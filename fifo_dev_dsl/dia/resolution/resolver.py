@@ -1,111 +1,200 @@
 
-from enum import Enum
+from common.llm.dia.dsl.elements.abort import Abort
+from common.llm.dia.dsl.elements.abort_with_new_intent import AbortWithNewIntent
 from common.llm.dia.dsl.elements.base import DslBase
-from common.llm.dia.dsl.elements.propagate_slot import PropagateSlot
-from common.llm.dia.dsl.elements.value_base import DSLValueBase
-from common.llm.dia.resolution.context import ResolutionContext
-from common.llm.dia.resolution.enums import ResolutionKind, ResolutionResult
+from common.llm.dia.dsl.elements.intent import Intent
+from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
+from common.llm.dia.resolution.context import ResolutionContext, ResolutionContextStackElement
+from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
 from common.llm.dia.resolution.interaction import Interaction
-from common.llm.dia.resolution.outcome import ResolutionOutcome, ResolutionOutcomeResultAndPropagationSlot
+from common.llm.dia.resolution.outcome import ResolutionOutcome
 from common.llm.dia.runtime.context import LLMRuntimeContext
-from common.typeutils.cast import strict_cast
 
-class AbortBehavior(Enum):
-    ABORT = 1
-    SKIP = 1
-
-
-def resolve4(abort_behavior: AbortBehavior, runtime_context: LLMRuntimeContext, dsl_elements: list[DslBase], kind: set[ResolutionKind], interaction: Interaction | None) -> ResolutionOutcome:
-    while True:
-
-        resolutions_result = ResolutionResult.NOT_APPLICABLE
-        new_dsl_elements = []
-        skip = False
-        outcome = None
-
-        for dsl_element in dsl_elements:
-            if skip:
-                new_dsl_elements.append(dsl_element)
-                continue
-
-            outcome = dsl_element.resolve(runtime_context, kind, ResolutionContext(), interaction)
-
-            if outcome.result is ResolutionResult.ABORT:
-                # we drop the current intent as it was aborted
-                if abort_behavior is AbortBehavior.SKIP:
-                    continue
-                else:
-                    return outcome
-
-            resolutions_result = resolutions_result.combine(outcome.result)
-
-            if outcome.result is ResolutionResult.INTERACTION_REQUESTED:
-                skip = True
-            
-            if outcome.resolved is not None:
-                new_dsl_elements.append(outcome.resolved)
-
-        dsl_elements = new_dsl_elements
-
-        if skip and outcome is not None:
-            return outcome.interaction, dsl_elements
-        
-        if resolutions_result is ResolutionResult.NOT_APPLICABLE:
-            return None, dsl_elements
-
-def resolve(dsl_elements: list[DslBase],
-            runtime_context: LLMRuntimeContext,
+def resolve(runtime_context: LLMRuntimeContext,
             resolution_context: ResolutionContext,
-            resolution_kind: set[ResolutionKind],
             abort_behavior: AbortBehavior,
             interaction: Interaction | None) -> ResolutionOutcome:
+    """
+    Resolve the current DSL structure using a resumable stack-based traversal.
 
-    new_items: list[DSLValueBase] = []
-    outcome_rnp = ResolutionOutcomeResultAndPropagationSlot()
+    Supports mutation, user interaction, and reentry propagation hooks across a tree of DSL
+    elements.
 
-    interaction_requested = False
-    propagated_slots = []
+    Args:
+        runtime_context (LLMRuntimeContext):
+            The runtime context with environment and tool references.
 
-    for val in dsl_elements:
+        resolution_context (ResolutionContext):
+            The resolution context holding the call stack and current processing state.
 
-        if interaction_requested:
-            new_items.append(val)
-            continue
+        abort_behavior (AbortBehavior):
+            Specifies how to handle abort signals and intent overrides.
 
-        outcome = val.resolve(runtime_context, resolution_kind, resolution_context.deepcopy(), interaction)
+        interaction (Interaction | None):
+            User interaction data passed in from outside resolution.
 
-        outcome_rnp += outcome
+    Returns:
+        ResolutionOutcome:
+            The final result of the DSL tree resolution.
+    """
 
-        if outcome.result is ResolutionResult.ABORT:
-            if abort_behavior is AbortBehavior.ABORT:
-                return outcome
-            # else
-            continue
+    args = (runtime_context, resolution_context, abort_behavior, interaction)
 
-        if outcome.result is ResolutionResult.NOT_APPLICABLE and isinstance(outcome.resolved, PropagateSlot):
-            propagated_slots.append(outcome.resolved)
-            continue
+    def _replace_current_node_with(
+        new_node: DslBase,
+        outcome: ResolutionOutcome
+    ) -> ResolutionOutcome:
+        """
+        Replace the current node in the stack with a new DSL node.
+
+        Args:
+            new_node (DslBase):
+                The new DSL node to install.
+
+            outcome (ResolutionOutcome):
+                The originating outcome containing propagated slots or supporting data.
+
+        Returns:
+            ResolutionOutcome:
+                CHANGED if the replacement occurred successfully, or ABORT.
+        """
+        assert outcome.node is not None
+
+        core_dsl_elements = []
+
+        for element in outcome.node:
+            if isinstance(element, Abort):
+                return ResolutionOutcome(
+                    result=ResolutionResult.ABORT,
+                    node=None
+                )
+            if isinstance(element, AbortWithNewIntent):
+                return ResolutionOutcome(
+                    result=ResolutionResult.ABORT,
+                    node=element.intent
+                )
+            if isinstance(element, PropagateSlots):
+                resolution_context.add_propagated_slot(element)
+            else:
+                core_dsl_elements.append(element)
+
+        assert len(resolution_context.call_stack) >= 2
+
+        current = resolution_context.call_stack[-1]
+        parent = resolution_context.call_stack[-2]
+        parent.obj.update_child(parent.idx - 1, new_node)
+
+        print(f"--> in {parent} replacing {current.obj} by {new_node}")
+
+        resolution_context.call_stack[-1] = ResolutionContextStackElement(new_node, 0)
+
+        return ResolutionOutcome(
+            result=ResolutionResult.CHANGED
+        )
+
+    def _try_call_on_reentry() -> None:
+        """
+        Call `on_reentry_resolution()` on the parent node after its child finishes.
+
+        This is used to apply propagated slots or update intermediate resolution state.
+        """
+        if len(resolution_context.call_stack) >= 2:
+            parent = resolution_context.call_stack[-2]
+            parent.obj.on_reentry_resolution(*args)
+
+    def _handle_abort_if_needed(sub_outcome: ResolutionOutcome) -> bool:
+        """
+        Handle an ABORT signal by removing or replacing the current intent in the stack.
+
+        Args:
+            sub_outcome (ResolutionOutcome):
+                An outcome returned from resolution to check.
+
+        Returns:
+            bool:
+                True if the abort was handled and traversal should continue.
+        """
+        if sub_outcome.result is not ResolutionResult.ABORT:
+            return False
+
+        while resolution_context.call_stack:
+            popped = resolution_context.call_stack.pop()
+            if isinstance(popped.obj, Intent):
+                break
+        else:
+            raise RuntimeError("ABORT: no Intent node found in call stack")
+
+        parent = resolution_context.call_stack[-1] if resolution_context.call_stack else None
+        if parent is None:
+            raise RuntimeError("ABORT: intent cannot be root")
+
+        if sub_outcome.node is not None:
+            parent.obj.update_child(parent.idx - 1, sub_outcome.node)
+            resolution_context.call_stack.append(
+                ResolutionContextStackElement(sub_outcome.node, 0)
+            )
+            sub_outcome.node.pre_resolution(*args)
+        else:
+            parent.obj.remove_child(parent.idx - 1)
+
+        return True
+
+    def _process_current_node(current: ResolutionContextStackElement) -> bool:
+        """
+        Perform resolution on a DSL node and handle any special outcomes.
+
+        Args:
+            current (ResolutionContextStackElement):
+                The current call stack element being resolved.
+
+        Returns:
+            bool:
+                True if resolution completed and traversal should continue.
+        """
+        outcome = current.obj.do_resolution(*args)
+
+        if _handle_abort_if_needed(outcome):
+            return True
 
         if outcome.result is ResolutionResult.INTERACTION_REQUESTED:
-            interaction_requested = True
+            raise StopIteration(outcome)
 
-        new_items.append(strict_cast(DslBase, outcome.resolved))
+        current.obj.post_resolution(*args)
 
-    if interaction_requested:
-        return ResolutionOutcome(
-            result=outcome_rnp.result,
-            resolved=new_items,
-            propagate_slots=outcome_rnp.propagate_slots + propagated_slots,
-            interaction=outcome.interaction
-        )
-    elif outcome_rnp.result is ResolutionResult.NOT_APPLICABLE:
-        assert len(outcome_rnp.propagate_slots) == 0
-        return ResolutionOutcome(
-            result=outcome_rnp.result,
-            resolved=new_items,
-            propagate_slots=outcome_rnp.propagate_slots + propagated_slots
-        )
-    else:
-        tmp = resolve(new_items, runtime_context, resolution_context, resolution_kind, abort_behavior, interaction)
-        tmp.propagate_slots += propagated_slots
-        return tmp
+        if outcome.result is ResolutionResult.NEW_DSL_NODES:
+            new_node = outcome.node[0]
+            sub_outcome = _replace_current_node_with(new_node, outcome)
+
+            if _handle_abort_if_needed(sub_outcome):
+                return True
+
+            new_node.pre_resolution(*args)
+            _try_call_on_reentry()
+            return True
+
+        _try_call_on_reentry()
+        resolution_context.call_stack.pop()
+        return True
+
+    while resolution_context.call_stack:
+        current = resolution_context.call_stack[-1]
+
+        try:
+            if current.obj.is_leaf():
+                if _process_current_node(current):
+                    continue
+            else:
+                children = current.obj.get_children()
+                if current.idx >= len(children):
+                    if _process_current_node(current):
+                        continue
+                else:
+                    child = children[current.idx]
+                    resolution_context.call_stack.append(ResolutionContextStackElement(child, 0))
+                    child.pre_resolution(*args)
+                    current.idx += 1
+
+        except StopIteration as interrupt:
+            return interrupt.value
+
+    return ResolutionOutcome()

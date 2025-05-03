@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
 from typing import Any
@@ -16,13 +16,9 @@ class ReturnValue(DSLValueBase):
 
     intent: Intent
 
-    def get_resolved_value_as_text(self) -> str:
-        # return self.value
-        assert False, "TODO"
-
     def eval(self,
              runtime_context: LLMRuntimeContext,
-             value_type: Optional[MiniDocStringType] = None) -> Any:
+             value_type: MiniDocStringType | None = None) -> Any:
 
         if value_type is None:
             raise RuntimeError("Missing expected type for evaluation of ReturnValue")

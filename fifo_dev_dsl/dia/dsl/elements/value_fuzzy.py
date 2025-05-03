@@ -8,5 +8,13 @@ class FuzzyValue(DSLValueBase):
 
     value: str
 
-    def get_resolved_value_as_text(self) -> str:
+    def represent_content_as_text(self) -> str | None:
+        """
+        Represent the content of this DSL node as a string.
+
+        Returns:
+            str | None:
+                The fuzzy value.
+        """
         return self.value
+

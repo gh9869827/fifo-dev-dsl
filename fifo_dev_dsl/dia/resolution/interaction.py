@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List, Optional
-from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+from dataclasses import dataclass
 
-from common.llm.dia.resolution.enums import ResolutionResult
 
 if TYPE_CHECKING:
     from common.llm.dia.dsl.elements.base import DslBase
-    from common.llm.dia.dsl.elements.propagate_slot import PropagateSlot
+    from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
 
 @dataclass
 class InteractionRequest:
@@ -16,7 +15,8 @@ class InteractionRequest:
     message: str
     expected_type: str  # e.g. 'str', 'int', 'choice'
     requester: DslBase
-    slot_name: Optional[str] = None  # Which slot this is clarifying
+    slot_name: str | None = None  # Which slot this is clarifying
+
 
 @dataclass
 class InteractionAnswer:

@@ -49,10 +49,12 @@ from common.llm.dia.dsl.elements.abort_with_new_intent import AbortWithNewIntent
 from common.llm.dia.dsl.elements.ask import Ask
 from common.llm.dia.dsl.elements.base import DslBase
 from common.llm.dia.dsl.elements.intent import Intent
-from common.llm.dia.dsl.elements.propagate_slot import PropagateSlot
+from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
 from common.llm.dia.dsl.elements.query_fill import QueryFill
 from common.llm.dia.dsl.elements.query_user import QueryUser
+from common.llm.dia.dsl.elements.root_elements import RootElements
 from common.llm.dia.dsl.elements.same_as_previous import SameAsPreviousIntent
+from common.llm.dia.dsl.elements.slot import Slot
 from common.llm.dia.dsl.elements.value_base import DSLValueBase
 from common.llm.dia.dsl.elements.value_fuzzy import FuzzyValue
 from common.llm.dia.dsl.elements.value_list import ListValue
@@ -153,15 +155,15 @@ def parse_intent(name: str, args: str) -> Intent:
     Example:
         parse_intent("move", 'x=add(a=1, b=2), y=-1, speed="fast"')
     """
-    params = {}
-    for arg in split_top_level_commas (args):
+    slots = []
+    for arg in split_top_level_commas(args):
         if '=' in arg:
             k, v = arg.split('=', 1)
-            params[k.strip()] = parse_dsl_element(v.strip(), True)
+            slots.append(Slot(k.strip(), parse_dsl_element(v.strip(), True)))
         else:
             raise ValueError("Intent args missing =")
 
-    return Intent(name=name, params=params)
+    return Intent(name=name, slots=slots)
 
 def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
     """
@@ -226,14 +228,14 @@ def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
             return SameAsPreviousIntent()
 
         if name == "PROPAGATE_SLOT":
-            slots = {}
+            slots = []
             for s in split_top_level_commas (args):
                 if '=' in s:
                     k, v = s.split('=', 1)
-                    slots[k.strip()] = parse_dsl_element(v.strip(), True)
+                    slots.append(Slot(k.strip(), parse_dsl_element(v.strip(), True)))
                 else:
                     raise ValueError("Propagated slots args missing =")
-            return PropagateSlot(slots)
+            return PropagateSlots(slots)
 
         if name == "ABORT_WITH_NEW_INTENT":
             return AbortWithNewIntent(strict_cast(Intent, parse_dsl_element(args, False)))
@@ -249,7 +251,7 @@ def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
     # numbers
     return Value(text)
 
-def parse_dsl(dsl_input: str) -> List[DslBase]:
+def parse_dsl(dsl_input: str) -> RootElements:
     """
     Parse a top-level DSL expression containing multiple elements.
 
@@ -262,11 +264,14 @@ def parse_dsl(dsl_input: str) -> List[DslBase]:
             A comma-separated DSL expression string (e.g., 'add(v=1), ABORT()').
 
     Returns:
-        List[DslBase]:
-            A list of parsed DSL elements, which are instances of DslBase subclasses.
+        RootElements:
+            The list of parsed root DSL elements, which are instances of DslBase subclasses.
 
     Raises:
         ValueError:
             If any element in the input is malformed.
     """
-    return [parse_dsl_element(element, False) for element in split_top_level_commas(dsl_input)]
+    print([parse_dsl_element(element, False) for element in split_top_level_commas(dsl_input)])
+    return RootElements(
+        items=[parse_dsl_element(element, False) for element in split_top_level_commas(dsl_input)]
+    )

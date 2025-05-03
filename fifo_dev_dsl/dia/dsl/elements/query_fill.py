@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
 
 from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from common.llm.dia.dsl.elements.base import DslBase
-from common.llm.dia.resolution.enums import ResolutionKind, ResolutionResult
+from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
 from common.llm.dia.resolution.interaction import Interaction
 from common.llm.dia.resolution.outcome import ResolutionOutcome
 from common.llm.dia.dsl.elements.value import Value
@@ -22,16 +22,14 @@ class QueryFill(DslBase):
     def is_resolved(self) -> bool:
         return False
 
-    def resolve(self,
-                runtime_context: LLMRuntimeContext,
-                kind: set[ResolutionKind],
-                context: ResolutionContext,
-                interaction: Optional[Interaction] = None) -> ResolutionOutcome:
+    def do_resolution(self,
+                       runtime_context: LLMRuntimeContext,
+                       resolution_context: ResolutionContext,
+                       abort_behavior: AbortBehavior,
+                       interaction: Interaction | None) -> ResolutionOutcome:
+        super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
 
-        if ResolutionKind.QUERY_FILL not in kind:
-            return super().resolve(runtime_context, kind, context, interaction)
-
-        prompt_user = runtime_context.get_user_prompt_dynamic_query(context, self.query)
+        prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
         answer = call_airlock_model_server(
                     model=Model.Phi4MiniInstruct,
@@ -67,10 +65,7 @@ class QueryFill(DslBase):
                 # handle multiple values and enforce reasoning
                 break
 
-        outcome = Value(value).resolve(runtime_context, kind, context, interaction)
-
         return ResolutionOutcome(
-            result=ResolutionResult.APPLICABLE_SUCCESS.combine(outcome.result),
-            resolved=outcome.resolved,
-            propagate_slots=outcome.propagate_slots
+            result=ResolutionResult.CHANGED,
+            node=[Value(value)]
         )

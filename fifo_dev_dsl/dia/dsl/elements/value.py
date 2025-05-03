@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
@@ -11,14 +11,22 @@ if TYPE_CHECKING:
 
 @dataclass
 class Value(DSLValueBase):
+
     value: Any
 
-    def get_resolved_value_as_text(self) -> str:
+    def represent_content_as_text(self) -> str | None:
+        """
+        Represent the content of this DSL node as a string.
+
+        Returns:
+            str | None:
+                The value.
+        """
         return self.value
 
     def eval(self,
              runtime_context: LLMRuntimeContext,
-             value_type: Optional[MiniDocStringType] = None) -> Any:
+             value_type: MiniDocStringType | None = None) -> Any:
 
         if value_type is None:
             raise RuntimeError("Missing expected type for evaluation of Value")

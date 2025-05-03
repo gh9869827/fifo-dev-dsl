@@ -1,12 +1,9 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
 from common.llm.dia.dsl.elements.base import DslBase
 from common.llm.dia.dsl.elements.intent import Intent
-from common.llm.dia.resolution.enums import ResolutionKind, ResolutionResult
-from common.llm.dia.resolution.interaction import Interaction
-from common.llm.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:
     from common.llm.dia.resolution.context import ResolutionContext
@@ -30,15 +27,3 @@ class AbortWithNewIntent(DslBase):
     """
 
     intent: Intent
-
-    def resolve(self,
-                runtime_context: LLMRuntimeContext,
-                kind: set[ResolutionKind],
-                context: ResolutionContext,
-                interaction: Optional[Interaction] = None) -> ResolutionOutcome:
-
-        return ResolutionOutcome(
-            result=ResolutionResult.ABORT,
-            resolved=self.intent,
-            propagate_slots=[]
-        )

@@ -1,14 +1,16 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Optional
+from abc import ABC
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from common.introspection.docstring import MiniDocStringType
-from common.llm.dia.resolution.enums import ResolutionKind, ResolutionResult
 from common.llm.dia.resolution.interaction import Interaction
 from common.llm.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:
+    from common.llm.dia.resolution.resolver import AbortBehavior
     from common.llm.dia.resolution.context import ResolutionContext
     from common.llm.dia.runtime.context import LLMRuntimeContext
+
 
 class DslBase:
     """
@@ -22,45 +24,130 @@ class DslBase:
     and `eval()` if they produce a concrete value during execution.
     """
 
-    def resolve(self,
-                runtime_context: LLMRuntimeContext,
-                kind: set[ResolutionKind],
-                context: ResolutionContext,
-                interaction: Optional[Interaction] = None) -> ResolutionOutcome:
+    def represent_content_as_text(self) -> str | None:
         """
-        Attempt to resolve this element for the given resolution wave/kind.
+        Represent the content of this DSL node as a string, if possible.
 
-        This method is called during resolution waves (e.g., ASK, QUERY_FILL) to give
-        the element a chance to participate. Subclasses override this method to provide
-        custom resolution behavior.
-        By default, the base class does not respond to any resolution phase
-        and simply returns itself as-is with a NOT_APPLICABLE result.
+        This method is used to pass resolved or unresolved values to an LLM in text form,
+        for example, when querying external knowledge, resolving slots, or sequencing intents.
 
-        Args:
-            runtime_context (LLMRuntimeContext):
-                Provides access to tools, query sources, and precompiled LLM prompts used
-                to guide model responses and fill in missing information.
+        Not all DSL nodes can be meaningfully represented as text. If this node or any of its
+        children cannot, this method should return None.
 
-            kind (Set[ResolutionKind]):
-                The type of resolution pass currently being executed (ASK, QUERY_FILL, etc).
-
-            context (ResolutionContext):
-                Tracks the current resolution state, including the intent being resolved,
-                the slot in question, and any values that need to be propagated.
-
-            interaction: todo if not None we resume evaluation where we left off with the new answer provided by the user
+        By default, returns None. Override in subclasses where textual representation is possible.
 
         Returns:
-            ResolutionOutcome:
-                Indicates whether the element was modified, aborted, or unchanged.
+            str | None:
+                A string representation of this node's content, or None if not representable.
         """
-        _ = runtime_context, kind, context, interaction
+        return None
 
-        return ResolutionOutcome(
-            result=ResolutionResult.NOT_APPLICABLE,
-            resolved=self,
-            propagate_slots=[]
-        )
+
+    def pretty_print_dsl(self, indent: int = 0) -> None:
+        """
+        Recursively print the DSL tree in a readable, indented format.
+
+        Args:
+            indent (int):
+                Current indentation level (used internally for recursion).
+        """
+        prefix = "  " * indent
+        print(f"{prefix}{repr(self)}")
+
+        for child in self.get_children():
+            child.pretty_print_dsl(indent + 1)
+
+    def get_children(self) -> list[DslBase]:
+        """
+        Return a list of DslBase child elements.
+
+        Returns:
+            list[tuple[str, DslBase]]:
+                The ordered list of child key-value pairs.
+        """
+        return []
+
+    def is_leaf(self) -> bool:
+        """
+        Return True if this node has no children.
+
+        Returns:
+            bool:
+                True if the node is a leaf, False otherwise.
+        """
+        return not self.get_children()
+
+    def update_child(self, index: int, new_child: DslBase) -> None:
+        """
+        Replace the child at the given index with a new value.
+
+        Args:
+            index (int):
+                Index of the child to replace.
+
+            new_child (DslBase):
+                The new node to insert.
+        """
+        raise RuntimeError(f"{self.__class__.__name__} is a leaf node; it cannot update children.")
+
+
+    def remove_child(self, index: int) -> None:
+        """
+        Remove the child at the specified index.
+
+        Args:
+            index (int):
+                Index of the child to remove.
+        """
+        raise RuntimeError(f"{self.__class__.__name__} is a leaf node; it cannot remove children.")
+
+    def is_abort_boundary(self) -> bool:
+        """
+        Return True if this node represents a boundary for abort pruning.
+
+        Returns:
+            bool:
+                True if this node defines an abort scope boundary.
+        """
+        return False
+    
+    def pre_resolution(self,
+                       runtime_context: LLMRuntimeContext,
+                       resolution_context: ResolutionContext,
+                       abort_behavior: AbortBehavior,
+                       interaction: Interaction | None):
+        _ = runtime_context, resolution_context, abort_behavior, interaction
+        pad = len(resolution_context.call_stack) * "  "
+        print(f"{pad}pre_resolution of {self}")
+    
+    def do_resolution(self,
+                       runtime_context: LLMRuntimeContext,
+                       resolution_context: ResolutionContext,
+                       abort_behavior: AbortBehavior,
+                       interaction: Interaction | None) -> ResolutionOutcome:
+        _ = runtime_context, resolution_context, abort_behavior, interaction
+        pad = len(resolution_context.call_stack) * "  "
+        print(f"{pad}do_resolution of {self}")
+
+        return ResolutionOutcome()
+    
+    def post_resolution(self,
+                       runtime_context: LLMRuntimeContext,
+                       resolution_context: ResolutionContext,
+                       abort_behavior: AbortBehavior,
+                       interaction: Interaction | None):
+        _ = runtime_context, resolution_context, abort_behavior, interaction
+        pad = len(resolution_context.call_stack) * "  "
+        print(f"{pad}post_resolution of {self}")
+
+    def on_reentry_resolution(self,
+                              runtime_context: LLMRuntimeContext,
+                              resolution_context: ResolutionContext,
+                              abort_behavior: AbortBehavior,
+                              interaction: Interaction | None):
+        _ = runtime_context, resolution_context, abort_behavior, interaction
+        pad = len(resolution_context.call_stack) * "  "
+        print(f"{pad}on_reentry_resolution of {self}")
 
     def is_resolved(self) -> bool:
         """
@@ -78,7 +165,7 @@ class DslBase:
 
     def eval(self,
              runtime_context: LLMRuntimeContext,
-             value_type: Optional[MiniDocStringType] = None) -> Any:
+             value_type: MiniDocStringType | None = None) -> Any:
         """
         Evaluate the DSL element and return its final value.
 
@@ -103,3 +190,105 @@ class DslBase:
                 If the element cannot be evaluated.
         """
         raise RuntimeError("Expression cannot be evaluated, be sure it is resolvable/resolved.")
+
+
+T = TypeVar("T", bound=DslBase)
+
+class DslContainerBase(DslBase, Generic[T], ABC):
+
+    _items: list[T]
+
+    def __init__(self, items: list[T]):
+        """
+        Initialize a container node with an ordered list of items.
+
+        Args:
+            items (list[T]):
+                A list of container items to store internally.
+        """
+        self._items: list[T] = items
+
+    def is_resolved(self) -> bool:
+        return all(val.is_resolved() for val in self._items)
+
+    def get_items(self) -> list[T]:
+        """
+        Return the internal list of stored items.
+
+        Returns:
+            list[T]:
+                The internal list used by this container.
+        """
+        return self._items
+
+    def get_children(self) -> list[DslBase]:
+        """
+        Return the list of DslBase children in traversal order.
+
+        Returns:
+            list[DslBase]:
+                The list of child nodes.
+        """
+        return [item for item in self._items]
+
+    def is_leaf(self) -> bool:
+        """
+        Return False; container nodes are never leaves.
+
+        Returns:
+            bool:
+                Always False.
+        """
+        return False
+
+    def update_child(self, index: int, new_child: DslBase) -> None:
+        """
+        Replace the child at the given index with a new value.
+
+        Args:
+            index (int):
+                Index of the child to replace.
+            new_child (DslBase):
+                The new node to insert.
+        """
+        self._items[index] = new_child
+
+    def remove_child(self, index: int) -> None:
+        """
+        Remove the child at the specified index.
+
+        Args:
+            index (int):
+                Index of the child to remove.
+        """
+        self._items.pop(index)
+
+    def represent_content_as_text(self) -> str | None:
+        """
+        Represent the content of this DSL node as a string, if possible.
+
+        This method is used to pass resolved or unresolved values to an LLM in text form,
+        for example, when querying external knowledge, resolving slots, or sequencing intents.
+
+        Not all DSL nodes can be meaningfully represented as text. If this node or any of its
+        children cannot, this method should return None.
+
+        Returns:
+            str | None:
+                A list that is a string representation of this node's content, or None if not
+                all items are representable. The list is formatted as `[...]`.
+        """
+        repr_elements = []
+
+        for v in self.get_children():
+            r = v.represent_content_as_text()
+            if r is None:
+                return None
+            repr_elements.append(r)
+
+        return f"[{','.join(repr_elements)}]"
+
+    def __repr__(self) -> str:
+        n = len(self.get_items())
+        item_str = "item" if n == 1 else "items"
+        return f"{self.__class__.__name__}({n} {item_str})"

@@ -88,7 +88,7 @@ class LLMRuntimeContext:
         """
         return self._prompt_query_fill
 
-    def get_user_prompt_dynamic_query(self, context: ResolutionContext, question: str) -> str:
+    def get_user_prompt_dynamic_query(self, resolution_context: ResolutionContext, question: str) -> str:
         """
         Dynamically create the user prompt used for QUERY_FILL and QUERY_USER resolution.
 
@@ -109,10 +109,15 @@ class LLMRuntimeContext:
             source() for source in self._query_sources
         )
 
+        # intent and slot can be None if for example the user only ask a question without
+        # mentioning any intent at all.
+        intent_name = resolution_context.intent.name if resolution_context.intent else "none"
+        slot_name = resolution_context.slot.name if resolution_context.slot else "none"
+
         return f"""query context:
-  intent: {context.intent}
-  slot: {context.slot}
-{context.format_other_slots_yaml('  ')}
+  intent: {intent_name}
+  slot: {slot_name}
+{resolution_context.format_other_slots_yaml('  ')}
   question: {question}
   runtime_information:
 {textwrap.indent(dynamic_runtime_info, prefix='    ')}

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
 
@@ -7,7 +7,7 @@ from common.llm.airlock_model_env.common.models import GenerationParameters, Mes
 from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from common.llm.dia.dsl.elements.base import DslBase
 import common.llm.dia.dsl.elements.helper as helper
-from common.llm.dia.resolution.enums import ResolutionKind
+from common.llm.dia.resolution.enums import AbortBehavior
 from common.llm.dia.resolution.interaction import Interaction
 from common.llm.dia.resolution.outcome import ResolutionOutcome
 
@@ -24,16 +24,14 @@ class QueryUser(DslBase):
     def is_resolved(self) -> bool:
         return False
 
-    def resolve(self,
-                runtime_context: LLMRuntimeContext,
-                kind: set[ResolutionKind],
-                context: ResolutionContext,
-                interaction: Optional[Interaction] = None) -> ResolutionOutcome:
+    def do_resolution(self,
+                       runtime_context: LLMRuntimeContext,
+                       resolution_context: ResolutionContext,
+                       abort_behavior: AbortBehavior,
+                       interaction: Interaction | None) -> ResolutionOutcome:
+        super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
 
-        if ResolutionKind.QUERY_USER not in kind:
-            return super().resolve(runtime_context, kind, context, interaction)
-
-        prompt_user = runtime_context.get_user_prompt_dynamic_query(context, self.query)
+        prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
         answer = call_airlock_model_server(
                     model=Model.Phi4MiniInstruct,
@@ -72,7 +70,6 @@ class QueryUser(DslBase):
         return helper.ask_helper(
             runtime_context=runtime_context,
             current=(self, value),
-            kind=kind,
-            resolution_context=context,
+            resolution_context=resolution_context,
             interaction=interaction
         )

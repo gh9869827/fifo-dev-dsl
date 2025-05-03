@@ -1,96 +1,85 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
 from common.introspection.docstring import MiniDocStringType
-from common.llm.dia.dsl.elements.base import DslBase
-from common.llm.dia.dsl.elements.value_base import DSLValueBase
-from common.llm.dia.resolution.enums import ResolutionKind, ResolutionResult
+from common.llm.dia.dsl.elements.base import DslContainerBase
+from common.llm.dia.dsl.elements.slot import Slot
 from common.llm.dia.resolution.interaction import Interaction
-from common.llm.dia.resolution.outcome import ResolutionOutcome
+from common.llm.dia.resolution.enums import AbortBehavior
 
 if TYPE_CHECKING:
     from common.llm.dia.resolution.context import ResolutionContext
     from common.llm.dia.runtime.context import LLMRuntimeContext
 
 @dataclass
-class Intent(DslBase):
+class Intent(DslContainerBase[Slot]):
 
     name: str
-    params: dict[str, DslBase]
 
-    def resolve(self,
-                runtime_context: LLMRuntimeContext,
-                kind: set[ResolutionKind],
-                context: ResolutionContext,
-                interaction: Optional[Interaction] = None) -> ResolutionOutcome:
+    def __init__(self, name: str, slots: list[Slot]):
+        super().__init__(slots)
+        self.name = name
 
-        new_params: dict[str, DslBase] = {}
-        resolutions_result = ResolutionResult.NOT_APPLICABLE
+    def _propagate_slots(self,
+                         resolution_context: ResolutionContext):
 
-        skip = False
-        for key, val in self.params.items():
-            if skip:
-                new_params[key] = val
-                continue
+        assert resolution_context.slot is None
 
-            ctx = context.deepcopy()
-            ctx.intent = self.name
-            ctx.slot = key
-            ctx.other_slots = {}
+        for propagated_slots in resolution_context.take_propagated_slots():
+            pslots = propagated_slots.to_dict()
+            updated = set()
 
-            # todo we need to combine self.params and new_params with priority on new_params and if not found go back to self.params
-            for other_key, other_val in self.params.items():
-                if (
-                    not other_key is key
-                    and other_val.is_resolved()
-                    and isinstance(other_val, DSLValueBase)
-                ):
-                    ctx.other_slots[other_key] = other_val.get_resolved_value_as_text()
+            for slot in self.get_items():
+                pslot_value = pslots.get(slot.name)
+                if pslot_value is not None:
+                    print(f"--> propagating slots {slot.name}, "
+                          f"{slot.value} replaced by {pslot_value} ")
+                    slot.value = pslot_value
+                    updated.add(slot.name)
 
-            outcome = val.resolve(runtime_context, kind, ctx, interaction)
+            # process the unconsumed propagated slots
+            for name, value in pslots.items():
+                if name not in updated:
+                    self._items.append(Slot(name, value))
 
-            print("intent resolution outcome", outcome)
+    def pre_resolution(self,
+                       runtime_context: LLMRuntimeContext,
+                       resolution_context: ResolutionContext,
+                       abort_behavior: AbortBehavior,
+                       interaction: Interaction | None):
+        super().pre_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+        resolution_context.intent = self
 
-            resolutions_result = resolutions_result.combine(outcome.result)
+    def post_resolution(self,
+                       runtime_context: LLMRuntimeContext,
+                       resolution_context: ResolutionContext,
+                       abort_behavior: AbortBehavior,
+                       interaction: Interaction | None):
+        super().post_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+        resolution_context.intent = None
 
-            if outcome.result is ResolutionResult.ABORT:
-                return outcome
-
-            if outcome.result is ResolutionResult.INTERACTION_REQUESTED:
-                skip = True
-
-            if outcome.resolved is None:
-                raise RuntimeError(f"Intent '{self.name}': resolved value for key '{key}' is None")
-
-            new_params[key] = outcome.resolved
-
-            # todo fix we need to take new_params and not self.params
-            for p in outcome.propagate_slots:
-                for pk, pv in p.slots.items():
-                    self.params[pk] = pv
-
-        return ResolutionOutcome(
-            result=resolutions_result,
-            resolved=Intent(self.name, new_params),
-            propagate_slots=[],
-            interaction=None if skip is False else outcome.interaction
+    def on_reentry_resolution(self,
+                              runtime_context: LLMRuntimeContext,
+                              resolution_context: ResolutionContext,
+                              abort_behavior: AbortBehavior,
+                              interaction: Interaction | None):
+        super().on_reentry_resolution(
+            runtime_context, resolution_context, abort_behavior, interaction
         )
-
-    def is_resolved(self) -> bool:
-        return all(val.is_resolved() for val in self.params.values())
+        self._propagate_slots(resolution_context)
 
     def eval(self,
              runtime_context: LLMRuntimeContext,
-             value_type: Optional[MiniDocStringType] = None) -> Any:
+             value_type: MiniDocStringType | None = None) -> Any:
 
         tool = runtime_context.get_tool(self.name)
 
         args = {
-            param_name: param_value.eval(
-                runtime_context, tool.tool_docstring.get_arg_by_name(param_name).pytype
-            ) for param_name, param_value in self.params.items()
+            slot.name: slot.value.eval(
+                runtime_context, tool.tool_docstring.get_arg_by_name(slot.name).pytype
+            ) for slot in self._items
         }
 
         ret = tool.tool_docstring.return_type.cast(tool(**args))
