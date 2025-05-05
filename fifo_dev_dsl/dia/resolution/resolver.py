@@ -7,7 +7,7 @@ from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
 from common.llm.dia.dsl.elements.root_elements import RootElements
 from common.llm.dia.resolution.context import LLMCallLog, ResolutionContext, ResolutionContextStackElement
 from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
-from common.llm.dia.resolution.interaction import Interaction
+from common.llm.dia.resolution.interaction import Interaction, InteractionAnswer
 from common.llm.dia.resolution.outcome import ResolutionOutcome
 from common.llm.dia.runtime.context import LLMRuntimeContext
 from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
@@ -257,3 +257,14 @@ class Resolver:
         )
 
         self._root_dsl_elements = parse_dsl(answer)
+
+    def fully_resolve_in_text_mode(self):
+        interaction_reply = None
+        while True:
+            outcome = self(interaction_reply)
+            if outcome.result is ResolutionResult.UNCHANGED:
+                break
+            assert outcome.result is ResolutionResult.INTERACTION_REQUESTED
+            print(f"< {outcome.interaction.message}")
+            answer = InteractionAnswer(content=input("> "))
+            interaction_reply = Interaction(outcome.interaction, answer)
