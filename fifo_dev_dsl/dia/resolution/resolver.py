@@ -4,11 +4,16 @@ from common.llm.dia.dsl.elements.abort_with_new_intent import AbortWithNewIntent
 from common.llm.dia.dsl.elements.base import DslBase
 from common.llm.dia.dsl.elements.intent import Intent
 from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
-from common.llm.dia.resolution.context import ResolutionContext, ResolutionContextStackElement
+from common.llm.dia.dsl.elements.root_elements import RootElements
+from common.llm.dia.resolution.context import LLMCallLog, ResolutionContext, ResolutionContextStackElement
 from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
 from common.llm.dia.resolution.interaction import Interaction
 from common.llm.dia.resolution.outcome import ResolutionOutcome
 from common.llm.dia.runtime.context import LLMRuntimeContext
+from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
+from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
+from common.llm.dia.dsl.parser.parser import parse_dsl
+
 
 def resolve(runtime_context: LLMRuntimeContext,
             resolution_context: ResolutionContext,
@@ -198,3 +203,57 @@ def resolve(runtime_context: LLMRuntimeContext,
             return interrupt.value
 
     return ResolutionOutcome()
+
+
+class Resolver:
+
+    _resolution_context: ResolutionContext
+    _runtime_context: LLMRuntimeContext
+    _root_dsl_elements: RootElements
+
+    def __init__(self, runtime_context: LLMRuntimeContext, prompt: str):
+        self._runtime_context = runtime_context
+        self._resolution_context = ResolutionContext()
+        self._process_user_prompt(prompt)
+        self._resolution_context.call_stack.clear()
+        self._resolution_context.call_stack.append(
+            ResolutionContextStackElement(self._root_dsl_elements, 0)
+        )
+
+    def __call__(self, interaction_reply: Interaction | None) -> ResolutionOutcome:
+        return resolve(
+            self._runtime_context, self._resolution_context, AbortBehavior.SKIP, interaction_reply
+        )
+
+    def _process_user_prompt(self, prompt: str):
+
+        answer = call_airlock_model_server(
+            model=Model.Phi4MiniInstruct,
+            adapter="intent-sequencer",
+            messages=[
+                    Message(
+                        role=Role.system,
+                        content=self._runtime_context.system_prompt_intent_sequencer
+                    ),
+                    Message(
+                        role=Role.user,
+                        content=prompt
+                    )
+            ],
+            parameters=GenerationParameters(
+                max_new_tokens=1024,
+                do_sample=False
+            ),
+            container_name="dev-phi"
+        )
+
+        self._resolution_context.llm_call_logs.append(
+            LLMCallLog(
+                description="main",
+                system_prompt=self._runtime_context.system_prompt_intent_sequencer,
+                assistant=prompt,
+                answer=answer
+            )
+        )
+
+        self._root_dsl_elements = parse_dsl(answer)

@@ -5,6 +5,7 @@ from common.llm.airlock_model_env.common.models import GenerationParameters, Mes
 from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
 import common.llm.dia.dsl.parser.parser as parser
+from common.llm.dia.resolution.context import LLMCallLog
 from common.llm.dia.resolution.enums import ResolutionResult
 from common.llm.dia.resolution.interaction import Interaction, InteractionRequest
 from common.llm.dia.resolution.outcome import ResolutionOutcome
@@ -75,15 +76,14 @@ def ask_helper(runtime_context: LLMRuntimeContext,
         container_name="dev-phi"
     )
 
-    print("ask_helper", current)
-    print("---")
-    print("$")
-    print(runtime_context.system_prompt_slot_resolver)
-    print(">")
-    print(resolution_text)
-    print("<")
-    print(answer)
-    print("---")
+    resolution_context.llm_call_logs.append(
+        LLMCallLog(
+            description=f"ask_helper[{current}]",
+            system_prompt=runtime_context.system_prompt_slot_resolver,
+            assistant=resolution_text,
+            answer=answer
+        )
+    )
 
     resolution_context.questions_being_clarified.append(
         (current_object, current_question, user_answer)
