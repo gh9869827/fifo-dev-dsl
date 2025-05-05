@@ -6,42 +6,65 @@ from common.llm.dia.dsl.elements.base import DslBase
 from common.llm.dia.dsl.elements.root_elements import RootElements
 from common.llm.dia.dsl.parser.parser import parse_dsl
 from common.llm.dia.resolution.context import ResolutionContext, ResolutionContextStackElement
-from common.llm.dia.resolution.enums import ResolutionResult
+from common.llm.dia.resolution.enums import AbortBehavior
 from common.llm.dia.resolution.interaction import Interaction, InteractionAnswer, InteractionRequest
-from common.llm.dia.resolution.outcome import ResolutionOutcome
-from common.llm.dia.resolution.resolver import AbortBehavior, resolve
+from common.llm.dia.resolution.resolver import resolve
 from common.llm.dia.runtime.context import LLMRuntimeContext
 
 
-def process_user_prompt(runtime_context: LLMRuntimeContext, resolution_context: ResolutionContext, prompt: str) -> Tuple[Optional[InteractionRequest], RootElements]:
+class Processor:
 
-    answer = call_airlock_model_server(
-        model=Model.Phi4MiniInstruct,
-        adapter="intent-sequencer",
-        messages=[
-                Message(role=Role.system, content=runtime_context.system_prompt_intent_sequencer),
-                Message(role=Role.user, content=prompt)
-        ],
-        parameters=GenerationParameters(
-            max_new_tokens=1024,
-            do_sample=False
-        ),
-        container_name="dev-phi"
-    )
+    _resolution_context: ResolutionContext
+    _runtime_context: LLMRuntimeContext
+    _root_dsl_elements: RootElements
 
-    print("main processing")
-    print("---")
-    print("$")
-    print(runtime_context.system_prompt_intent_sequencer)
-    print(">")
-    print(prompt)
-    print("<")
-    print(answer)
-    print("---")
+    def __init__(self, runtime_context: LLMRuntimeContext, prompt: str):
+        self._runtime_context = runtime_context
+        self._resolution_context = ResolutionContext()
+        self._process_user_prompt(prompt)
+        self._resolution_context.call_stack.clear()
+        self._resolution_context.call_stack.append(
+            ResolutionContextStackElement(self._root_dsl_elements, 0)
+        )
 
-    root_dsl_elements = parse_dsl(answer)
+    def __call__(self, interaction_reply: Interaction | None):
+        return resolve(
+            self._runtime_context, self._resolution_context, AbortBehavior.SKIP, interaction_reply
+        )
 
-    return root_dsl_elements
+    def _process_user_prompt(self, prompt: str):
+
+        answer = call_airlock_model_server(
+            model=Model.Phi4MiniInstruct,
+            adapter="intent-sequencer",
+            messages=[
+                    Message(
+                        role=Role.system,
+                        content=self._runtime_context.system_prompt_intent_sequencer
+                    ),
+                    Message(
+                        role=Role.user,
+                        content=prompt
+                    )
+            ],
+            parameters=GenerationParameters(
+                max_new_tokens=1024,
+                do_sample=False
+            ),
+            container_name="dev-phi"
+        )
+
+        print("main processing")
+        print("---")
+        print("$")
+        print(self._runtime_context.system_prompt_intent_sequencer)
+        print(">")
+        print(prompt)
+        print("<")
+        print(answer)
+        print("---")
+
+        self._root_dsl_elements = parse_dsl(answer)
 
 
 
