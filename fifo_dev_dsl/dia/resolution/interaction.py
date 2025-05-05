@@ -5,7 +5,6 @@ from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from common.llm.dia.dsl.elements.base import DslBase
-    from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
 
 @dataclass
 class InteractionRequest:

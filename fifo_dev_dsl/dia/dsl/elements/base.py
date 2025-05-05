@@ -110,7 +110,7 @@ class DslBase:
                 True if this node defines an abort scope boundary.
         """
         return False
-    
+
     def pre_resolution(self,
                        runtime_context: LLMRuntimeContext,
                        resolution_context: ResolutionContext,
@@ -119,7 +119,7 @@ class DslBase:
         _ = runtime_context, resolution_context, abort_behavior, interaction
         pad = len(resolution_context.call_stack) * "  "
         print(f"{pad}pre_resolution of {self}")
-    
+
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,
                        resolution_context: ResolutionContext,
@@ -130,7 +130,7 @@ class DslBase:
         print(f"{pad}do_resolution of {self}")
 
         return ResolutionOutcome()
-    
+
     def post_resolution(self,
                        runtime_context: LLMRuntimeContext,
                        resolution_context: ResolutionContext,

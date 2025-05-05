@@ -23,11 +23,6 @@ def ask_helper(runtime_context: LLMRuntimeContext,
 
     current_object, current_question = current
 
-    # if len(resolution_context.questions_being_clarified) > 0:
-    #     _source_object, source_question, _ = resolution_context.questions_being_clarified[0]
-    # else:
-    #     _source_object, source_question = current
-
     if (
            interaction is None
         or interaction is not None and interaction.request.requester is not current_object
@@ -45,12 +40,6 @@ def ask_helper(runtime_context: LLMRuntimeContext,
     assert interaction.answer.consumed is False
     user_answer = interaction.answer.content
     interaction.answer.consumed = True
-
-    #   previous_questions_and_answers:
-    #     - question: ...
-    #       answer: ...
-    #     - question: ...
-    #       answer: ...
 
     if resolution_context.questions_being_clarified:
         previous_qna_yaml = "\n".join(

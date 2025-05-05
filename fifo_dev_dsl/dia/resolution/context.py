@@ -27,11 +27,6 @@ class ResolutionContext:
     questions_being_clarified: list[tuple[Ask | QueryUser, str]] = field(default_factory=list)
     call_stack: list[ResolutionContextStackElement] = field(default_factory=list)
 
-    def display_other_slots(self) -> str:
-        if self.other_slots:
-            return "".join([f"\n    - {key}: {value}" for key, value in self.other_slots.items()])
-        return "none"
-
     def format_other_slots_yaml(self, padding: str="") -> str:
         if not self.other_slots:
             return f"{padding}other_slots: {{}}"

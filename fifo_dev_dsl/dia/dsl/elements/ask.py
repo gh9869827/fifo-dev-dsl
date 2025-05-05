@@ -17,25 +17,6 @@ class Ask(DslBase):
 
     question: str
 
-    # def resolve(self,
-    #             runtime_context: LLMRuntimeContext,
-    #             resolution_context: ResolutionContext,
-    #             interaction: Optional[Interaction] = None) -> ResolutionOutcome:
-
-    #     return helper.ask_helper(
-    #         runtime_context=runtime_context,
-    #         current=(self, self.question),
-    #         resolution_context=resolution_context,
-    #         interaction=interaction)
-
-    # def pre_resolution(self,
-    #                    runtime_context: LLMRuntimeContext,
-    #                    resolution_context: ResolutionContext,
-    #                    abort_behavior: AbortBehavior,
-    #                    interaction: Interaction | None):
-    #     super().pre_resolution(runtime_context, resolution_context, abort_behavior, interaction)
-    #     resolution_context.intent = self
-    
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,
                        resolution_context: ResolutionContext,
@@ -48,15 +29,6 @@ class Ask(DslBase):
             current=(self, self.question),
             resolution_context=resolution_context,
             interaction=interaction)
-
-    # def post_resolution(self,
-    #                    runtime_context: LLMRuntimeContext,
-    #                    resolution_context: ResolutionContext,
-    #                    abort_behavior: AbortBehavior,
-    #                    interaction: Interaction | None):
-    #     super().post_resolution(runtime_context, resolution_context, abort_behavior, interaction)
-    #     resolution_context.intent = None
-
 
     def is_resolved(self) -> bool:
         return False
