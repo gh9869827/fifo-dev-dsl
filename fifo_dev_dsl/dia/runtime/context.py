@@ -173,18 +173,16 @@ class LLMRuntimeContext:
 answer on three lines as follows:
 reasoning: your reasoning to answer the question
 value: the value of the requested slot. Only include the value, no explanation.
-abort: if the answer to the question cannot be deduced, include the error message here
-"""
+abort: if the answer to the question cannot be deduced, include the error message here"""
 
     def _precompile_prompt_query_user(self, yaml_tools_definition: str, _yaml_sources: str):
         return f"""You are a precise agent that answers user questions according to the scope defined by the intents below:
 
 {yaml_tools_definition}
 
-answer on three lines as follows:
+answer on two lines as follows:
 reasoning: your reasoning to answer the question
-user friendly answer: the value of the requested slot. Include the value, and just enough explanation like if you are takling to a colleague asking a question and who is in a hurry. if the answer to the question cannot be deduced, include the error message here
-"""
+user friendly answer: the value of the requested slot. Include the value, and just enough explanation like if you are takling to a colleague asking a question and who is in a hurry. if the answer to the question cannot be deduced, include the error message here"""
 
     def _precompile_prompt_intent_sequencer(self, yaml_tools_definition: str, yaml_sources: str):
         return f"""You are a precise intent sequencer. You parse the user's prompt and split it into atomic intents that match one of the defined intents below:

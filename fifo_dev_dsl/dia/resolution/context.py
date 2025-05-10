@@ -51,8 +51,7 @@ $
 {call_log.assistant}
 <
 {call_log.answer}
----
-"""
+---"""
         return res
 
     def format_other_slots_yaml(self, padding: str="") -> str:
