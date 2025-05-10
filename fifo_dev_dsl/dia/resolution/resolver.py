@@ -133,6 +133,9 @@ def resolve(runtime_context: LLMRuntimeContext,
         if parent is None:
             raise RuntimeError("ABORT: intent cannot be root")
 
+        print("--> Clearing clarifying question due to abort condition")
+        resolution_context.questions_being_clarified.clear()
+
         if sub_outcome.node is not None:
             parent.obj.update_child(parent.idx - 1, sub_outcome.node)
             resolution_context.call_stack.append(
