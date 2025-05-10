@@ -66,6 +66,6 @@ class QueryFill(DslBase):
                 break
 
         return ResolutionOutcome(
-            result=ResolutionResult.CHANGED,
+            result=ResolutionResult.NEW_DSL_NODES,
             node=[Value(value)]
         )
