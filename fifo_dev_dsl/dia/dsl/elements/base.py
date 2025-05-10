@@ -90,6 +90,18 @@ class DslBase:
         """
         raise RuntimeError(f"{self.__class__.__name__} is a leaf node; it cannot update children.")
 
+    def insert_child(self, index: int, new_child: DslBase) -> None:
+        """
+        Insert a new child node at the specified index.
+
+        Args:
+            index (int):
+                Index at which to insert the new child.
+
+            new_child (DslBase):
+                The new node to insert.
+        """
+        raise RuntimeError(f"{self.__class__.__name__} is a leaf node; it cannot insert children.")
 
     def remove_child(self, index: int) -> None:
         """
@@ -252,6 +264,18 @@ class DslContainerBase(DslBase, Generic[T], ABC):
                 The new node to insert.
         """
         self._items[index] = new_child
+
+    def insert_child(self, index: int, new_child: DslBase) -> None:
+        """
+        Insert a new child node at the specified index.
+
+        Args:
+            index (int):
+                Index at which to insert the new child.
+            new_child (DslBase):
+                The new node to insert.
+        """
+        self._items.insert(index, new_child)
 
     def remove_child(self, index: int) -> None:
         """
