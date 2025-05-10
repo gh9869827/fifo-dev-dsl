@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from common.llm.dia.dsl.elements.base import DslBase
+from common.llm.dia.resolution.context import LLMCallLog
 from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
 from common.llm.dia.resolution.interaction import Interaction
 from common.llm.dia.resolution.outcome import ResolutionOutcome
@@ -50,14 +51,14 @@ class QueryFill(DslBase):
                     container_name="dev-phi"
                 )
 
-        print("---")
-        print("$")
-        print(runtime_context.system_prompt_query_user)
-        print(">")
-        print(prompt_user)
-        print("<")
-        print(answer)
-        print("---")
+        resolution_context.llm_call_logs.append(
+            LLMCallLog(
+                description="QueryFill[do_resolution]",
+                system_prompt=runtime_context.system_prompt_query_fill,
+                assistant=prompt_user,
+                answer=answer
+            )
+        )
 
         for line in answer.splitlines():
             if line.startswith("value: "):
