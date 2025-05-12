@@ -32,6 +32,14 @@ class QueryUser(DslBase):
                        interaction: Interaction | None) -> ResolutionOutcome:
         super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
 
+        if interaction is not None and interaction.request.requester is self:
+            return helper.ask_helper(
+                runtime_context=runtime_context,
+                current=(self, interaction.request.message),
+                resolution_context=resolution_context,
+                interaction=interaction
+            )
+
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
         answer = call_airlock_model_server(
