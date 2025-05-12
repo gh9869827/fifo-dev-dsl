@@ -2,9 +2,9 @@
 from common.llm.dia.dsl.elements.abort import Abort
 from common.llm.dia.dsl.elements.abort_with_new_intent import AbortWithNewIntent
 from common.llm.dia.dsl.elements.base import DslBase
+from common.llm.dia.dsl.elements.element_list import ListElement
 from common.llm.dia.dsl.elements.intent import Intent
 from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
-from common.llm.dia.dsl.elements.root_elements import RootElements
 from common.llm.dia.resolution.context import LLMCallLog, ResolutionContext, ResolutionContextStackElement
 from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
 from common.llm.dia.resolution.interaction import Interaction, InteractionAnswer
@@ -212,7 +212,7 @@ class Resolver:
 
     _resolution_context: ResolutionContext
     _runtime_context: LLMRuntimeContext
-    _root_dsl_elements: RootElements
+    _root_dsl_elements: ListElement
 
     def __init__(self, runtime_context: LLMRuntimeContext, prompt: str):
         self._runtime_context = runtime_context

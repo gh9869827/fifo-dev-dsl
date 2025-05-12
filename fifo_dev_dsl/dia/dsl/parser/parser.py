@@ -48,11 +48,11 @@ from common.llm.dia.dsl.elements.abort import Abort
 from common.llm.dia.dsl.elements.abort_with_new_intent import AbortWithNewIntent
 from common.llm.dia.dsl.elements.ask import Ask
 from common.llm.dia.dsl.elements.base import DslBase
+from common.llm.dia.dsl.elements.element_list import ListElement
 from common.llm.dia.dsl.elements.intent import Intent
 from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
 from common.llm.dia.dsl.elements.query_fill import QueryFill
 from common.llm.dia.dsl.elements.query_user import QueryUser
-from common.llm.dia.dsl.elements.root_elements import RootElements
 from common.llm.dia.dsl.elements.same_as_previous import SameAsPreviousIntent
 from common.llm.dia.dsl.elements.slot import Slot
 from common.llm.dia.dsl.elements.value_base import DSLValueBase
@@ -251,7 +251,7 @@ def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
     # numbers
     return Value(text)
 
-def parse_dsl(dsl_input: str) -> RootElements:
+def parse_dsl(dsl_input: str) -> ListElement:
     """
     Parse a top-level DSL expression containing multiple elements.
 
@@ -264,14 +264,13 @@ def parse_dsl(dsl_input: str) -> RootElements:
             A comma-separated DSL expression string (e.g., 'add(v=1), ABORT()').
 
     Returns:
-        RootElements:
+        ListElement:
             The list of parsed root DSL elements, which are instances of DslBase subclasses.
 
     Raises:
         ValueError:
             If any element in the input is malformed.
     """
-    print([parse_dsl_element(element, False) for element in split_top_level_commas(dsl_input)])
-    return RootElements(
+    return ListElement(
         items=[parse_dsl_element(element, False) for element in split_top_level_commas(dsl_input)]
     )
