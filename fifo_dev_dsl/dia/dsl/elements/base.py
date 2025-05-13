@@ -123,43 +123,44 @@ class DslBase:
         """
         return False
 
+    def _log_resolution(self,
+                        label: str,
+                        resolution_context: ResolutionContext):
+        pad = "  " * len(resolution_context.call_stack)
+        print(f"{pad}[{label:<8}] {self}")
+
     def pre_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None):
-        _ = runtime_context, resolution_context, abort_behavior, interaction
-        pad = len(resolution_context.call_stack) * "  "
-        print(f"{pad}pre_resolution of {self}")
+                    runtime_context: LLMRuntimeContext,
+                    resolution_context: ResolutionContext,
+                    abort_behavior: AbortBehavior,
+                    interaction: Interaction | None):
+        _ = runtime_context, abort_behavior, interaction
+        self._log_resolution(" → pre", resolution_context)
 
     def do_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None) -> ResolutionOutcome:
-        _ = runtime_context, resolution_context, abort_behavior, interaction
-        pad = len(resolution_context.call_stack) * "  "
-        print(f"{pad}do_resolution of {self}")
-
+                    runtime_context: LLMRuntimeContext,
+                    resolution_context: ResolutionContext,
+                    abort_behavior: AbortBehavior,
+                    interaction: Interaction | None) -> ResolutionOutcome:
+        _ = runtime_context, abort_behavior, interaction
+        self._log_resolution("⚙️  do   ", resolution_context)
         return ResolutionOutcome()
 
     def post_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None):
-        _ = runtime_context, resolution_context, abort_behavior, interaction
-        pad = len(resolution_context.call_stack) * "  "
-        print(f"{pad}post_resolution of {self}")
+                        runtime_context: LLMRuntimeContext,
+                        resolution_context: ResolutionContext,
+                        abort_behavior: AbortBehavior,
+                        interaction: Interaction | None):
+        _ = runtime_context, abort_behavior, interaction
+        self._log_resolution(" ← post", resolution_context)
 
     def on_reentry_resolution(self,
-                              runtime_context: LLMRuntimeContext,
-                              resolution_context: ResolutionContext,
-                              abort_behavior: AbortBehavior,
-                              interaction: Interaction | None):
-        _ = runtime_context, resolution_context, abort_behavior, interaction
-        pad = len(resolution_context.call_stack) * "  "
-        print(f"{pad}on_reentry_resolution of {self}")
+                            runtime_context: LLMRuntimeContext,
+                            resolution_context: ResolutionContext,
+                            abort_behavior: AbortBehavior,
+                            interaction: Interaction | None):
+        _ = runtime_context, abort_behavior, interaction
+        self._log_resolution(" ↺ visit", resolution_context)
 
     def is_resolved(self) -> bool:
         """
