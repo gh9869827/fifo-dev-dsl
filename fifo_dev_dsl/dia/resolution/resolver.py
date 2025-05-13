@@ -1,9 +1,8 @@
 
 from common.llm.dia.dsl.elements.abort import Abort
-from common.llm.dia.dsl.elements.abort_with_new_intent import AbortWithNewIntent
+from common.llm.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
 from common.llm.dia.dsl.elements.base import DslBase
 from common.llm.dia.dsl.elements.element_list import ListElement
-from common.llm.dia.dsl.elements.intent import Intent
 from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
 from common.llm.dia.resolution.context import LLMCallLog, ResolutionContext, ResolutionContextStackElement
 from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
@@ -73,10 +72,10 @@ def resolve(runtime_context: LLMRuntimeContext,
                     result=ResolutionResult.ABORT,
                     node=None
                 )
-            if isinstance(element, AbortWithNewIntent):
+            if isinstance(element, AbortWithNewDsl):
                 return ResolutionOutcome(
                     result=ResolutionResult.ABORT,
-                    node=element.intent
+                    node=element.new_dsl
                 )
             if isinstance(element, PropagateSlots):
                 resolution_context.add_propagated_slot(element)
@@ -123,18 +122,21 @@ def resolve(runtime_context: LLMRuntimeContext,
             return False
 
         while resolution_context.call_stack:
-            popped = resolution_context.call_stack.pop()
-            if isinstance(popped.obj, Intent):
+            if isinstance(resolution_context.call_stack[-1].obj, ListElement):
                 break
+
+            resolution_context.call_stack.pop()
         else:
-            raise RuntimeError("ABORT: no Intent node found in call stack")
+            raise RuntimeError("ABORT: no ListElement node found in call stack")
 
-        parent = resolution_context.call_stack[-1] if resolution_context.call_stack else None
-        if parent is None:
-            raise RuntimeError("ABORT: intent cannot be root")
+        assert resolution_context.call_stack
 
-        print("--> Clearing clarifying question due to abort condition")
+        parent = resolution_context.call_stack[-1]
+
+        print("--> Clearing slot, intent and clarifying question due to abort condition")
         resolution_context.questions_being_clarified.clear()
+        resolution_context.slot = None
+        resolution_context.intent = None
 
         if sub_outcome.node is not None:
             parent.obj.update_child(parent.idx - 1, sub_outcome.node)

@@ -12,7 +12,7 @@ and integrates **interaction loops** directly into the syntax using constructs l
 - `QUERY_USER("...")`: Pull information the user has requested previously.
 - `QUERY_FILL("...")`: Resolve slot values by querying runtime state (e.g., inventory).
 - `PROPAGATE_SLOT(...)`: Forward values inferred from prior context or dialog.
-- `ABORT()` / `ABORT_WITH_NEW_INTENT(...)`: Interrupt and redirect execution flow.
+- `ABORT()` / `ABORT_WITH_NEW_INTENTS(...)`: Interrupt and redirect execution flow.
 
 Key Features:
 - Intent calls with named arguments: `get_screw(count=4, length=QUERY_FILL("8mm to 12mm"))`
@@ -42,10 +42,10 @@ as slot values are resolved through dialog or context.
 """
 
 
-from typing import List
+from typing import List, Type, TypeVar
 
 from common.llm.dia.dsl.elements.abort import Abort
-from common.llm.dia.dsl.elements.abort_with_new_intent import AbortWithNewIntent
+from common.llm.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
 from common.llm.dia.dsl.elements.ask import Ask
 from common.llm.dia.dsl.elements.base import DslBase
 from common.llm.dia.dsl.elements.element_list import ListElement
@@ -165,7 +165,13 @@ def parse_intent(name: str, args: str) -> Intent:
 
     return Intent(name=name, slots=slots)
 
-def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
+T = TypeVar("T", bound=DslBase)
+U = TypeVar("U", bound=DslBase)
+
+def parse_dsl_element(text: str,
+                      wrap_intent_as_value: bool,
+                      list_type: Type[T] = ListValue,
+                      list_content_type: Type[U] = DSLValueBase) -> DslBase:
     """
     Parse a single DSL element from a string into its corresponding object.
 
@@ -181,6 +187,14 @@ def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
         wrap_intent_as_value (bool):
             If True, top-level intents will be wrapped in a ReturnValue object.
 
+        list_type (Type[T], optional):
+            The container class to use when parsing arrays, typically `ListValue`
+            or a subclass. Must accept a list of `list_content_type` instances as input.
+
+        list_content_type (Type[U], optional):
+            The expected type for each element inside the list. All parsed elements
+            must be instances of this type, or a `TypeError` is raised.
+
     Returns:
         DslBase:
             The parsed representation of the DSL element.
@@ -188,7 +202,11 @@ def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
     Raises:
         ValueError:
             If the input is empty or arguments are malformed.
+
+        TypeError:
+            If list elements do not match the expected type.
     """
+
     text = text.strip()
 
     if not text:
@@ -196,8 +214,10 @@ def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
 
     if text.startswith('[') and text.endswith(']'):
         # array
-        return ListValue(
-            [strict_cast(DSLValueBase, parse_dsl_element(value, True))
+        return list_type(
+            [strict_cast(
+                list_content_type,
+                parse_dsl_element(value, wrap_intent_as_value, list_type, list_content_type))
              for value in split_top_level_commas (text[1:-1])
             ]
         )
@@ -237,8 +257,10 @@ def parse_dsl_element(text: str, wrap_intent_as_value: bool) -> DslBase:
                     raise ValueError("Propagated slots args missing =")
             return PropagateSlots(slots)
 
-        if name == "ABORT_WITH_NEW_INTENT":
-            return AbortWithNewIntent(strict_cast(Intent, parse_dsl_element(args, False)))
+        if name == "ABORT_WITH_NEW_INTENTS":
+            return AbortWithNewDsl(
+                strict_cast(ListElement, parse_dsl_element(args, False, ListElement, DslBase))
+            )
 
         if name == "ABORT":
             return Abort()
