@@ -45,22 +45,18 @@ def resolve(runtime_context: LLMRuntimeContext,
     args = (runtime_context, resolution_context, abort_behavior, interaction)
 
     def _replace_current_node_with(
-        new_node: DslBase,
         outcome: ResolutionOutcome
     ) -> ResolutionOutcome:
         """
         Replace the current node in the stack with a new DSL node.
 
         Args:
-            new_node (DslBase):
-                The new DSL node to install.
-
             outcome (ResolutionOutcome):
                 The originating outcome containing propagated slots or supporting data.
 
         Returns:
             ResolutionOutcome:
-                CHANGED if the replacement occurred successfully, or ABORT.
+                NEW_DSL_NODES if the replacement occurred successfully, or ABORT.
         """
         assert outcome.node is not None
 
@@ -86,6 +82,14 @@ def resolve(runtime_context: LLMRuntimeContext,
 
         current = resolution_context.call_stack[-1]
         parent = resolution_context.call_stack[-2]
+
+        assert len(core_dsl_elements) > 0 # for now
+
+        if len(core_dsl_elements) == 1:
+            new_node = core_dsl_elements[0]
+        else:
+            new_node = ListElement(core_dsl_elements)
+
         parent.obj.update_child(parent.idx - 1, new_node)
 
         print(f"--> in {parent} replacing {current.obj} by {new_node}")
@@ -93,7 +97,8 @@ def resolve(runtime_context: LLMRuntimeContext,
         resolution_context.call_stack[-1] = ResolutionContextStackElement(new_node, 0)
 
         return ResolutionOutcome(
-            result=ResolutionResult.CHANGED
+            result=ResolutionResult.NEW_DSL_NODES,
+            node=new_node
         )
 
     def _try_call_on_reentry() -> None:
@@ -172,13 +177,12 @@ def resolve(runtime_context: LLMRuntimeContext,
         current.obj.post_resolution(*args)
 
         if outcome.result is ResolutionResult.NEW_DSL_NODES:
-            new_node = outcome.node[0]
-            sub_outcome = _replace_current_node_with(new_node, outcome)
+            sub_outcome = _replace_current_node_with(outcome)
 
             if _handle_abort_if_needed(sub_outcome):
                 return True
 
-            new_node.pre_resolution(*args)
+            sub_outcome.node.pre_resolution(*args)
             _try_call_on_reentry()
             return True
 

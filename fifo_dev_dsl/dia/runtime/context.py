@@ -14,12 +14,13 @@ class LLMRuntimeContext:
 
     It contains:
       - A list of available tools (`ToolHandler`) that can be invoked via DSL intents
-      - A list of query sources used to respond to QUERY_FILL and QUERY_USER phases
+      - A list of query sources used to respond to QUERY_FILL, QUERY_USER and QUERY_GATHER phases
       - Precompiled LLM prompt templates for specific phases:
           - intent sequencing
           - slot resolution
           - query fill (autofill from context)
           - query user (responding to user questions)
+          - query gather (automatically gathering details to properly deduce intents)
 
     This context acts as the main registry for tools, enabling type-safe evaluation
     of resolved intents using their documented parameter and return types. It is also
@@ -35,6 +36,7 @@ class LLMRuntimeContext:
 
     _prompt_query_fill: str
     _prompt_query_user: str
+    _prompt_query_gather: str
     _prompt_intent_sequencer: str
     _prompt_slot_resolver: str
 
@@ -58,6 +60,7 @@ class LLMRuntimeContext:
         yaml_info = yaml_tools, yaml_sources
         self._prompt_query_fill = self._precompile_prompt_query_fill(*yaml_info)
         self._prompt_query_user = self._precompile_prompt_query_user(*yaml_info)
+        self._prompt_query_gather = self._precompile_prompt_query_gather(*yaml_info)
         self._prompt_intent_sequencer = self._precompile_prompt_intent_sequencer(*yaml_info)
         self._prompt_slot_resolver = self._precompile_prompt_slot_resolver(*yaml_info)
 
@@ -90,7 +93,8 @@ class LLMRuntimeContext:
 
     def get_user_prompt_dynamic_query(self, resolution_context: ResolutionContext, question: str) -> str:
         """
-        Dynamically create the user prompt used for QUERY_FILL and QUERY_USER resolution.
+        Dynamically create the user prompt used for QUERY_FILL, QUERY_USER and QUERY_GATHER
+        resolution.
 
         Args:
             context (ResolutionContext):
@@ -135,6 +139,17 @@ class LLMRuntimeContext:
         return self._prompt_query_user
 
     @property
+    def system_prompt_query_gather(self) -> str:
+        """
+        System prompt used for QUERY_GATHER resolution.
+
+        Returns:
+            str:
+                The precompiled system prompt to respond to gather queries.
+        """
+        return self._prompt_query_gather
+
+    @property
     def system_prompt_intent_sequencer(self) -> str:
         """
         System prompt used to sequence atomic intents from user input.
@@ -171,7 +186,7 @@ class LLMRuntimeContext:
 {yaml_tools_definition}
 
 answer on three lines as follows:
-reasoning: your reasoning to answer the question
+reasoning: your reasoning to answer the question. Clearly investigate each item that is provided in the 'query context' section with a special attention to the 'runtime_information' section. Pay special attention to the type you return. If the user asks for a single value, and multiple ones can be return, only return one.
 value: the value of the requested slot. Only include the value, no explanation.
 abort: if the answer to the question cannot be deduced, include the error message here"""
 
@@ -181,8 +196,17 @@ abort: if the answer to the question cannot be deduced, include the error messag
 {yaml_tools_definition}
 
 answer on two lines as follows:
-reasoning: your reasoning to answer the question
+reasoning: your reasoning to answer the question. Clearly investigate each item that is provided in the 'query context' section with a special attention to the 'runtime_information' section. Pay special attention to the type you return. If the user asks for a single value, and multiple ones can be return, only return one.
 user friendly answer: the value of the requested slot. Include the value, and just enough explanation like if you are takling to a colleague asking a question and who is in a hurry. if the answer to the question cannot be deduced, include the error message here"""
+
+    def _precompile_prompt_query_gather(self, yaml_tools_definition: str, _yaml_sources: str):
+        return f"""You are a precise agent that answers questions according to the scope defined by the intents below:
+
+{yaml_tools_definition}
+
+answer on two lines as follows:
+reasoning: your reasoning to answer the question. Clearly investigate each item that is provided in the 'query context' section with a special attention to the 'runtime_information' section. Pay special attention to the type you return. If the user asks for a single value, and multiple ones can be return, only return one.
+user friendly answer: the detailled answer to the question. if the answer to the question cannot be deduced, include the error message here"""
 
     def _precompile_prompt_intent_sequencer(self, yaml_tools_definition: str, yaml_sources: str):
         return f"""You are a precise intent sequencer. You parse the user's prompt and split it into atomic intents that match one of the defined intents below:

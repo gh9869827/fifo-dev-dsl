@@ -24,7 +24,7 @@ class Ask(DslBase):
                        interaction: Interaction | None) -> ResolutionOutcome:
         super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
 
-        return helper.ask_helper(
+        return helper.ask_helper_slot_resolver(
             runtime_context=runtime_context,
             current=(self, self.question),
             resolution_context=resolution_context,

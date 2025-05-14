@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional, Union, Tuple
 from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
+from common.llm.dia.dsl.elements.query_gather import QueryGather
 import common.llm.dia.dsl.parser.parser as parser
 from common.llm.dia.resolution.context import LLMCallLog
 from common.llm.dia.resolution.enums import ResolutionResult
@@ -17,10 +18,11 @@ if TYPE_CHECKING:
     from common.llm.dia.resolution.context import ResolutionContext
 
 
-def ask_helper(runtime_context: LLMRuntimeContext,
-               current: Tuple[Union[Ask, QueryUser], str],
-               resolution_context: ResolutionContext,
-               interaction: Optional[Interaction] = None) -> ResolutionOutcome:
+def ask_helper_slot_resolver(
+        runtime_context: LLMRuntimeContext,
+        current: Tuple[Union[Ask, QueryUser, QueryGather], str],
+        resolution_context: ResolutionContext,
+        interaction: Optional[Interaction] = None) -> ResolutionOutcome:
 
     current_object, current_question = current
 
@@ -42,31 +44,20 @@ def ask_helper(runtime_context: LLMRuntimeContext,
     user_answer = interaction.answer.content
     interaction.answer.consumed = True
 
-    if resolution_context.questions_being_clarified:
-        previous_qna_yaml = "\n".join(
-            f"    - question: {q}\n      answer: {a}" for _, q, a in resolution_context.questions_being_clarified
-        )
-        previous_qna_block = f"  previous_questions_and_answers:\n{previous_qna_yaml}"
-    else:
-        previous_qna_block = "  previous_questions_and_answers: []"
+    return ask_helper_no_interaction_slot_resolver(
+        runtime_context, current, resolution_context, user_answer
+    )
 
-    # intent and slot can be None if for example the user only ask a question without
-    # mentioning any intent at all.
-    intent_name = resolution_context.intent.name if resolution_context.intent else "none"
-    slot_name = resolution_context.slot.name if resolution_context.slot else "none"
-
-    resolution_text = f"""resolution_context:
-  intent: {intent_name}
-  slot: {slot_name}
-{previous_qna_block}
-  current_question: {current_question}
-  current_user_answer: {user_answer}"""
+def _ask_helper_no_interaction(system_prompt: str,
+                               current: Tuple[Union[Ask, QueryUser, QueryGather], str],
+                               resolution_context: ResolutionContext,
+                               resolution_text: str) -> ResolutionOutcome:
 
     answer = call_airlock_model_server(
         model=Model.Phi4MiniInstruct,
         adapter="intent-sequencer",
         messages=[
-            Message(role=Role.system, content=runtime_context.system_prompt_slot_resolver),
+            Message(role=Role.system, content=system_prompt),
             Message(role=Role.user, content=resolution_text)
         ],
         parameters=GenerationParameters(
@@ -79,14 +70,10 @@ def ask_helper(runtime_context: LLMRuntimeContext,
     resolution_context.llm_call_logs.append(
         LLMCallLog(
             description=f"ask_helper[{current}]",
-            system_prompt=runtime_context.system_prompt_slot_resolver,
+            system_prompt=system_prompt,
             assistant=resolution_text,
             answer=answer
         )
-    )
-
-    resolution_context.questions_being_clarified.append(
-        (current_object, current_question, user_answer)
     )
 
     parsed_dsl = parser.parse_dsl(answer)
@@ -94,4 +81,54 @@ def ask_helper(runtime_context: LLMRuntimeContext,
     return ResolutionOutcome(
         node=parsed_dsl.get_children(),
         result=ResolutionResult.NEW_DSL_NODES
+    )
+
+def ask_helper_no_interaction_slot_resolver(
+        runtime_context: LLMRuntimeContext,
+        current: Tuple[Union[Ask, QueryUser, QueryGather], str],
+        resolution_context: ResolutionContext,
+        user_answer: str) -> ResolutionOutcome:
+
+    current_object, current_question = current
+
+    previous_qna_block = resolution_context.format_previous_qna_block()
+    # intent and slot can be None if for example the user only ask a question without
+    # mentioning any intent at all.
+    intent_name = resolution_context.intent.name if resolution_context.intent else "none"
+    slot_name = resolution_context.slot.name if resolution_context.slot else "none"
+
+    resolution_text = f"""resolution_context:
+  intent: {intent_name}
+  slot: {slot_name}
+{previous_qna_block}
+  current_question: {current_question}
+  current_user_answer: {user_answer}"""
+
+    resolution_context.questions_being_clarified.append(
+        (current_object, current_question, user_answer)
+    )
+
+    return _ask_helper_no_interaction(
+        runtime_context.system_prompt_slot_resolver, current, resolution_context, resolution_text
+    )
+
+def ask_helper_no_interaction_intent_sequencer(
+        runtime_context: LLMRuntimeContext,
+        current: Tuple[Union[Ask, QueryUser, QueryGather], str],
+        resolution_context: ResolutionContext,
+        gathered_data: str) -> ResolutionOutcome:
+
+    current_object, current_question = current
+
+    resolution_text = f"""{current_question}
+
+Here is the data you should use to generate the intents:
+{gathered_data}"""
+
+    resolution_context.questions_being_clarified.append(
+        (current_object, current_question, gathered_data)
+    )
+
+    return _ask_helper_no_interaction(
+        runtime_context.system_prompt_intent_sequencer, current, resolution_context, resolution_text
     )

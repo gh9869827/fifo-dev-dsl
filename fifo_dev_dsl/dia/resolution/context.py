@@ -39,6 +39,15 @@ class ResolutionContext:
     call_stack: list[ResolutionContextStackElement] = field(default_factory=list)
     llm_call_logs: list[LLMCallLog] = field(default_factory=list)
 
+    def format_previous_qna_block(self) -> str:
+        if self.questions_being_clarified:
+            previous_qna_yaml = "\n".join(
+                f"    - question: {q}\n      answer: {a}" for _, q, a 
+                                                          in self.questions_being_clarified
+            )
+            return f"  previous_questions_and_answers:\n{previous_qna_yaml}"
+        return "  previous_questions_and_answers: []"
+
     def format_call_log(self) -> str:
         if not self.llm_call_logs:
             return ""

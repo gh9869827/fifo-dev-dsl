@@ -10,6 +10,7 @@ and integrates **interaction loops** directly into the syntax using constructs l
 
 - `ASK("...")`: Prompt the user to provide a missing value.
 - `QUERY_USER("...")`: Pull information the user has requested previously.
+- `QUERY_GATHER("...")`: Gather information required to deduce intents.
 - `QUERY_FILL("...")`: Resolve slot values by querying runtime state (e.g., inventory).
 - `PROPAGATE_SLOT(...)`: Forward values inferred from prior context or dialog.
 - `ABORT()` / `ABORT_WITH_NEW_INTENTS(...)`: Interrupt and redirect execution flow.
@@ -52,6 +53,7 @@ from common.llm.dia.dsl.elements.element_list import ListElement
 from common.llm.dia.dsl.elements.intent import Intent
 from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
 from common.llm.dia.dsl.elements.query_fill import QueryFill
+from common.llm.dia.dsl.elements.query_gather import QueryGather
 from common.llm.dia.dsl.elements.query_user import QueryUser
 from common.llm.dia.dsl.elements.same_as_previous import SameAsPreviousIntent
 from common.llm.dia.dsl.elements.slot import Slot
@@ -244,12 +246,17 @@ def parse_dsl_element(text: str,
         if name == "QUERY_USER":
             return QueryUser(strip_quotes(args))
 
+        if name == "QUERY_GATHER":
+            args = split_top_level_commas(args)
+            assert len(args) == 2
+            return QueryGather(strip_quotes(args[0]), strip_quotes(args[1]))
+
         if name == "SAME_AS_PREVIOUS_INTENT":
             return SameAsPreviousIntent()
 
         if name == "PROPAGATE_SLOT":
             slots = []
-            for s in split_top_level_commas (args):
+            for s in split_top_level_commas(args):
                 if '=' in s:
                     k, v = s.split('=', 1)
                     slots.append(Slot(k.strip(), parse_dsl_element(v.strip(), True)))

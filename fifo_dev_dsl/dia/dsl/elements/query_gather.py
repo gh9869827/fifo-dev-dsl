@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
+import re
 from dataclasses import dataclass
 
 from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
@@ -18,8 +18,9 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class QueryUser(DslBase):
+class QueryGather(DslBase):
 
+    original_intent: str
     query: str
 
     def is_resolved(self) -> bool:
@@ -32,14 +33,6 @@ class QueryUser(DslBase):
                        interaction: Interaction | None) -> ResolutionOutcome:
         super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
 
-        if interaction is not None and interaction.request.requester is self:
-            return helper.ask_helper_slot_resolver(
-                runtime_context=runtime_context,
-                current=(self, interaction.request.message),
-                resolution_context=resolution_context,
-                interaction=interaction
-            )
-
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
         answer = call_airlock_model_server(
@@ -47,7 +40,7 @@ class QueryUser(DslBase):
                     messages=[
                         Message(
                             role=Role.system,
-                            content=runtime_context.system_prompt_query_user
+                            content=runtime_context.system_prompt_query_gather
                         ),
                         Message(
                             role=Role.user,
@@ -63,22 +56,24 @@ class QueryUser(DslBase):
 
         resolution_context.llm_call_logs.append(
             LLMCallLog(
-                description="QueryUser[do_resolution]",
-                system_prompt=runtime_context.system_prompt_query_user,
+                description="QueryGather[do_resolution]",
+                system_prompt=runtime_context.system_prompt_query_gather,
                 assistant=prompt_user,
                 answer=answer
             )
         )
 
-        for line in answer.splitlines():
-            if line.startswith("user friendly answer: "):
-                value = line[len("user friendly answer: "):].strip()
-                # handle multiple values and enforce reasoning
-                break
+        match = re.search(
+            r"reasoning:\s*(.*?)\nuser friendly answer:(.*)",
+            answer,
+            flags=re.DOTALL
+        )
 
-        return helper.ask_helper_slot_resolver(
-            runtime_context=runtime_context,
-            current=(self, value),
-            resolution_context=resolution_context,
-            interaction=interaction
+        if match:
+            value = match[2].strip()
+        else:
+            value = "unknown"
+
+        return helper.ask_helper_no_interaction_intent_sequencer(
+            runtime_context, (self, self.original_intent), resolution_context, value
         )
