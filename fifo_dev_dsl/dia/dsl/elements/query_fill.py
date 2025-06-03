@@ -1,4 +1,5 @@
 from __future__ import annotations
+import re
 from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.resolution.context import LLMCallLog
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
@@ -18,6 +20,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class QueryFill(DslBase):
+
     query: str
 
     def is_resolved(self) -> bool:
@@ -60,11 +63,20 @@ class QueryFill(DslBase):
             )
         )
 
-        for line in answer.splitlines():
-            if line.startswith("value: "):
-                value = line[len("value: "):].strip()
-                # handle multiple values and enforce reasoning
-                break
+        match = re.search(
+            r"reasoning:\s*(.*?)\nvalue:\s*(.*?)\nabort:\s*(.*)",
+            answer,
+            flags=re.DOTALL
+        )
+
+        if match:
+            # If 'abort:' is non-empty, raise; otherwise use extracted value
+            if match[3].strip():
+                raise RuntimeError("QueryFill failed: abort message was returned")
+
+            value = match[2].strip()
+        else:
+            value = "unknown"
 
         return ResolutionOutcome(
             result=ResolutionResult.NEW_DSL_NODES,

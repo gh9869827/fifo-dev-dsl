@@ -71,11 +71,16 @@ class QueryUser(DslBase):
             )
         )
 
-        for line in answer.splitlines():
-            if line.startswith("user friendly answer: "):
-                value = line[len("user friendly answer: "):].strip()
-                # handle multiple values and enforce reasoning
-                break
+        match = re.search(
+            r"reasoning:\s*(.*?)\nuser friendly answer:(.*)",
+            answer,
+            flags=re.DOTALL
+        )
+
+        if match:
+            value = match[2].strip()
+        else:
+            value = "unknown"
 
         return helper.ask_helper_slot_resolver(
             runtime_context=runtime_context,
