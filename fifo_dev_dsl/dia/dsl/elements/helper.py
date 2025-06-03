@@ -22,15 +22,16 @@ if TYPE_CHECKING:
 
 def ask_helper_slot_resolver(
         runtime_context: LLMRuntimeContext,
-        current: Tuple[Union[Ask, QueryUser, QueryGather], str],
+        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
         resolution_context: ResolutionContext,
-        interaction: Optional[Interaction] = None) -> ResolutionOutcome:
+        interaction: Interaction | None = None
+) -> ResolutionOutcome:
 
     current_object, current_question = current
 
     if (
            interaction is None
-        or interaction is not None and interaction.request.requester is not current_object
+        or interaction.request.requester is not current_object
     ):
         return ResolutionOutcome(
             result=ResolutionResult.INTERACTION_REQUESTED,
@@ -50,10 +51,13 @@ def ask_helper_slot_resolver(
         runtime_context, current, resolution_context, user_answer
     )
 
-def _ask_helper_no_interaction(system_prompt: str,
-                               current: Tuple[Union[Ask, QueryUser, QueryGather], str],
-                               resolution_context: ResolutionContext,
-                               resolution_text: str) -> ResolutionOutcome:
+
+def _ask_helper_no_interaction(
+        system_prompt: str,
+        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
+        resolution_context: ResolutionContext,
+        resolution_text: str
+) -> ResolutionOutcome:
 
     answer = call_airlock_model_server(
         model=Model.Phi4MiniInstruct,
@@ -87,9 +91,10 @@ def _ask_helper_no_interaction(system_prompt: str,
 
 def ask_helper_no_interaction_slot_resolver(
         runtime_context: LLMRuntimeContext,
-        current: Tuple[Union[Ask, QueryUser, QueryGather], str],
+        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
         resolution_context: ResolutionContext,
-        user_answer: str) -> ResolutionOutcome:
+        user_answer: str
+) -> ResolutionOutcome:
 
     current_object, current_question = current
 
@@ -116,9 +121,10 @@ def ask_helper_no_interaction_slot_resolver(
 
 def ask_helper_no_interaction_intent_sequencer(
         runtime_context: LLMRuntimeContext,
-        current: Tuple[Union[Ask, QueryUser, QueryGather], str],
+        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
         resolution_context: ResolutionContext,
-        gathered_data: str) -> ResolutionOutcome:
+        gathered_data: str
+) -> ResolutionOutcome:
 
     current_object, current_question = current
 

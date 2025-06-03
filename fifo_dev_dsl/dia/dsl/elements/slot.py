@@ -61,6 +61,9 @@ class Slot(make_dsl_container(DslBase)):
                        abort_behavior: AbortBehavior,
                        interaction: Interaction | None):
         super().pre_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+
+        assert resolution_context.intent is not None
+
         resolution_context.slot = self
         resolution_context.other_slots = {}
         for slot in resolution_context.intent.get_items():

@@ -37,15 +37,15 @@ class ResolutionContext:
     intent: Intent | None = None
     slot: Slot | None = None
     other_slots: dict[str, str]  | None = None
-    _propagate_slots: list[PropagateSlots] = field(default_factory=list, repr=False)
-    questions_being_clarified: list[tuple[Ask | QueryUser, str]] = field(default_factory=list)
-    call_stack: list[ResolutionContextStackElement] = field(default_factory=list)
-    llm_call_logs: list[LLMCallLog] = field(default_factory=list)
+    _propagate_slots: list[PropagateSlots] = field(default_factory=list[PropagateSlots], repr=False)
+    questions_being_clarified: list[tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str, str]] = field(default_factory=list[tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str, str]])
+    call_stack: list[ResolutionContextStackElement] = field(default_factory=list[ResolutionContextStackElement])
+    llm_call_logs: list[LLMCallLog] = field(default_factory=list[LLMCallLog])
 
     def format_previous_qna_block(self) -> str:
         if self.questions_being_clarified:
             previous_qna_yaml = "\n".join(
-                f"    - question: {q}\n      answer: {a}" for _, q, a 
+                f"    - question: {q}\n      answer: {a}" for _, q, a
                                                           in self.questions_being_clarified
             )
             return f"  previous_questions_and_answers:\n{previous_qna_yaml}"

@@ -43,7 +43,7 @@ class Intent(make_dsl_container(Slot)):
 
         for propagated_slots in resolution_context.take_propagated_slots():
             pslots = propagated_slots.to_dict()
-            updated = set()
+            updated: set[str] = set()
 
             for slot in self.get_items():
                 pslot_value = pslots.get(slot.name)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar
 
 from fifo_dev_common.typeutils.strict_cast import strict_cast
 from fifo_dev_dsl.dia.resolution.interaction import Interaction
@@ -75,8 +75,8 @@ class DslBase:
         Return a list of DslBase child elements.
 
         Returns:
-            list[tuple[str, DslBase]]:
-                The ordered list of child key-value pairs.
+            list[DslBase]:
+                Ordered list of immediate child nodes.
         """
         return []
 
@@ -316,7 +316,7 @@ class DslContainerBase(DslBase, Generic[T], ABC):
                 A list that is a string representation of this node's content, or None if not
                 all items are representable. The list is formatted as `[...]`.
         """
-        repr_elements = []
+        repr_elements: list[str] = []
 
         for v in self.get_children():
             r = v.represent_content_as_text()

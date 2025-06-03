@@ -61,7 +61,7 @@ def resolve(runtime_context: LLMRuntimeContext,
         """
         assert outcome.nodes is not None
 
-        core_dsl_elements = []
+        core_dsl_elements: list[DslBase] = []
 
         for element in outcome.nodes:
             if isinstance(element, Abort):
@@ -243,14 +243,14 @@ class Resolver:
             model=Model.Phi4MiniInstruct,
             adapter="intent-sequencer",
             messages=[
-                    Message(
-                        role=Role.system,
-                        content=self._runtime_context.system_prompt_intent_sequencer
-                    ),
-                    Message(
-                        role=Role.user,
-                        content=prompt
-                    )
+                Message(
+                    role=Role.system,
+                    content=self._runtime_context.system_prompt_intent_sequencer
+                ),
+                Message(
+                    role=Role.user,
+                    content=prompt
+                )
             ],
             parameters=GenerationParameters(
                 max_new_tokens=1024,
