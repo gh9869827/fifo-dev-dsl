@@ -24,3 +24,16 @@ class ReturnValue(DSLValueBase):
             raise RuntimeError("Missing expected type for evaluation of ReturnValue")
 
         return self.intent.eval(runtime_context, value_type)
+
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of a return value.
+
+        This wraps an intent as an inline sub-expression, enabling nested calls like:
+        `multiply(a=4, b=add(a=2, b=3))`.
+
+        Returns:
+            str:
+                A string representation of the nested intent.
+        """
+        return self.intent.to_dsl_representation()

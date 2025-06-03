@@ -42,6 +42,19 @@ class Slot(make_dsl_container(DslBase)):
         """
         self._items[0] = new_value
 
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the slot.
+
+        Combines the slot name with the DSL representation of its value,
+        formatted as `name=value`.
+
+        Returns:
+            str:
+                The slot assignment in DSL form, e.g., `count=42`.
+        """
+        return f"{self.name}={self.value.to_dsl_representation()}"
+
     def pre_resolution(self,
                        runtime_context: LLMRuntimeContext,
                        resolution_context: ResolutionContext,

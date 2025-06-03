@@ -24,6 +24,33 @@ class Value(DSLValueBase):
         """
         return self.value
 
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of a single value.
+
+        Attempts to coerce string values into numbers for unquoted output.
+        Falls back to quoted string representation if coercion fails.
+        This ensures DSL output like `42` or `"hello"` rather than always using repr.
+
+        Returns:
+            str:
+                A clean, type-aware DSL representation:
+                - numerics appear unquoted,
+                - strings appear quoted.
+        """
+        if isinstance(self.value, str):
+            try:
+                # Try int first (more specific), then float
+                int_val = int(self.value)
+                return str(int_val)
+            except ValueError:
+                try:
+                    float_val = float(self.value)
+                    return str(float_val)
+                except ValueError:
+                    return f'"{self.value}"'
+        return f'"{self.value}"'
+
     def eval(self,
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:

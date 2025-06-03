@@ -42,6 +42,19 @@ class DslBase:
         """
         return None
 
+    def to_dsl_representation(self) -> str:
+        """
+        Return a DSL-style string representation of this node.
+
+        Used when rendering nodes into prompt text for LLMs, especially in
+        resolution or clarification contexts. Subclasses may override to provide
+        domain-specific formatting.
+
+        Returns:
+            str:
+                A DSL-compatible string representation.
+        """
+        return repr(self)
 
     def pretty_print_dsl(self, indent: int = 0) -> None:
         """

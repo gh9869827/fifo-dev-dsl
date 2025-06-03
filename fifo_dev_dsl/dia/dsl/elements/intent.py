@@ -22,6 +22,20 @@ class Intent(make_dsl_container(Slot)):
         super().__init__(slots)
         self.name = name
 
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the intent.
+
+        Formats the intent as a function-style call with named slot arguments,
+        such as `set_task_due_date(task_uid=42, due_date="tomorrow at noon")`.
+
+        Returns:
+            str:
+                A string representing the intent and its slots in DSL form.
+        """
+        parts = [slot.to_dsl_representation() for slot in self._items]
+        return f"{self.name}({', '.join(parts)})"
+
     def _propagate_slots(self,
                          resolution_context: ResolutionContext):
 
