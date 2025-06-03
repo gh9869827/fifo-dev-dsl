@@ -58,4 +58,4 @@ class Value(DSLValueBase):
         if value_type is None:
             raise RuntimeError("Missing expected type for evaluation of Value")
 
-        return value_type.cast(self.value)
+        return value_type.cast(self.value, allow_scalar_to_list=True)

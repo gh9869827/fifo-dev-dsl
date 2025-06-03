@@ -12,19 +12,3 @@ class PropagateSlots(make_dsl_container(Slot)):
         return {
             propagated_slot.name : propagated_slot.value for propagated_slot in self.get_items()
         }
-
-    def pre_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None):
-        super().pre_resolution(runtime_context, resolution_context, abort_behavior, interaction)
-        resolution_context.slot = self
-    
-    def post_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None):
-        super().post_resolution(runtime_context, resolution_context, abort_behavior, interaction)
-        resolution_context.intent = None

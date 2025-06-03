@@ -96,6 +96,11 @@ class Intent(make_dsl_container(Slot)):
             ) for slot in self._items
         }
 
+        if tool.tool_docstring.return_type is None:
+            tool(**args)
+
+            return None
+
         ret = tool.tool_docstring.return_type.cast(tool(**args))
 
         return value_type.cast(ret) if value_type is not None else ret

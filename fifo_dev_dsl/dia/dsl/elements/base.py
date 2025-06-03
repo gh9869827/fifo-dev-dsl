@@ -189,34 +189,6 @@ class DslBase:
         """
         return True
 
-    def eval(self,
-             runtime_context: LLMRuntimeContext,
-             value_type: MiniDocStringType | None = None) -> Any:
-        """
-        Evaluate the DSL element and return its final value.
-
-        Only fully resolved elements should be evaluated. Subclasses override this
-        to return a concrete value (e.g., a string, number, or list). If called on
-        an unresolved element or one that does not support evaluation, a RuntimeError
-        is raised.
-
-        Args:
-            runtime_context (LLMRuntimeContext):
-                Runtime context providing access to tools, sources, and LLM prompts.
-
-            value_type (Optional[MiniDocStringType]):
-                Optional hint about the expected type of the result.
-
-        Returns:
-            Any:
-                The concrete value resulting from evaluation.
-
-        Raises:
-            RuntimeError:
-                If the element cannot be evaluated.
-        """
-        raise RuntimeError("Expression cannot be evaluated, be sure it is resolvable/resolved.")
-
 
 T = TypeVar("T", bound=DslBase)
 

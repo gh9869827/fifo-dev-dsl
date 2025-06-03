@@ -223,10 +223,20 @@ class Resolver:
     _runtime_context: LLMRuntimeContext
     _root_dsl_elements: ListElement
 
-    def __init__(self, runtime_context: LLMRuntimeContext, prompt: str):
+    def __init__(self,
+                 runtime_context: LLMRuntimeContext,
+                 prompt: str | None = None,
+                 dsl: ListElement | None = None):
         self._runtime_context = runtime_context
         self._resolution_context = ResolutionContext()
-        self._process_user_prompt(prompt)
+
+        if dsl is not None:
+            self._root_dsl_elements = copy.deepcopy(dsl)
+        elif prompt is not None:
+            self._process_user_prompt(prompt)
+        else:
+            raise ValueError("Either a prompt or a parsed DSL must be provided.")
+
         self._resolution_context.call_stack.clear()
         self._resolution_context.call_stack.append(
             ResolutionContextStackElement(self._root_dsl_elements, 0)
@@ -236,6 +246,10 @@ class Resolver:
         return resolve(
             self._runtime_context, self._resolution_context, AbortBehavior.SKIP, interaction_reply
         )
+
+    @property
+    def dsl_elements(self) -> ListElement:
+        return copy.deepcopy(self._root_dsl_elements)
 
     def _process_user_prompt(self, prompt: str):
 
@@ -277,6 +291,7 @@ class Resolver:
             if outcome.result is ResolutionResult.UNCHANGED:
                 break
             assert outcome.result is ResolutionResult.INTERACTION_REQUESTED
+            assert outcome.interaction is not None
             print(f"< {outcome.interaction.message}")
             answer = InteractionAnswer(content=input("> "))
             interaction_reply = Interaction(outcome.interaction, answer)

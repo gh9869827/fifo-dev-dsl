@@ -39,6 +39,7 @@ class LLMRuntimeContext:
     _prompt_query_gather: str
     _prompt_intent_sequencer: str
     _prompt_slot_resolver: str
+    _prompt_error_resolver: str
 
     def __init__(self, tools: list[ToolHandler], query_sources: list[ToolQuerySource]):
         """
@@ -63,6 +64,7 @@ class LLMRuntimeContext:
         self._prompt_query_gather = self._precompile_prompt_query_gather(*yaml_info)
         self._prompt_intent_sequencer = self._precompile_prompt_intent_sequencer(*yaml_info)
         self._prompt_slot_resolver = self._precompile_prompt_slot_resolver(*yaml_info)
+        self._prompt_error_resolver = self._precompile_prompt_error_resolver(*yaml_info)
 
         self._tool_name_to_tool = { t.tool_name: t for t in self._tools }
 
@@ -110,7 +112,7 @@ class LLMRuntimeContext:
                 information.
         """
         dynamic_runtime_info = "\n".join(
-            source() for source in self._query_sources
+            source.get_description() for source in self._query_sources
         )
 
         # intent and slot can be None if for example the user only ask a question without
@@ -171,6 +173,17 @@ class LLMRuntimeContext:
         """
         return self._prompt_slot_resolver
 
+    @property
+    def system_prompt_error_resolver(self) -> str:
+        """
+        System prompt used to resolve error in the current intent.
+
+        Returns:
+            str:
+                The precompiled system prompt used during error resolution.
+        """
+        return self._prompt_error_resolver
+
     # formatting prompts
     # pylint: disable=line-too-long
 
@@ -187,7 +200,7 @@ class LLMRuntimeContext:
 
 answer on three lines as follows:
 reasoning: your reasoning to answer the question. Clearly investigate each item that is provided in the 'query context' section with a special attention to the 'runtime_information' section. Pay special attention to the type you return. If the user asks for a single value, and multiple ones can be return, only return one.
-value: the value of the requested slot. Only include the value, no explanation.
+value: the value of the requested slot. Only include the value, no explanation. When return a list use [...].
 abort: if the answer to the question cannot be deduced, include the error message here"""
 
     def _precompile_prompt_query_user(self, yaml_tools_definition: str, _yaml_sources: str):
@@ -217,6 +230,15 @@ user friendly answer: the detailled answer to the question. if the answer to the
 
     def _precompile_prompt_slot_resolver(self, yaml_tools_definition: str, yaml_sources: str):
         return f"""You are a precise slot resolver. You resolve one slot at a time based on the current resolution context, but the user may change or override the task. Here are the available intents:
+
+{yaml_tools_definition}
+
+If the user's answer does not directly resolve to a value, return a QUERY_FILL(...), QUERY_USER(...) or a follow-up ASK(...).
+
+{self._get_sources(yaml_sources)}"""
+
+    def _precompile_prompt_error_resolver(self, yaml_tools_definition: str, yaml_sources: str):
+        return f"""You are a precise error resolver. You resolve one error at a time based on the current resolution context, but the user may change or override the task. Here are the available intents:
 
 {yaml_tools_definition}
 
