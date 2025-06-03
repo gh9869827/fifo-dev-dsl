@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 @dataclass
-class Intent(DslContainerBase[Slot]):
+class Intent(make_dsl_container(Slot)):
 
     name: str
 

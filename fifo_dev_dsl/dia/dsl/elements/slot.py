@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
@@ -9,8 +10,9 @@ if TYPE_CHECKING:
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
+
 @dataclass
-class Slot(DslContainerBase[DslBase]):
+class Slot(make_dsl_container(DslBase)):
 
     name: str
 

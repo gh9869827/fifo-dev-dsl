@@ -264,7 +264,7 @@ class DslContainerBase(DslBase, Generic[T], ABC):
             new_child (DslBase):
                 The new node to insert.
         """
-        self._items[index] = new_child
+        self._items[index] = strict_cast(self._expected_type(), new_child)
 
     def insert_child(self, index: int, new_child: DslBase) -> None:
         """
@@ -276,7 +276,7 @@ class DslContainerBase(DslBase, Generic[T], ABC):
             new_child (DslBase):
                 The new node to insert.
         """
-        self._items.insert(index, new_child)
+        self._items.insert(index, strict_cast(self._expected_type(), new_child))
 
     def remove_child(self, index: int) -> None:
         """
@@ -317,3 +317,52 @@ class DslContainerBase(DslBase, Generic[T], ABC):
         n = len(self.get_items())
         item_str = "item" if n == 1 else "items"
         return f"{self.__class__.__name__}({n} {item_str})"
+
+    def _expected_type(self) -> Type[T]:
+        """
+        Return the expected type of child elements stored in this container.
+
+        This method is used by `DslContainerBase` to enforce strict runtime type
+        validation when inserting, updating, or replacing child nodes. It must
+        return the exact subclass of `DslBase` that this container is designed
+        to hold (i.e., the same type parameter `T` used in `DslContainerBase[T]`).
+
+        Returns:
+            Type[T]: 
+                The class object representing the allowed type of child nodes.
+        """
+        raise NotImplementedError("Subclasses must define _expected_type()")
+
+
+def make_dsl_container(expected_type: Type[T]) -> type[DslContainerBase[T]]:
+    """
+    Create a typed subclass of `DslContainerBase` for a specific DSL node type.
+
+    This factory returns a new subclass of `DslContainerBase[T]` that is preconfigured
+    to accept only child nodes of type `expected_type`. It automatically implements the
+    `_expected_type()` method required by the base class, ensuring strict runtime
+    validation via `strict_cast`.
+
+    This approach eliminates type duplication in subclasses and guarantees both
+    runtime safety and static typing support without requiring decorators or manual overrides.
+
+    Args:
+        expected_type (Type[T]):
+            The DSL node type that this container should enforce for its children.
+
+    Returns:
+        type[DslContainerBase[T]]:
+            A new subclass of `DslContainerBase` bound to `T` and ready to use
+            as a base class for custom containers.
+
+    Example:
+        >>> class ListValue(make_dsl_container(DSLValueBase)):
+        ...     pass
+
+    """
+    # `Any` avoids a Pylance warning about reusing the outer TypeVar `_CT`
+    class _GeneratedContainer(DslContainerBase[Any]):
+        def _expected_type(self) -> Type[T]:
+            return expected_type
+    _GeneratedContainer.__name__ = f"{expected_type.__name__}ListBase"
+    return _GeneratedContainer
