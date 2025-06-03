@@ -3,18 +3,18 @@ from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
 
-from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
-from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
-from common.llm.dia.dsl.elements.base import DslBase
-from common.llm.dia.resolution.context import LLMCallLog
-from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
-from common.llm.dia.resolution.interaction import Interaction
-from common.llm.dia.resolution.outcome import ResolutionOutcome
-from common.llm.dia.dsl.elements.value import Value
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
+from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
+from fifo_dev_dsl.dia.resolution.context import LLMCallLog
+from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import Interaction
+from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
+from fifo_dev_dsl.dia.dsl.elements.value import Value
 
 if TYPE_CHECKING:
-    from common.llm.dia.resolution.context import ResolutionContext
-    from common.llm.dia.runtime.context import LLMRuntimeContext
+    from fifo_dev_dsl.dia.resolution.context import ResolutionContext
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 @dataclass
 class QueryFill(DslBase):

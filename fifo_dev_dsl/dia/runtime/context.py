@@ -2,11 +2,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 import textwrap
 
-from common.containers.read_only.read_only_list import ReadOnlyList
-from common.llm.tool.decorator import ToolHandler, ToolQuerySource
+from fifo_dev_common.containers.read_only.read_only_list import ReadOnlyList
+from fifo_dev_common.introspection.tool_decorator import ToolHandler, ToolQuerySource
 
 if TYPE_CHECKING:
-    from common.llm.dia.resolution.context import ResolutionContext
+    from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
 class LLMRuntimeContext:
     """

@@ -1,15 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
-
-from common.llm.dia.dsl.elements.base import DslBase, DslContainerBase
-from common.llm.dia.dsl.elements.slot import Slot
-from common.llm.dia.resolution.interaction import Interaction
-
-if TYPE_CHECKING:
-    from common.llm.dia.resolution.resolver import AbortBehavior
-    from common.llm.dia.resolution.context import ResolutionContext
-    from common.llm.dia.runtime.context import LLMRuntimeContext
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
+from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 
 class PropagateSlots(DslContainerBase[Slot]):
 

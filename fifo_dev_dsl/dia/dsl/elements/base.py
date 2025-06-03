@@ -2,14 +2,14 @@ from __future__ import annotations
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
-from common.introspection.docstring import MiniDocStringType
-from common.llm.dia.resolution.interaction import Interaction
-from common.llm.dia.resolution.outcome import ResolutionOutcome
+from fifo_dev_common.typeutils.strict_cast import strict_cast
+from fifo_dev_dsl.dia.resolution.interaction import Interaction
+from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:
-    from common.llm.dia.resolution.resolver import AbortBehavior
-    from common.llm.dia.resolution.context import ResolutionContext
-    from common.llm.dia.runtime.context import LLMRuntimeContext
+    from fifo_dev_dsl.dia.resolution.resolver import AbortBehavior
+    from fifo_dev_dsl.dia.resolution.context import ResolutionContext
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
 class DslBase:

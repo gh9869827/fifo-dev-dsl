@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
-from common.introspection.docstring import MiniDocStringType
-from common.llm.dia.dsl.elements.value_base import DSLValueBase
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
 
 if TYPE_CHECKING:
-    from common.llm.dia.runtime.context import LLMRuntimeContext
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 @dataclass
 class Value(DSLValueBase):

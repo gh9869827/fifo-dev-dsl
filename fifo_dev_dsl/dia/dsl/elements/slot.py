@@ -1,15 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from dataclasses import dataclass
-
-from common.llm.dia.dsl.elements.base import DslBase, DslContainerBase
-from common.llm.dia.resolution.interaction import Interaction
-from common.llm.dia.resolution.enums import AbortBehavior
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
+from fifo_dev_dsl.dia.resolution.interaction import Interaction
+from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
 
 if TYPE_CHECKING:
-    from common.llm.dia.resolution.context import ResolutionContext
-    from common.llm.dia.runtime.context import LLMRuntimeContext
+    from fifo_dev_dsl.dia.resolution.context import ResolutionContext
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 @dataclass
 class Slot(DslContainerBase[DslBase]):

@@ -2,13 +2,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
+from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
+from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
+
 if TYPE_CHECKING:
-    from common.llm.dia.dsl.elements.slot import Slot
-    from common.llm.dia.dsl.elements.base import DslBase
-    from common.llm.dia.dsl.elements.intent import Intent
-    from common.llm.dia.dsl.elements.query_user import QueryUser
-    from common.llm.dia.dsl.elements.ask import Ask
-    from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
+    from fifo_dev_dsl.dia.dsl.elements.slot import Slot
+    from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+    from fifo_dev_dsl.dia.dsl.elements.intent import Intent
+    from fifo_dev_dsl.dia.dsl.elements.query_user import QueryUser
+    from fifo_dev_dsl.dia.dsl.elements.ask import Ask
+    from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
 
 
 @dataclass

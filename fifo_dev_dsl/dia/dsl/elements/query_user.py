@@ -1,20 +1,21 @@
 from __future__ import annotations
+import re
 from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
 
-from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
-from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
-from common.llm.dia.dsl.elements.base import DslBase
-import common.llm.dia.dsl.elements.helper as helper
-from common.llm.dia.resolution.context import LLMCallLog
-from common.llm.dia.resolution.enums import AbortBehavior
-from common.llm.dia.resolution.interaction import Interaction
-from common.llm.dia.resolution.outcome import ResolutionOutcome
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
+from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
+import fifo_dev_dsl.dia.dsl.elements.helper as helper
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+from fifo_dev_dsl.dia.resolution.context import LLMCallLog
+from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
+from fifo_dev_dsl.dia.resolution.interaction import Interaction
+from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:
-    from common.llm.dia.runtime.context import LLMRuntimeContext
-    from common.llm.dia.resolution.context import ResolutionContext
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
+    from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
 
 @dataclass

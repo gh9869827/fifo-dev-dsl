@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-from common.llm.dia.dsl.elements.base import DslBase
-from common.llm.dia.dsl.elements.element_list import ListElement
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 
 
 @dataclass

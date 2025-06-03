@@ -45,24 +45,25 @@ as slot values are resolved through dialog or context.
 
 from typing import List, Type, TypeVar
 
-from common.llm.dia.dsl.elements.abort import Abort
-from common.llm.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
-from common.llm.dia.dsl.elements.ask import Ask
-from common.llm.dia.dsl.elements.base import DslBase
-from common.llm.dia.dsl.elements.element_list import ListElement
-from common.llm.dia.dsl.elements.intent import Intent
-from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
-from common.llm.dia.dsl.elements.query_fill import QueryFill
-from common.llm.dia.dsl.elements.query_gather import QueryGather
-from common.llm.dia.dsl.elements.query_user import QueryUser
-from common.llm.dia.dsl.elements.same_as_previous import SameAsPreviousIntent
-from common.llm.dia.dsl.elements.slot import Slot
-from common.llm.dia.dsl.elements.value_base import DSLValueBase
-from common.llm.dia.dsl.elements.value_fuzzy import FuzzyValue
-from common.llm.dia.dsl.elements.value_list import ListValue
-from common.llm.dia.dsl.elements.value_return import ReturnValue
-from common.llm.dia.dsl.elements.value import Value
-from common.typeutils.cast import strict_cast
+from fifo_dev_common.typeutils.strict_cast import strict_cast
+
+from fifo_dev_dsl.dia.dsl.elements.abort import Abort
+from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
+from fifo_dev_dsl.dia.dsl.elements.ask import Ask
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
+from fifo_dev_dsl.dia.dsl.elements.intent import Intent
+from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
+from fifo_dev_dsl.dia.dsl.elements.query_fill import QueryFill
+from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
+from fifo_dev_dsl.dia.dsl.elements.query_user import QueryUser
+from fifo_dev_dsl.dia.dsl.elements.same_as_previous import SameAsPreviousIntent
+from fifo_dev_dsl.dia.dsl.elements.slot import Slot
+from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
+from fifo_dev_dsl.dia.dsl.elements.value_fuzzy import FuzzyValue
+from fifo_dev_dsl.dia.dsl.elements.value_list import ListValue
+from fifo_dev_dsl.dia.dsl.elements.value_return import ReturnValue
+from fifo_dev_dsl.dia.dsl.elements.value import Value
 
 def split_top_level_commas(param_str: str) -> List[str]:
     """

@@ -1,21 +1,23 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Union, Tuple
 
-from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
-from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
+from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
-from common.llm.dia.dsl.elements.query_gather import QueryGather
-import common.llm.dia.dsl.parser.parser as parser
-from common.llm.dia.resolution.context import LLMCallLog
-from common.llm.dia.resolution.enums import ResolutionResult
-from common.llm.dia.resolution.interaction import Interaction, InteractionRequest
-from common.llm.dia.resolution.outcome import ResolutionOutcome
-from common.llm.dia.dsl.elements.query_user import QueryUser
+from fifo_dev_dsl.dia.dsl.elements.intent import Intent
+from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
+from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
+import fifo_dev_dsl.dia.dsl.parser.parser as parser
+from fifo_dev_dsl.dia.resolution.context import LLMCallLog
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionRequest
+from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
+from fifo_dev_dsl.dia.dsl.elements.query_user import QueryUser
 
 if TYPE_CHECKING:
-    from common.llm.dia.dsl.elements.ask import Ask
-    from common.llm.dia.runtime.context import LLMRuntimeContext
-    from common.llm.dia.resolution.context import ResolutionContext
+    from fifo_dev_dsl.dia.dsl.elements.ask import Ask
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
+    from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
 
 def ask_helper_slot_resolver(

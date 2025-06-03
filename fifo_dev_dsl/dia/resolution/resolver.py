@@ -1,17 +1,18 @@
 
-from common.llm.dia.dsl.elements.abort import Abort
-from common.llm.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
-from common.llm.dia.dsl.elements.base import DslBase
-from common.llm.dia.dsl.elements.element_list import ListElement
-from common.llm.dia.dsl.elements.propagate_slots import PropagateSlots
-from common.llm.dia.resolution.context import LLMCallLog, ResolutionContext, ResolutionContextStackElement
-from common.llm.dia.resolution.enums import AbortBehavior, ResolutionResult
-from common.llm.dia.resolution.interaction import Interaction, InteractionAnswer
-from common.llm.dia.resolution.outcome import ResolutionOutcome
-from common.llm.dia.runtime.context import LLMRuntimeContext
-from common.llm.airlock_model_env.common.models import GenerationParameters, Message, Model, Role
-from common.llm.airlock_model_env.sdk.client_sdk import call_airlock_model_server
-from common.llm.dia.dsl.parser.parser import parse_dsl
+import copy
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
+from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
+from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl
+from fifo_dev_dsl.dia.dsl.elements.abort import Abort
+from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
+from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
+from fifo_dev_dsl.dia.resolution.context import LLMCallLog, ResolutionContext, ResolutionContextStackElement
+from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
+from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
+from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
 def resolve(runtime_context: LLMRuntimeContext,

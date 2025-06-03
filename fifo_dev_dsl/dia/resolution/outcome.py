@@ -2,11 +2,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
-from common.llm.dia.resolution.enums import ResolutionResult
-from common.llm.dia.resolution.interaction import InteractionRequest
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import InteractionRequest
 
 if TYPE_CHECKING:
-    from common.llm.dia.dsl.elements.base import DslBase
+    from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 
 @dataclass
 class ResolutionOutcome:
