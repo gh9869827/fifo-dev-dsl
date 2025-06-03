@@ -81,7 +81,7 @@ def _ask_helper_no_interaction(system_prompt: str,
     parsed_dsl = parser.parse_dsl(answer)
 
     return ResolutionOutcome(
-        node=parsed_dsl.get_children(),
+        nodes=parsed_dsl.get_children(),
         result=ResolutionResult.NEW_DSL_NODES
     )
 

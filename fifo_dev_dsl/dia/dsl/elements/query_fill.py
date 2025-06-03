@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
 
-from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.resolution.context import LLMCallLog
@@ -80,5 +79,5 @@ class QueryFill(DslBase):
 
         return ResolutionOutcome(
             result=ResolutionResult.NEW_DSL_NODES,
-            node=[Value(value)]
+            nodes=[Value(value)]
         )

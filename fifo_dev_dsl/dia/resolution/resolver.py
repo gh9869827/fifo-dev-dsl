@@ -59,11 +59,11 @@ def resolve(runtime_context: LLMRuntimeContext,
             ResolutionOutcome:
                 NEW_DSL_NODES if the replacement occurred successfully, or ABORT.
         """
-        assert outcome.node is not None
+        assert outcome.nodes is not None
 
         core_dsl_elements = []
 
-        for element in outcome.node:
+        for element in outcome.nodes:
             if isinstance(element, Abort):
                 return ResolutionOutcome(
                     result=ResolutionResult.ABORT,
@@ -182,6 +182,8 @@ def resolve(runtime_context: LLMRuntimeContext,
 
             if _handle_abort_if_needed(sub_outcome):
                 return True
+
+            assert sub_outcome.node is not None
 
             sub_outcome.node.pre_resolution(*args)
             _try_call_on_reentry()
