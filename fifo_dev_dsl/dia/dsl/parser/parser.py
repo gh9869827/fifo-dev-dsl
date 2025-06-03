@@ -43,14 +43,14 @@ as slot values are resolved through dialog or context.
 """
 
 
-from typing import List, Type, TypeVar
+from typing import Any, List, Type, TypeVar
 
 from fifo_dev_common.typeutils.strict_cast import strict_cast
 
 from fifo_dev_dsl.dia.dsl.elements.abort import Abort
 from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
 from fifo_dev_dsl.dia.dsl.elements.ask import Ask
-from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase, DslContainerBase
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
@@ -71,66 +71,88 @@ def split_top_level_commas(param_str: str) -> List[str]:
 
     This function is designed for parsing DIA's mini DSL, where function calls may
     include deeply nested lists, sub-expressions, and quoted strings. It ensures that 
-    commas inside brackets, parentheses, or quotes do not trigger a split.
+    commas inside brackets, parentheses, or quoted strings (with matching '...' or "...") 
+    do not trigger a split. Only strings with matching quote types are supported.
+    Escaped quotes inside strings are properly handled.
 
     Args:
         param_str (str):
             A comma-separated argument string from the DSL. Can include nested calls,
-            list literals, and quoted values.
+            list literals, and quoted values with matching single or double quotes.
 
     Returns:
         List[str]:
             A list of argument substrings, each trimmed of surrounding whitespace.
 
     Example:
-        split_top_level_commas('v=[1, negate(v=2)], x="a, b", y=(z, w)') →
-            ['v=[1, negate(v=2)]', 'x="a, b"', 'y=(z, w)']
+        split_top_level_commas('v=[1, negate(v=2)], x="a, b", y=(z, w)')
+            → ['v=[1, negate(v=2)]', 'x="a, b"', 'y=(z, w)']
+
+        split_top_level_commas("foo='hello, world', bar=\"x, y\"")
+            → ["foo='hello, world'", 'bar="x, y"']
+
+        split_top_level_commas("x='a, \"b, c\"', y=2")
+            → ["x='a, \"b, c\"'", 'y=2']
+
+        split_top_level_commas('z="escaped \\" quote, and comma", t=\'simple\'')
+            → ['z="escaped \\" quote, and comma"', "t='simple'"]
+
+        split_top_level_commas("s='bad string\"")
+            → ["s='bad string\""]   # Unmatched quotes will consume the remainder of the string
     """
-    args = []
+    args: list[str] = []
     level = 0
-    in_quote = False
+    in_quote = None  # None, "'" or '"'
     i = 0
-    start_idx = i
+    start_idx = 0
     while i < len(param_str):
-        if param_str[i] == '"':
-            in_quote = not in_quote
-        elif not in_quote:
-            if param_str[i] in '([':
+        c = param_str[i]
+        if in_quote:
+            if c == '\\' and i + 1 < len(param_str):
+                i += 2  # skip escaped char
+                continue
+            elif c == in_quote:
+                in_quote = None
+        else:
+            if c in ("'", '"'):
+                in_quote = c
+            elif c in "([{" :
                 level += 1
-            elif param_str[i] in ')]':
+            elif c in ")]}":
                 level -= 1
-            elif param_str[i] == ',' and level == 0:
+            elif c == "," and level == 0:
                 args.append(param_str[start_idx:i].strip())
                 i += 1
                 start_idx = i
+                continue
         i += 1
-
-    if i > start_idx:
-        args.append(param_str[start_idx:i].strip())
-
+    if start_idx < len(param_str):
+        args.append(param_str[start_idx:].strip())
     return args
-
 
 def strip_quotes(val: str) -> str:
     """
-    Remove surrounding double quotes from a string.
+    Remove surrounding matching quotes from a string.
+
+    Supports both double quotes (") and single quotes (') as long as they match.
 
     Args:
         val (str): 
-            The string to process. Must start and end with a double quote (`"`).
+            The string to process. Must start and end with the same type of quote (either ' or ").
 
     Returns:
         str:
-            The string without the outer double quotes.
+            The string without the outer quotes.
 
     Raises:
         ValueError:
-            If the input string does not start and end with a double quote.
+            If the input string does not start and end with matching single or double quotes.
     """
     val = val.strip()
-    if not (val.startswith('"') and val.endswith('"')):
-        raise ValueError(f'String must start and end with a double quote: {val!r}')
-    return val[1:-1]
+    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+        return val[1:-1]
+    raise ValueError('String must start and end with matching quotes')
+
 
 def parse_intent(name: str, args: str) -> Intent:
     """
@@ -158,7 +180,7 @@ def parse_intent(name: str, args: str) -> Intent:
     Example:
         parse_intent("move", 'x=add(a=1, b=2), y=-1, speed="fast"')
     """
-    slots = []
+    slots: list[Slot] = []
     for arg in split_top_level_commas(args):
         if '=' in arg:
             k, v = arg.split('=', 1)
@@ -168,8 +190,8 @@ def parse_intent(name: str, args: str) -> Intent:
 
     return Intent(name=name, slots=slots)
 
-T = TypeVar("T", bound=DslBase)
 U = TypeVar("U", bound=DslBase)
+T = TypeVar("T", bound=DslContainerBase[Any])
 
 def parse_dsl_element(text: str,
                       wrap_intent_as_value: bool,
@@ -217,20 +239,22 @@ def parse_dsl_element(text: str,
 
     if text.startswith('[') and text.endswith(']'):
         # array
-        return list_type(
-            [strict_cast(
+        parsed_elements = [
+            strict_cast(
                 list_content_type,
-                parse_dsl_element(value, wrap_intent_as_value, list_type, list_content_type))
-             for value in split_top_level_commas (text[1:-1])
-            ]
-        )
+                parse_dsl_element(value, wrap_intent_as_value, list_type, list_content_type)
+            )
+            for value in split_top_level_commas(text[1:-1])
+        ]
 
-    if text.startswith('"') and text.endswith('"'):
+        return list_type(parsed_elements)
+
+    if text.startswith('"') and text.endswith('"') or text.startswith("'") and text.endswith("'"):
         # string
         return Value(text[1:-1])
 
     if "(" in text and text.endswith(")"):
-        # intent and builtings
+        # intent and builtins
         open_paren = text.find("(")
         name = text[:open_paren].strip()
         args = text[open_paren+1:-1].strip()
@@ -256,7 +280,7 @@ def parse_dsl_element(text: str,
             return SameAsPreviousIntent()
 
         if name == "PROPAGATE_SLOT":
-            slots = []
+            slots: list[Slot] = []
             for s in split_top_level_commas(args):
                 if '=' in s:
                     k, v = s.split('=', 1)
