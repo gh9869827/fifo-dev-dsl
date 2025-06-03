@@ -16,7 +16,7 @@ class InteractionRequest:
     message: str
     expected_type: str  # e.g. 'str', 'int', 'choice'
     requester: DslBase
-    slot_name: str | None = None  # Which slot this is clarifying
+    slot: Slot | None = None  # Which slot this is clarifying
 
 
 @dataclass

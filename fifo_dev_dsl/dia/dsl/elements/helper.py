@@ -38,7 +38,7 @@ def ask_helper_slot_resolver(
             interaction=InteractionRequest(
                 message=current_question,
                 expected_type="str",
-                slot_name=resolution_context.slot,
+                slot=resolution_context.slot,
                 requester=current_object
             )
         )
