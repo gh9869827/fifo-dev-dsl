@@ -1,0 +1,17 @@
+[project]
+name = "fifo-dev-dsl"
+version = "0.1.0"
+description = "DSLs for intent parsing, planning, and reasoning in `fifo-dev` and `fifo-bot` agents"
+authors = [
+  { name = "Florent Gastoud" }
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "datasets>=3.5.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
