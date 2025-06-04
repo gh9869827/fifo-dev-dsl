@@ -24,6 +24,17 @@ class QueryGather(DslBase):
     query: str
 
     def is_resolved(self) -> bool:
+        """
+        Indicate that this placeholder has not yet been expanded.
+
+        ``QUERY_GATHER`` nodes collect additional information used to refine the
+        user's intent. They stay unresolved until their query is executed and
+        the resulting data is inserted.
+
+        Returns:
+            bool:
+                Always ``False``.
+        """
         return False
 
     def do_resolution(self,

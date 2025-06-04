@@ -31,4 +31,14 @@ class Ask(DslBase):
             interaction=interaction)
 
     def is_resolved(self) -> bool:
+        """
+        Indicate that ASK nodes are never resolved.
+
+        ASK elements prompt the user for input and therefore remain
+        placeholders in the DSL tree until replaced with the user's response.
+
+        Returns:
+            bool:
+                Always ``False``.
+        """
         return False

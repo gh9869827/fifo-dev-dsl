@@ -24,6 +24,17 @@ class QueryUser(DslBase):
     query: str
 
     def is_resolved(self) -> bool:
+        """
+        Report that the user's question has not yet been answered.
+
+        ``QUERY_USER`` nodes capture a direct question from the user. The system
+        must gather information and replace this placeholder with the answer
+        before the intent can proceed.
+
+        Returns:
+            bool:
+                Always ``False``.
+        """
         return False
 
     def do_resolution(self,

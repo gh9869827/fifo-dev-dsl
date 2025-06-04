@@ -23,6 +23,17 @@ class QueryFill(DslBase):
     query: str
 
     def is_resolved(self) -> bool:
+        """
+        Report that this placeholder has not yet been filled.
+
+        ``QUERY_FILL`` nodes request a single piece of information from an
+        external data source to complete an intent. They remain in the DSL until
+        replaced with the retrieved value.
+
+        Returns:
+            bool:
+                Always ``False``.
+        """
         return False
 
     def do_resolution(self,
