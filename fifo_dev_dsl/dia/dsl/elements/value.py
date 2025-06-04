@@ -14,16 +14,6 @@ class Value(DSLValueBase):
 
     value: Any
 
-    def represent_content_as_text(self) -> str | None:
-        """
-        Represent the content of this DSL node as a string.
-
-        Returns:
-            str | None:
-                The value.
-        """
-        return self.value
-
     def to_dsl_representation(self) -> str:
         """
         Return the DSL-style representation of a single value.

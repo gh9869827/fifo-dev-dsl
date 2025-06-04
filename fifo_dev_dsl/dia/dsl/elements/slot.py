@@ -68,9 +68,8 @@ class Slot(make_dsl_container(DslBase)):
         resolution_context.other_slots = {}
         for slot in resolution_context.intent.get_items():
             if slot.name != resolution_context.slot.name:
-                value_as_text = slot.value.represent_content_as_text()
-                if value_as_text is not None:
-                    resolution_context.other_slots[slot.name] = value_as_text
+                value_as_text = slot.value.to_dsl_representation()
+                resolution_context.other_slots[slot.name] = value_as_text
 
     def post_resolution(self,
                        runtime_context: LLMRuntimeContext,

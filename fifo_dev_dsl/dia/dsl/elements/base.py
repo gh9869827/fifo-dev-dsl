@@ -24,24 +24,6 @@ class DslBase:
     and `eval()` if they produce a concrete value during execution.
     """
 
-    def represent_content_as_text(self) -> str | None:
-        """
-        Represent the content of this DSL node as a string, if possible.
-
-        This method is used to pass resolved or unresolved values to an LLM in text form,
-        for example, when querying external knowledge, resolving slots, or sequencing intents.
-
-        Not all DSL nodes can be meaningfully represented as text. If this node or any of its
-        children cannot, this method should return None.
-
-        By default, returns None. Override in subclasses where textual representation is possible.
-
-        Returns:
-            str | None:
-                A string representation of this node's content, or None if not representable.
-        """
-        return None
-
     def to_dsl_representation(self) -> str:
         """
         Return a DSL-style string representation of this node.
@@ -272,31 +254,6 @@ class DslContainerBase(DslBase, Generic[T], ABC):
                 Index of the child to remove.
         """
         self._items.pop(index)
-
-    def represent_content_as_text(self) -> str | None:
-        """
-        Represent the content of this DSL node as a string, if possible.
-
-        This method is used to pass resolved or unresolved values to an LLM in text form,
-        for example, when querying external knowledge, resolving slots, or sequencing intents.
-
-        Not all DSL nodes can be meaningfully represented as text. If this node or any of its
-        children cannot, this method should return None.
-
-        Returns:
-            str | None:
-                A list that is a string representation of this node's content, or None if not
-                all items are representable. The list is formatted as `[...]`.
-        """
-        repr_elements: list[str] = []
-
-        for v in self.get_children():
-            r = v.represent_content_as_text()
-            if r is None:
-                return None
-            repr_elements.append(r)
-
-        return f"[{','.join(repr_elements)}]"
 
     def __repr__(self) -> str:
         n = len(self.get_items())
