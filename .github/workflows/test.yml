@@ -12,17 +12,17 @@ jobs:
       - name: Checkout main repo
         uses: actions/checkout@v4
 
-      - name: Checkout fifo_tool_airlock_model_env
+      - name: Checkout fifo-tool-airlock-model-env
         uses: actions/checkout@v4
         with:
-          repository: gh9869827/fifo_tool_airlock_model_env
-          path: external/fifo_tool_airlock_model_env
+          repository: gh9869827/fifo-tool-airlock-model-env
+          path: external/fifo-tool-airlock-model-env
 
-      - name: Checkout fifo_dev_common
+      - name: Checkout fifo-dev-common
         uses: actions/checkout@v4
         with:
-          repository: gh9869827/fifo_dev_common
-          path: external/fifo_dev_common
+          repository: gh9869827/fifo-dev-common
+          path: external/fifo-dev-common
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,8 +32,8 @@ jobs:
       - name: Install dependencies and package
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install -e external/fifo_tool_airlock_model_env
-          python -m pip install -e external/fifo_dev_common
+          python -m pip install -e external/fifo-tool-airlock-model-env
+          python -m pip install -e external/fifo-dev-common
           python -m pip install -e .
           python -m pip install pytest
 
