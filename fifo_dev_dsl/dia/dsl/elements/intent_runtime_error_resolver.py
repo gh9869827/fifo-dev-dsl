@@ -42,4 +42,14 @@ class IntentRuntimeErrorResolver(DslBase):
             interaction=interaction)
 
     def is_resolved(self) -> bool:
+        """
+        Indicate that this node always stays unresolved.
+
+        The resolver reflects a runtime error in the intent flow and cannot be
+        reduced to a normal value.
+
+        Returns:
+            bool:
+                Always ``False``.
+        """
         return False

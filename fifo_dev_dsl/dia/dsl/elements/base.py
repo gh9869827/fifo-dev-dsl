@@ -159,11 +159,12 @@ class DslBase:
 
     def is_resolved(self) -> bool:
         """
-        Indicates whether this DSL element is fully resolved.
+        Determine whether this DSL element is fully resolved.
 
-        A resolved element has no remaining ASK, QUERY_FILL, or QUERY_USER nodes
-        and is ready for evaluation or execution. Subclasses override this when
-        their resolution state depends on internal fields.
+        Nodes remain unresolved while they contain interactive placeholders such
+        as ``ASK``, ``QUERY_FILL``, ``QUERY_USER`` or ``QUERY_GATHER``. Subclasses
+        may track additional state and override this method accordingly. Once no
+        such placeholders remain, the element is ready for evaluation.
 
         Returns:
             bool:
@@ -189,6 +190,17 @@ class DslContainerBase(DslBase, Generic[T], ABC):
         self._items: list[T] = items
 
     def is_resolved(self) -> bool:
+        """
+        Return ``True`` only if every child item is resolved.
+
+        Container nodes propagate their resolved state from the elements they
+        contain.  If any child reports ``False`` for :py:meth:`is_resolved`, the
+        container itself is unresolved.
+
+        Returns:
+            bool:
+                ``True`` when all items are resolved.
+        """
         return all(val.is_resolved() for val in self._items)
 
     def get_items(self) -> list[T]:
