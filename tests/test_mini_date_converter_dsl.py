@@ -279,7 +279,9 @@ def next_month_day(month: int, day: int) -> datetime:
 )
 def test_today_expression(expr: str, expected_fn: Callable[[], datetime]):
     result = MiniDateConverterDSL().parse(expr)
-    assert result == expected_fn()
+
+    # Allow for minor timing differences between expected and actual datetime evaluation
+    assert abs(result - expected_fn()) < timedelta(milliseconds=100)
 
 
 def test_nested_set_time_offset_weekday():
