@@ -4,7 +4,7 @@ from enum import Enum, IntEnum
 
 class AbortBehavior(Enum):
     ABORT = 1
-    SKIP = 1
+    SKIP = 2
 
 class ResolutionResult(IntEnum):
     """
