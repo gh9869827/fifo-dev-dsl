@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout main repo
         uses: actions/checkout@v4
+        with:
+          path: fifo-dev-dsl
 
       - name: Checkout fifo-tool-airlock-model-env
         uses: actions/checkout@v4
@@ -34,8 +36,10 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -e external/fifo-tool-airlock-model-env
           python -m pip install -e external/fifo-dev-common
-          python -m pip install -e .
+          python -m pip install -e fifo-dev-dsl
           python -m pip install pytest
 
-      - name: Run tests
-        run: pytest
+      - name: Run pytest from main repo
+        run: |
+          cd fifo-dev-dsl
+          pytest
