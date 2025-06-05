@@ -1,4 +1,6 @@
+from typing import Any, Type
 import pytest
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase, DslContainerBase
 from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 from fifo_dev_dsl.dia.dsl.elements.value import Value
@@ -174,7 +176,7 @@ def test_parse_intent_invalid(name: str, args: str):
         ),
     ],
 )
-def test_parse_dsl_element_valid(text: str, wrap: bool, expected):
+def test_parse_dsl_element_valid(text: str, wrap: bool, expected: DslBase):
     result = parse_dsl_element(text, wrap)
     assert type(result) == type(expected)
     assert result == expected
@@ -188,6 +190,10 @@ def test_parse_dsl_element_valid(text: str, wrap: bool, expected):
         ("[foo()]", False, ListValue, Value, TypeError),
     ],
 )
-def test_parse_dsl_element_invalid(text: str, wrap: bool, list_type, list_content_type, exc):
+def test_parse_dsl_element_invalid(text: str,
+                                   wrap: bool,
+                                   list_type: Type[DslContainerBase[Any]],
+                                   list_content_type: Type[DslBase],
+                                   exc: Type[Exception]):
     with pytest.raises(exc):
         parse_dsl_element(text, wrap, list_type, list_content_type)
