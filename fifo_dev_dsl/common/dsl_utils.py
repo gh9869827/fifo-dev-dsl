@@ -79,7 +79,7 @@ def split_top_level_commas(args_str: str) -> list[str]:
                 stripped = current.strip()
                 if not stripped:
                     raise ValueError(f"Empty top-level argument at position {i}")
-                
+
                 args.append(stripped)
                 current = ''
             else:
@@ -99,3 +99,45 @@ def split_top_level_commas(args_str: str) -> list[str]:
         raise ValueError("Trailing empty top-level argument")
 
     return args
+
+def strip_quotes(val: str) -> str:
+    """
+    Remove surrounding matching quotes from a string.
+
+    This function strips a single pair of matching quotes from the start and end
+    of a string. It supports both single quotes (') and double quotes ("). It does
+    not validate the internal contents of the string — only the outermost quotes.
+
+    This is a simple utility intended to run **after structural validation has already
+    been performed** (e.g., by a DSL parser or a function such as `split_top_level_commas`).
+    If the input does not start and end with the same type of quote, a ValueError is raised.
+
+    Args:
+        val (str): 
+            The string to process. Must start and end with the same type of quote
+            (either `'` or `"`).
+
+    Returns:
+        str:
+            The string with the outermost pair of matching quotes removed.
+
+    Raises:
+        ValueError:
+            If the input string does not start and end with the same type of quote,
+            or if it consists of only a single quote character (e.g. just `'` or `"`).
+
+    Examples:
+        strip_quotes("'hello'") → "hello"
+        strip_quotes('"x, y"') → "x, y"
+        strip_quotes("  'trimmed'  ") → "trimmed"
+
+        strip_quotes("'a\"b'") → 'a"b'          # valid, internal content not checked
+        strip_quotes("plain") → ValueError      # not quoted
+        strip_quotes("'broken\"") → ValueError  # mismatched quotes
+    """
+    val = val.strip()
+    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+        if len(val) == 1:
+            raise ValueError('String is too short to contain quoted content')
+        return val[1:-1]
+    raise ValueError('String must start and end with matching quotes')

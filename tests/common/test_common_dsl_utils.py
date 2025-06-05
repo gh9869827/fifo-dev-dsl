@@ -1,5 +1,6 @@
 from typing import Type
 import pytest
+from fifo_dev_dsl.common.dsl_utils import strip_quotes
 from fifo_dev_dsl.domain_specific.common.dsl_utils import split_top_level_commas
 
 @pytest.mark.parametrize(
@@ -101,3 +102,47 @@ def test_split_dsl_args(args_str: str, expected: list[str]):
 def test_split_dsl_args_invalid(args_str: str, expected: Type[Exception]):
     with pytest.raises(expected):
         split_top_level_commas(args_str)
+
+
+
+@pytest.mark.parametrize("input_str, expected", [
+    # Single and double quoted strings
+    ("'hello'", "hello"),
+    ('"world"', "world"),
+
+    # Quoted with spaces
+    ("  'trimmed'  ", "trimmed"),
+    ('   " also trimmed "   ', " also trimmed "),
+
+    # Edge cases: single character
+    ("'x'", "x"),
+    ('"1"', "1"),
+
+    # Empty string in quotes
+    ("''", ""),
+    ('""', ""),
+])
+def test_strip_quotes_valid(input_str: str, expected: str):
+    assert strip_quotes(input_str) == expected
+
+
+@pytest.mark.parametrize("invalid_input", [
+    # Missing end quote
+    "'unclosed",
+    '"unclosed',
+
+    # Mismatched quotes
+    "'mismatch\"",
+    '"mismatch\'',
+
+    # No quotes
+    "plain",
+    "123",
+
+    # Only one quote
+    "'",
+    '"',
+])
+def test_strip_quotes_invalid(invalid_input: str):
+    with pytest.raises(ValueError):
+        strip_quotes(invalid_input)

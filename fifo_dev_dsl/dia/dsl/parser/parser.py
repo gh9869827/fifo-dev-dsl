@@ -43,10 +43,11 @@ as slot values are resolved through dialog or context.
 """
 
 
-from typing import Any, List, Type, TypeVar
+from typing import Any, Type, TypeVar
 
 from fifo_dev_common.typeutils.strict_cast import strict_cast
 
+from fifo_dev_dsl.common.dsl_utils import split_top_level_commas, strip_quotes
 from fifo_dev_dsl.dia.dsl.elements.abort import Abort
 from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
 from fifo_dev_dsl.dia.dsl.elements.ask import Ask
@@ -64,29 +65,6 @@ from fifo_dev_dsl.dia.dsl.elements.value_fuzzy import FuzzyValue
 from fifo_dev_dsl.dia.dsl.elements.value_list import ListValue
 from fifo_dev_dsl.dia.dsl.elements.value_return import ReturnValue
 from fifo_dev_dsl.dia.dsl.elements.value import Value
-
-def strip_quotes(val: str) -> str:
-    """
-    Remove surrounding matching quotes from a string.
-
-    Supports both double quotes (") and single quotes (') as long as they match.
-
-    Args:
-        val (str): 
-            The string to process. Must start and end with the same type of quote (either ' or ").
-
-    Returns:
-        str:
-            The string without the outer quotes.
-
-    Raises:
-        ValueError:
-            If the input string does not start and end with matching single or double quotes.
-    """
-    val = val.strip()
-    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
-        return val[1:-1]
-    raise ValueError('String must start and end with matching quotes')
 
 
 def parse_intent(name: str, args: str) -> Intent:
