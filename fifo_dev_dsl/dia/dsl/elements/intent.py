@@ -22,6 +22,21 @@ class Intent(make_dsl_container(Slot)):
         super().__init__(slots)
         self.name = name
 
+    @property
+    def slots(self) -> list[Slot]:
+        """
+        Return the list of slots contained in the intent.
+
+        This is a convenience property that delegates to `get_items()`,
+        typically used to access the key-value argument pairs of the intent
+        in the order they were defined.
+
+        Returns:
+            list[Slot]:
+                A list of Slot objects representing named arguments.
+        """
+        return self.get_items()
+
     def to_dsl_representation(self) -> str:
         """
         Return the DSL-style representation of the intent.

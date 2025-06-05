@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar, cast
 
 from fifo_dev_common.typeutils.strict_cast import strict_cast
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
@@ -188,6 +188,11 @@ class DslContainerBase(DslBase, Generic[T], ABC):
                 A list of container items to store internally.
         """
         self._items: list[T] = items
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, DslContainerBase):
+            return NotImplemented
+        return self._items == cast(DslContainerBase[T], other)._items
 
     def is_resolved(self) -> bool:
         """

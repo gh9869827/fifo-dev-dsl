@@ -80,7 +80,7 @@ def parse_intent(name: str, args: str) -> Intent:
             The name of the intent (e.g., "move", "multiply", "schedule").
 
         args (str):
-            A comma-separated string of named arguments (e.g., 'v=[1, negate(v=2)]').
+            A comma-separated string of named arguments (e.g., 'v=[1, invert(v=2)]').
 
     Returns:
         Intent:
@@ -88,7 +88,7 @@ def parse_intent(name: str, args: str) -> Intent:
 
     Raises:
         ValueError:
-            If any argument is missing an '=' sign.
+            If any argument is missing an '=' sign, a name, or a value.
 
     Example:
         parse_intent("move", 'x=add(a=1, b=2), y=-1, speed="fast"')
@@ -97,7 +97,12 @@ def parse_intent(name: str, args: str) -> Intent:
     for arg in split_top_level_commas(args):
         if '=' in arg:
             k, v = arg.split('=', 1)
-            slots.append(Slot(k.strip(), parse_dsl_element(v.strip(), True)))
+            k, v = k.strip(), v.strip()
+            if not k:
+                raise ValueError("Intent args missing name")
+            if not v:
+                raise ValueError("Intent args missing value")
+            slots.append(Slot(k, parse_dsl_element(v, True)))
         else:
             raise ValueError("Intent args missing =")
 
