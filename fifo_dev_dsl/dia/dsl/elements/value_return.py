@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from typing import Any
 
-from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
-from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
 
 if TYPE_CHECKING:
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+    from fifo_dev_dsl.dia.dsl.elements.intent import Intent
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 @dataclass

@@ -1,7 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-from fifo_dev_dsl.dia.dsl.elements.intent import Intent
-from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome
+
+if TYPE_CHECKING:
+    from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome
+    from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 
 
 @dataclass

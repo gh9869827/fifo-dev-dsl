@@ -3,10 +3,10 @@ from abc import ABC
 from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar
 
 from fifo_dev_common.typeutils.strict_cast import strict_cast
-from fifo_dev_dsl.dia.resolution.interaction import Interaction
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:
+    from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.resolver import AbortBehavior
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext

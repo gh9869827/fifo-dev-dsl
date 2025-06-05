@@ -7,12 +7,12 @@ from fifo_tool_airlock_model_env.common.models import GenerationParameters, Mess
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
-from fifo_dev_dsl.dia.resolution.context import LLMCallLog
-from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
-from fifo_dev_dsl.dia.resolution.interaction import Interaction
-from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
+from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 
 if TYPE_CHECKING:
+    from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
+    from fifo_dev_dsl.dia.resolution.interaction import Interaction
+    from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 

@@ -2,16 +2,18 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
+from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
 from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
+from fifo_dev_dsl.dia.dsl.elements.query_user import QueryUser
+from fifo_dev_dsl.dia.dsl.elements.ask import Ask
 from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
+from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
+
 
 if TYPE_CHECKING:
     from fifo_dev_dsl.dia.dsl.elements.slot import Slot
     from fifo_dev_dsl.dia.dsl.elements.base import DslBase
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent
-    from fifo_dev_dsl.dia.dsl.elements.query_user import QueryUser
-    from fifo_dev_dsl.dia.dsl.elements.ask import Ask
-    from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
 
 
 @dataclass
@@ -19,17 +21,6 @@ class ResolutionContextStackElement:
     obj: DslBase
     idx: int
 
-@dataclass
-class LLMCallLog:
-    # each llm call is composed exactly of a system prompt a assistant prompt and a user(answer)
-    # prompt the system prompt gives the instructions, the assistant prompt gives the 
-    # resolution/runtime specific context and the answer/user is the actual output of the llm.
-    # a Call Log can be used to fine tune the model behavior by correcting the answer of a model
-    # and retraining on the new expected output.
-    description: str
-    system_prompt: str
-    assistant: str
-    answer: str
 
 @dataclass
 class ResolutionContext:

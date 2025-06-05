@@ -2,10 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
-from fifo_dev_dsl.dia.dsl.elements.slot import Slot
-
-
 if TYPE_CHECKING:
+    from fifo_dev_dsl.dia.dsl.elements.slot import Slot
     from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 
 @dataclass

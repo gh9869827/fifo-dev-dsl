@@ -8,7 +8,8 @@ from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
-from fifo_dev_dsl.dia.resolution.context import LLMCallLog, ResolutionContext, ResolutionContextStackElement
+from fifo_dev_dsl.dia.resolution.context import ResolutionContext, ResolutionContextStackElement
+from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome

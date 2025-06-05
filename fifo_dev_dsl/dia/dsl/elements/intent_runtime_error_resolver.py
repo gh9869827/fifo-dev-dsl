@@ -4,12 +4,12 @@ from dataclasses import dataclass
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
-from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
-from fifo_dev_dsl.dia.resolution.interaction import Interaction
-from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
-from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 
 if TYPE_CHECKING:
+    from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
+    from fifo_dev_dsl.dia.resolution.interaction import Interaction
+    from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
+    from fifo_dev_dsl.dia.dsl.elements.intent import Intent
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 

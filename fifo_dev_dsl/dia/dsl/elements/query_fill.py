@@ -6,14 +6,14 @@ from dataclasses import dataclass
 
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
-from fifo_dev_dsl.dia.resolution.context import LLMCallLog
+from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
-from fifo_dev_dsl.dia.resolution.interaction import Interaction
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 from fifo_dev_dsl.dia.dsl.elements.value import Value
 
 if TYPE_CHECKING:
+    from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
