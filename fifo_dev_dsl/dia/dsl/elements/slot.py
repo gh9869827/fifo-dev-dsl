@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 
@@ -19,6 +19,13 @@ class Slot(make_dsl_container(DslBase)):
     def __init__(self, name: str, value: DslBase):
         super().__init__([value])
         self.name = name
+
+    def __eq__(self, other: Any) -> bool:
+        return (
+                isinstance(other, self.__class__)
+            and self.name == other.name
+            and super().__eq__(other)
+        )
 
     @property
     def value(self) -> DslBase:

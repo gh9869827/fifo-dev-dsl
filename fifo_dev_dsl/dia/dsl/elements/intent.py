@@ -22,6 +22,13 @@ class Intent(make_dsl_container(Slot)):
         super().__init__(slots)
         self.name = name
 
+    def __eq__(self, other: Any) -> bool:
+        return (
+                isinstance(other, self.__class__)
+            and self.name == other.name
+            and super().__eq__(other)
+        )
+
     @property
     def slots(self) -> list[Slot]:
         """
