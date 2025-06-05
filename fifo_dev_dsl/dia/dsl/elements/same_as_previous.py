@@ -1,7 +1,17 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING, Any
+
 from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
 
+if TYPE_CHECKING:
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 @dataclass
 class SameAsPreviousIntent(DSLValueBase):
-    pass
+
+    def eval(self,
+             runtime_context: LLMRuntimeContext,
+             value_type: MiniDocStringType | None = None) -> Any:
+        raise NotImplementedError()
