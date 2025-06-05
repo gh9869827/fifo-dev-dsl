@@ -1,7 +1,7 @@
 import re
 from typing import Callable, TypeVar
 
-from fifo_dev_dsl.common.dsl_utils import split_dsl_args
+from fifo_dev_dsl.common.dsl_utils import split_top_level_commas
 
 T = TypeVar("T")
 
@@ -39,7 +39,7 @@ def parse_dsl_expression(
         raise ValueError(f"Invalid expression: {expr}")
 
     func, args_str = match.groups()
-    args = split_dsl_args(args_str)
+    args = split_top_level_commas(args_str)
 
     return evaluator(func, args)
 

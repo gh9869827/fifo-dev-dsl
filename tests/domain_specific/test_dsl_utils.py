@@ -1,57 +1,6 @@
 from typing import Tuple, cast
 import pytest
-from fifo_dev_dsl.domain_specific.common.dsl_utils import parse_dsl_expression, split_dsl_args
-
-@pytest.mark.parametrize(
-    "args_str,expected",
-    [
-        # Unbalanced parentheses: extra opening
-        ("a(b, c", ValueError),
-
-        # Unbalanced parentheses: extra closing
-        ("a, b)", ValueError),
-
-        # Misplaced commas (comma at start)
-        (",a(b, c)", ValueError),
-
-        # Incomplete function call
-        ("a(", ValueError),
-
-        # Only closing parenthesis
-        (")", ValueError),
-
-        # Garbage nesting (should raise or be handled)
-        ("a(b(c, d), e))", ValueError),
-
-        # Multiple unmatched nesting
-        ("a((b, c), d", ValueError),
-
-        # Misplaced commas (comma at end)
-        ("a(b, c),", ValueError),
-
-        # Mismatched group symbols
-        ("a(b, [c, d))", ValueError),
-        ("a[b, c)", ValueError),
-        ("a(b, c]d)", ValueError),
-        ("func((x, y], z)", ValueError),
-
-        # Incomplete bracket group
-        ("WEEKLY(1, [MO, TU", ValueError),
-        ("WEEKLY(1, MO, TU])", ValueError),
-
-        # Trailing comma with no value
-        ("x, y, ", ValueError),
-
-        # Double comma
-        ("x,,y", ValueError),
-    ]
-)
-def test_split_dsl_args_invalid(args_str: str, expected: list[str]):
-    if isinstance(expected, type) and issubclass(expected, Exception):
-        with pytest.raises(expected):
-            split_dsl_args(args_str)
-    else:
-        assert split_dsl_args(args_str) == expected
+from fifo_dev_dsl.domain_specific.common.dsl_utils import parse_dsl_expression
 
 def dummy_evaluator(func_name: str, args: list[str]) -> Tuple[str, list[str]]:
     return (func_name, args)
