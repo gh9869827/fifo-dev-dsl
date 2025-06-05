@@ -23,3 +23,14 @@ class AbortWithNewDsl(DslBase):
     """
 
     new_dsl: ListElement
+
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the AbortWithNewDsl node.
+
+        Returns:
+            str:
+                A string in DSL syntax replacing the current element with new ones,
+                e.g., 'ABORT_WITH_NEW_INTENTS([foo(), bar(x=2)])'.
+        """
+        return f"ABORT_WITH_NEW_INTENTS({self.new_dsl.to_dsl_representation()})"

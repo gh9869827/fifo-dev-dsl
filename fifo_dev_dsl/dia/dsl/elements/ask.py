@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
+from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
 
@@ -16,6 +17,17 @@ if TYPE_CHECKING:
 class Ask(DslBase):
 
     question: str
+
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the Ask node.
+
+        Returns:
+            str:
+                The question in DSL syntax, with internal quotes escaped and the string properly
+                quoted. For example: ASK("question").
+        """
+        return f'ASK({quote_and_escape(self.question)})'
 
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,

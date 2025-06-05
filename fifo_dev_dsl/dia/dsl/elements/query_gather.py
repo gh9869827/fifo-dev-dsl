@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import re
 from dataclasses import dataclass
 
+from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
@@ -36,6 +37,19 @@ class QueryGather(DslBase):
                 Always ``False``.
         """
         return False
+
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the QueryGather node.
+
+        Returns:
+            str:
+                The query in DSL syntax, with internal quotes escaped and each argument
+                properly quoted. For example: QUERY_GATHER("intent", "query").
+        """
+        i = quote_and_escape(self.original_intent)
+        q = quote_and_escape(self.query)
+        return f'QUERY_GATHER({i}, {q})'
 
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,

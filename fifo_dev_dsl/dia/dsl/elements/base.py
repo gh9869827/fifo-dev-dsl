@@ -194,6 +194,18 @@ class DslContainerBase(DslBase, Generic[T], ABC):
             return NotImplemented
         return self._items == cast(DslContainerBase[T], other)._items
 
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of a generic container node.
+
+        Returns:
+            str:
+                A string in DSL list syntax containing the representation of all items,
+                e.g., '[x=1, y=foo()]'.
+        """
+        items = ", ".join([i.to_dsl_representation() for i in self.get_items()])
+        return f"[{items}]"
+
     def is_resolved(self) -> bool:
         """
         Return ``True`` only if every child item is resolved.

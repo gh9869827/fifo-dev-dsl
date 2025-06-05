@@ -15,3 +15,13 @@ class SameAsPreviousIntent(DSLValueBase):
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:
         raise NotImplementedError()
+
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the SameAsPreviousIntent node.
+
+        Returns:
+            str:
+                The fixed DSL syntax, always returns 'SAME_AS_PREVIOUS_INTENT()'.
+        """
+        return "SAME_AS_PREVIOUS_INTENT()"

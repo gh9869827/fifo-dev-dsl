@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from dataclasses import dataclass
 
+from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
@@ -36,6 +37,17 @@ class QueryUser(DslBase):
                 Always ``False``.
         """
         return False
+
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the QueryUser node.
+
+        Returns:
+            str:
+                The query in DSL syntax, with internal quotes escaped and the value properly quoted.
+                For example: QUERY_USER("query").
+        """
+        return f'QUERY_USER({quote_and_escape(self.query)})'
 
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,

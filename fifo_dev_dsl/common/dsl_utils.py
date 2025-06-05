@@ -141,3 +141,30 @@ def strip_quotes(val: str) -> str:
             raise ValueError('String is too short to contain quoted content')
         return val[1:-1]
     raise ValueError('String must start and end with matching quotes')
+
+def quote_and_escape(val: str) -> str:
+    """
+    Escape quotes and backslashes for inclusion in a DSL-quoted string.
+
+    This function escapes any characters that would break the syntax of a DSL
+    representation using double quotes and returns the final string enclosed
+    in double quotes. It is intended to prepare raw string values for output
+    like `ASK("...")` or `Value("...")`.
+
+    Args:
+        val (str):
+            The raw string to escape. May contain backslashes or quotes.
+
+    Returns:
+        str:
+            The escaped string, enclosed in double quotes, and safe for
+            inclusion inside DSL output.
+
+    Examples:
+        quote_and_escape('hello') → '"hello"'
+        quote_and_escape('a"b') → '"a\\"b"'
+        quote_and_escape('x\\y') → '"x\\\\y"'
+        quote_and_escape('"') → '"\\""'
+    """
+    escaped = val.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{escaped}"'

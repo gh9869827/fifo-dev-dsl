@@ -15,3 +15,13 @@ class Abort(DslBase):
 
     This is typically used when the user decides to cancel or redirect the intent.
     """
+
+    def to_dsl_representation(self) -> str:
+        """
+        Return the DSL-style representation of the Abort node.
+
+        Returns:
+            str:
+                The fixed DSL syntax for aborting, always returns 'ABORT()'.
+        """
+        return "ABORT()"

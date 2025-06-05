@@ -1,6 +1,6 @@
 from typing import Type
 import pytest
-from fifo_dev_dsl.common.dsl_utils import strip_quotes
+from fifo_dev_dsl.common.dsl_utils import quote_and_escape, strip_quotes
 from fifo_dev_dsl.domain_specific.common.dsl_utils import split_top_level_commas
 
 @pytest.mark.parametrize(
@@ -146,3 +146,17 @@ def test_strip_quotes_valid(input_str: str, expected: str):
 def test_strip_quotes_invalid(invalid_input: str):
     with pytest.raises(ValueError):
         strip_quotes(invalid_input)
+
+
+@pytest.mark.parametrize("input_str,expected", [
+    ("simple", '"simple"'),
+    ('quote " inside', '"quote \\" inside"'),
+    ("backslash \\", '"backslash \\\\"'),
+    ('quote and backslash "\\', '"quote and backslash \\"\\\\"'),
+    ('already \\" escaped', '"already \\\\\\" escaped"'),
+    ("combo \\ and \"", '"combo \\\\ and \\\""'),
+    ("nested \"quote\" with \\backslash\\", '"nested \\\"quote\\\" with \\\\backslash\\\\\"'),
+    ("", '""'),
+])
+def test_quote_and_escape(input_str: str, expected: str):
+    assert quote_and_escape(input_str) == expected
