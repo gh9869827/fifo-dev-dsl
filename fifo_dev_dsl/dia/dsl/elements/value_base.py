@@ -27,4 +27,22 @@ class DSLValueBase(DslBase, ABC):
     def eval(self,
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:
-        pass
+        """
+        Compute and return the runtime value for this DSL element.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                The runtime environment available during evaluation.
+                This includes:
+                - Registered tools available for intent resolution
+                - Domain-specific query sources (e.g., item inventory, memory store)
+                - LLM prompt templates for all resolution and interaction phases
+
+            value_type (MiniDocStringType | None):
+                Optional expected type for the result, used to guide value interpretation.
+
+        Returns:
+            Any:
+                The resolved Python value that this DSL node evaluates to.
+                This value can be passed as a tool argument or used in other composed expressions.
+        """
