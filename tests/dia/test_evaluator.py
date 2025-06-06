@@ -89,7 +89,7 @@ class Demo:
 )
 def test_dsl_resolution(prompt: str,
                         mock_dsl_response: str,
-                        expected_call_trace: list[tuple[str, int, int]]):
+                        expected_call_trace: list[tuple[str, Any]]):
     demo = Demo()
     runtime_context = LLMRuntimeContext(
         tools=[demo.add, demo.add_list, demo.multiply],
@@ -98,6 +98,40 @@ def test_dsl_resolution(prompt: str,
 
     with patch("fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
                return_value=mock_dsl_response):
+        resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
+        outcome_resolver = resolver(interaction_reply=None)
+
+        assert outcome_resolver is not None
+        assert outcome_resolver.result is ResolutionResult.UNCHANGED
+
+        evaluator = Evaluator(runtime_context, resolver.dsl_elements)
+        outcome_evalutor = evaluator.evaluate()
+
+        assert outcome_evalutor.status is EvaluationStatus.SUCCESS
+        assert demo.call_trace == expected_call_trace
+
+
+def test_query_fill() -> None:
+    """
+    Test partial DSL resolution using QUERY_FILL followed by evaluation.
+    """
+    prompt = "add 2 and the second prime number"
+    mock_dsl_response = "add(a=2, b=QUERY_FILL('what is the second prime number?'))"
+    mock_dsl_answer_query_fill = "reasoning: the second prime number is 3\nvalue: 3\nabort:"
+    expected_call_trace = [("add", (2, 3))]
+
+    demo = Demo()
+
+    runtime_context = LLMRuntimeContext(
+        tools=[demo.add, demo.add_list, demo.multiply],
+        query_sources=[]
+    )
+
+    with patch("fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+               return_value=mock_dsl_response) ,\
+         patch("fifo_dev_dsl.dia.dsl.elements.query_fill.call_airlock_model_server",
+               return_value=mock_dsl_answer_query_fill):
+
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
 
