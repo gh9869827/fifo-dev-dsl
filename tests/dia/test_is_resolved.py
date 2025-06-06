@@ -3,6 +3,7 @@ import pytest
 from fifo_dev_dsl.dia.dsl.elements.abort import Abort
 from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
 from fifo_dev_dsl.dia.dsl.elements.ask import Ask
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.intent_evaluated_success import (
@@ -34,7 +35,7 @@ from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome
         IntentRuntimeErrorResolver(Intent("foo", []), "err"),
     ],
 )
-def test_is_resolved_unresolved_elements(element):
+def test_is_resolved_unresolved_elements(element: DslBase):
     assert element.is_resolved() is False
 
 
@@ -51,7 +52,7 @@ def test_is_resolved_unresolved_elements(element):
         IntentEvaluatedSuccess(Intent("baz", []), EvaluationOutcome()),
     ],
 )
-def test_is_resolved_resolved_elements(element):
+def test_is_resolved_resolved_elements(element: DslBase):
     assert element.is_resolved() is True
 
 
@@ -70,6 +71,5 @@ def test_is_resolved_resolved_elements(element):
         (ListValue([Value("1"), FuzzyValue("few")]), True),
     ],
 )
-def test_is_resolved_container_elements(element, expected):
+def test_is_resolved_container_elements(element: DslBase, expected: bool):
     assert element.is_resolved() is expected
-
