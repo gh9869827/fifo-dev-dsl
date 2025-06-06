@@ -100,7 +100,7 @@ def resolve(runtime_context: LLMRuntimeContext,
 
         return ResolutionOutcome(
             result=ResolutionResult.NEW_DSL_NODES,
-            node=new_node
+            nodes=[new_node]
         )
 
     def _try_call_on_reentry() -> None:
@@ -184,9 +184,9 @@ def resolve(runtime_context: LLMRuntimeContext,
             if _handle_abort_if_needed(sub_outcome):
                 return True
 
-            assert sub_outcome.node is not None
+            assert sub_outcome.nodes is not None and len(sub_outcome.nodes) == 1
 
-            sub_outcome.node.pre_resolution(*args)
+            sub_outcome.nodes[0].pre_resolution(*args)
             _try_call_on_reentry()
             return True
 
