@@ -10,7 +10,7 @@ from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionRequest
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent
     from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather

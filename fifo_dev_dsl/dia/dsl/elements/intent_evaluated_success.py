@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 

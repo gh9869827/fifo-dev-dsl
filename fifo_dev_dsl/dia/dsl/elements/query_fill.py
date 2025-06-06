@@ -13,7 +13,7 @@ from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 from fifo_dev_dsl.dia.dsl.elements.value import Value
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext

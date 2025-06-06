@@ -6,7 +6,7 @@ from typing import Any
 
 from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext

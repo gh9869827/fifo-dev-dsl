@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome

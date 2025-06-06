@@ -5,7 +5,7 @@ import textwrap
 from fifo_dev_common.containers.read_only.read_only_list import ReadOnlyList
 from fifo_dev_common.introspection.tool_decorator import ToolHandler, ToolQuerySource
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
 class LLMRuntimeContext:

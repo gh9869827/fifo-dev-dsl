@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from dataclasses import dataclass
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.dsl.elements.slot import Slot
     from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 

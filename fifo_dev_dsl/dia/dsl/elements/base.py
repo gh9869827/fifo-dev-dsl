@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar, cast
 from fifo_dev_common.typeutils.strict_cast import strict_cast
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.resolver import AbortBehavior
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext

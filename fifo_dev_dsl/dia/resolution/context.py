@@ -10,7 +10,7 @@ from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.dsl.elements.slot import Slot
     from fifo_dev_dsl.dia.dsl.elements.base import DslBase
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent

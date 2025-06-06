@@ -7,7 +7,7 @@ from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_dsl.dia.dsl.elements.base import make_dsl_container
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
