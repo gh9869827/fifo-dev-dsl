@@ -84,7 +84,12 @@ class Demo:
             "add 2 and 3 and multiply the result by 4",
             "multiply(a=4, b=add(a=2, b=3))",
             [("add", (2, 3)), ("multiply", (4, 5))]
-        )
+        ),
+        (
+            "add a couple and a few",
+            'add(a=F("a couple"), b=F("a few"))',
+            [("add", (2, 3))]
+        ),
     ]
 )
 def test_dsl_resolution(prompt: str,
