@@ -15,6 +15,24 @@ if TYPE_CHECKING:
 
 @dataclass
 class Ask(DslBase):
+    """
+    Prompt the user to provide a missing slot value during resolution.
+
+    ``ASK`` nodes act as placeholders for information that cannot be resolved
+    automatically. They remain in the DSL tree until the user responds, at which
+    point they are replaced with the returned value.
+
+    Attributes:
+        question (str):
+            The question to present to the user.
+
+    Example:
+        create_task(
+            task_description="...",
+            task_list_short_name="...",
+            due_date=ASK("What is the target date?")
+        )
+    """
 
     question: str
 

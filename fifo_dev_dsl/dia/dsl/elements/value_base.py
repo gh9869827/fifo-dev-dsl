@@ -9,6 +9,19 @@ if TYPE_CHECKING:
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 class DSLValueBase(DslBase, ABC):
+    """
+    Abstract base class for all DSL nodes that evaluate to a runtime value.
+
+    Any node that can produce a concrete value during execution—such as a constant,
+    list, fuzzy descriptor, or computed result—should inherit from this class.
+    Subclasses must implement the `eval()` method, which returns a Python value
+    suitable for use as a tool's slot value or in composed expressions.
+
+    Example use cases include:
+        - Literal values (e.g., `Value("12mm")`)
+        - Nested expressions (e.g., `ReturnValue(...)`)
+        - Collections (e.g., `ListValue([...])`)
+    """
 
     @abstractmethod
     def eval(self,

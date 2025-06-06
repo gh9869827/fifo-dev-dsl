@@ -7,13 +7,13 @@ from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 @dataclass
 class Abort(DslBase):
     """
-    A control directive that halts intent resolution and prevents execution.
+    A control directive that halts further intent resolution and execution.
 
-    When encountered, this node returns a ResolutionResult.ABORT. It signals that
-    the current user path is no longer valid, and no further resolution or execution
-    should take place.
-
-    This is typically used when the user decides to cancel or redirect the intent.
+    When present in the DSL tree, the resolver returns
+    `ResolutionResult.ABORT` and discards any subsequent nodes in the 
+    execution branch, and moves to the execution of the next intent.
+    This node is typically injected when the user cancels the conversation
+    or explicitly requests to stop processing.
     """
 
     def to_dsl_representation(self) -> str:

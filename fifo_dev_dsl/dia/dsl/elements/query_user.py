@@ -21,6 +21,28 @@ if TYPE_CHECKING:
 
 @dataclass
 class QueryUser(DslBase):
+    """
+    Represent a user question that should be answered by the system.
+
+    This node is used when the user's input is itself a question — not a request to
+    invoke a tool, but a query seeking information. Unlike `Intent` nodes, which 
+    trigger actions, `QueryUser` captures an information-seeking goal, such as 
+    "How many screws are in the inventory?".
+
+    During resolution, the system treats this as a direct user question and attempts
+    to answer it immediately, rather than continuing with tool execution. Once the 
+    answer is provided, the DSL requests a follow-up from the user — who may choose 
+    to abort, refine their request, or proceed with a new intent now that they have 
+    the information they needed.
+
+    Attributes:
+        query (str):
+            The natural language question asked by the user.
+
+    Example:
+        Input:  "How many screws do we have in the inventory?"
+        Output: QUERY_USER("How many screws do we have in the inventory?")
+    """
 
     query: str
 

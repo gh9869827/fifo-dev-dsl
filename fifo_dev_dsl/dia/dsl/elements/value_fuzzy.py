@@ -24,6 +24,24 @@ _FUZZY_TO_NUMERIC: dict[str, int] = {
 
 @dataclass
 class FuzzyValue(DSLValueBase):
+    """
+    A fuzzy descriptor representing an approximate quantity in natural language.
+
+    This node captures vague expressions like "a few" or "many" and maps them to
+    concrete numeric values at evaluation time. It enables the DSL to gracefully
+    interpret imprecise user input by referencing the internal `_FUZZY_TO_NUMERIC` table.
+
+    Unlike `Value`, which stores exact constants, `FuzzyValue` supports common
+    quantity idioms that users might naturally provide. This allows for a more
+    conversational experience during resolution.
+
+    Attributes:
+        value (str):
+            A fuzzy quantity phrase such as "a couple" or "several".
+
+    Example:
+        FuzzyValue("a few") → 3 (after evaluation)
+    """
 
     value: str
 

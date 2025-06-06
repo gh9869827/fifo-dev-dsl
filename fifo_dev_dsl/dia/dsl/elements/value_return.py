@@ -13,6 +13,22 @@ if TYPE_CHECKING:
 
 @dataclass
 class ReturnValue(DSLValueBase):
+    """
+    Use the result of another intent as an inline value.
+
+    `ReturnValue` wraps an :class:`Intent`, allowing its result to be embedded
+    as a value in another intent's slot. This supports nested execution where
+    the output of one tool feeds directly into another.
+
+    For example, retrieving the location of a box and then passing that location
+    to a pickup intent can be expressed as:
+
+        pickup(location=ReturnValue(get_box_location()))
+
+    Attributes:
+        intent (Intent):
+            The intent whose evaluated result will be used as the slot value.
+    """
 
     intent: Intent
 

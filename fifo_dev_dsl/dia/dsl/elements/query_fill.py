@@ -20,20 +20,39 @@ if TYPE_CHECKING:
 
 @dataclass
 class QueryFill(DslBase):
+    """
+    Compute or infer a missing value using LLM-based reasoning.
+
+    This node is used when a required value cannot be determined from local context alone.
+    During resolution, it triggers a call to a large language model, passing a structured
+    prompt derived from the current intent, prior state, and relevant runtime information.
+
+    Unlike `ASK`, which delegates to the user, `QueryFill` invokes autonomous reasoning—
+    for example, querying an LLM with access to inventory data, system state, or sensor outputs.
+
+    Once resolved, this node is replaced with a concrete value such as `Value("12")`.
+
+    Attributes:
+        query (str):
+            A short description of the desired value, e.g., "longest screw available".
+
+    Example:
+        retrieve_screw(count=6, length=QUERY_FILL("longest length you have"))
+    """
 
     query: str
 
     def is_resolved(self) -> bool:
         """
-        Report that this placeholder has not yet been filled.
+        Indicate that this node has not yet been resolved.
 
-        ``QUERY_FILL`` nodes request a single piece of information from an
-        external data source to complete an intent. They remain in the DSL until
-        replaced with the retrieved value.
+        `QueryFill` nodes require external inference to produce a value.
+        Until they are replaced with a concrete result (e.g., a `Value`),
+        they are considered unresolved.
 
         Returns:
             bool:
-                Always ``False``.
+                Always `False`.
         """
         return False
 

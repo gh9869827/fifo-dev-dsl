@@ -15,6 +15,20 @@ if TYPE_CHECKING:
 
 @dataclass
 class Intent(make_dsl_container(Slot)):
+    """
+    A DSL node that calls a named tool with structured parameters.
+
+    An Intent represents a call to a tool, with arguments provided as an ordered
+    list of :class:`Slot` objects. Each slot maps a name to a value, which may
+    itself be another DSL expression. This enables nested calls and composable logic.
+
+    During evaluation, the runtime context resolves the tool by name and invokes
+    it with the evaluated slot values.
+
+    Attributes:
+        name (str):
+            The name of the tool to invoke.
+    """
 
     name: str
 

@@ -9,6 +9,20 @@ if TYPE_CHECKING:
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
+    """
+    A DSL node representing a list of values to be evaluated as a Python list.
+
+    Each item in this container is a :class:`DSLValueBase` element. During
+    evaluation, all child nodes are resolved in order, and their results are
+    collected into a standard Python list.
+
+    This enables compound expressions such as passing multiple arguments,
+    defining sets of options, or grouping multiple return values.
+
+    Example:
+        Used inside a slot:
+            sum(v=ListValue([Value(1), Value(2), Value(3)])) → 6
+    """
 
     def eval(self,
              runtime_context: LLMRuntimeContext,

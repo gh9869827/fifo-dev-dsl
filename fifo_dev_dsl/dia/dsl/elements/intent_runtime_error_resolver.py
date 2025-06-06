@@ -15,6 +15,27 @@ if TYPE_CHECKING:
 
 @dataclass
 class IntentRuntimeErrorResolver(DslBase):
+    """
+    Placeholder for a failed intent awaiting user-guided recovery.
+
+    This node is injected into the DSL tree when an :class:`Intent` raises a runtime error
+    during evaluation. It captures the failing intent and the associated error message,
+    pausing automatic resolution.
+
+    During the next resolution pass, this node prompts the user for a corrective action —
+    such as retrying, modifying parameters, or abandoning the operation — and allows
+    the system to generate new DSL elements in response.
+
+    This mechanism enables interactive recovery from unexpected execution failures
+    while preserving context.
+
+    Attributes:
+        intent (Intent):
+            The intent that encountered a runtime error.
+
+        error_message (str):
+            A human-readable description of the failure.
+    """
 
     intent: Intent
     error_message: str

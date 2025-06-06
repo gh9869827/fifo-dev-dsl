@@ -176,6 +176,20 @@ class DslBase:
 T = TypeVar("T", bound=DslBase)
 
 class DslContainerBase(DslBase, Generic[T], ABC):
+    """
+    Base class for nodes that group other DSL elements.
+
+    This class is used to represent a collection of child DSL nodes (e.g., slots in an intent,
+    values in a list) and provides utilities for traversal and evaluation.
+
+    Used by DSL elements such as:
+        - `Intent`, which contains `Slot` items.
+        - `ListValue`, which contains `DSLValueBase` items.
+
+    Attributes:
+        _items (list[T]):
+            A list of child DSL nodes stored in the order they were provided.
+    """
 
     _items: list[T]
 

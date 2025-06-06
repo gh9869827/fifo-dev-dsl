@@ -8,18 +8,18 @@ from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 @dataclass
 class AbortWithNewDsl(DslBase):
     """
-    Aborts the current resolution path and replaces it with the new DSL elements.
+    Abort the current resolution path and replace it with a new DSL subtree.
 
-    Like `Abort`, this node result in an abort condition, signaling that the
-    current element is no longer valid. However, the new DSL elements are installed in place of the
-    current aborted one.
+    Like `Abort`, this node signals that the current resolution path is no longer valid.
+    However, instead of terminating execution, it returns `ResolutionResult.NEW_DSL_NODES`
+    with the provided `new_dsl`, allowing the resolver to continue with a new intent sequence.
 
-    This is useful for graceful redirection, for example, when an item is unavailable and a fallback
-    is suggested.
+    This is useful for graceful redirection—for example, when a requested item is unavailable
+    and an alternative path should be proposed.
 
-    Params:
+    Attributes:
         new_dsl (ListElement):
-            New DSL elements to install as a replacement for the aborted one.
+            DSL elements that will replace the aborted intent subtree.
     """
 
     new_dsl: ListElement

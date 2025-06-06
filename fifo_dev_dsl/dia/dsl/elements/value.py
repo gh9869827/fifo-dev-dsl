@@ -11,6 +11,24 @@ if TYPE_CHECKING:
 
 @dataclass
 class Value(DSLValueBase):
+    """
+    A literal constant representing a fully known value in the DSL tree.
+
+    `Value` nodes wrap concrete Python objects such as strings, numbers, or booleans.
+    Unlike other DSL nodes that may require resolution, a `Value` is always considered
+    resolved and can be evaluated directly.
+
+    During evaluation, it is cast to the expected type by the execution layer.
+
+    Attributes:
+        value (Any):
+            The underlying Python object to treat as a resolved constant.
+
+    Examples:
+        Value("12")       # A string constant
+        Value(42)         # An integer constant
+        Value(True)       # A boolean constant
+    """
 
     value: Any
 

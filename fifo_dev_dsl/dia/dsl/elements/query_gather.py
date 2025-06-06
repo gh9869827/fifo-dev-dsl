@@ -20,6 +20,35 @@ if TYPE_CHECKING:
 
 @dataclass
 class QueryGather(DslBase):
+    """
+    Collect contextual information to begin generating a complete intent.
+
+    This node is used when the system lacks sufficient information to construct
+    a well-formed intent from the user's request. Unlike `QueryFill`, which resolves
+    one missing slot at a time, `QueryGather` performs a broader, one-shot inference
+    to extract multiple interdependent values simultaneously.
+
+    It sends the `query` to the runtime reasoning engine (e.g., an LLM) based on the
+    original user request. Once the information is retrieved, the DSL can initiate
+    intent generation accordingly.
+
+    This is especially useful when slot values are tightly coupled — for example,
+    when both `length` and `count` must be derived together to avoid inconsistent logic.
+
+    Attributes:
+        original_intent (str):
+            The user's natural language request.
+
+        query (str):
+            A clarification or refinement question used to gather context from the runtime engine.
+
+    Example:
+        Input:  "Give me all the shortest screws in the inventory"
+        Output: QUERY_GATHER(
+                    "Give me all the shortest screws in the inventory",
+                    "Shortest screw length and count in the inventory"
+                )
+    """
 
     original_intent: str
     query: str

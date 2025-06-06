@@ -11,6 +11,26 @@ if TYPE_CHECKING:
 
 @dataclass
 class IntentEvaluatedSuccess(DslBase):
+    """
+    Marks that an intent has successfully completed evaluation.
+
+    This node wraps a previously executed intent and stores its evaluation outcome,
+    including return values and status. It prevents redundant re-execution by
+    preserving results from earlier stages in the DSL evaluation process.
+
+    This mechanism is essential for non-idempotent operations or side-effecting
+    actions — for example, if a robot has already moved or an item was deleted,
+    re-evaluating that intent could cause incorrect behavior. By wrapping the intent
+    in a success marker, we ensure correct recovery and safe replay during error
+    handling or full-tree re-evaluation.
+
+    Attributes:
+        intent (Intent):
+            The intent that completed without errors.
+
+        evaluation_outcome (EvaluationOutcome):
+            The result of evaluating the intent, including its return value and status.
+    """
 
     intent: Intent
     evaluation_outcome: EvaluationOutcome

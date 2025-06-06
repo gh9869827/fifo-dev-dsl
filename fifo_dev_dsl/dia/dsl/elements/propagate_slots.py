@@ -4,6 +4,22 @@ from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 
 class PropagateSlots(make_dsl_container(Slot)):
+    """
+    Forward extra slot values inferred from user input into the current resolution.
+
+    This node captures values the user provides that were not explicitly requested
+    but are still relevant. These values are propagated and merged into the
+    current intent before final execution.
+
+    It is commonly used when the DSL requests a specific slot value and the user
+    responds with additional useful information — for example, specifying both
+    a quantity and a length when only the quantity was asked.
+
+    Example:
+        Question: "How many screws do you need?"
+        Answer: "Actually, give me 5 10mm screws."
+        Result: value = 5, PropagateSlots([Slot("length", Value("10"))])
+    """
 
     def __init__(self, slots: list[Slot]):
         super().__init__(slots)

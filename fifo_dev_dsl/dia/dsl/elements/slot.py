@@ -13,6 +13,29 @@ if TYPE_CHECKING:
 
 @dataclass
 class Slot(make_dsl_container(DslBase)):
+    """
+    Associate a named parameter with a DSL value.
+
+    Slots represent arguments passed to an `Intent`. Each slot pairs a name
+    with a single DSL expression — either a literal (e.g., `Value("12")`)
+    or a complex structure (e.g., `Ask`, `QueryFill`, or a nested `Intent`).
+
+    Although each slot contains exactly one value, it inherits from the DSL container
+    base to allow uniform traversal, transformation, and resolution hooks. This enables
+    consistent handling of all DSL elements, including support for nesting and lifecycle
+    hooks like `pre_resolution` and `post_resolution`.
+
+    Attributes:
+        name (str):
+            The name of the argument to bind.
+
+    Examples:
+        Literal value:
+            Slot("length", Value("12"))
+
+        Nested invocation:
+            Slot("target", ReturnValue(Intent(name="get_location", slots=[])))
+    """
 
     name: str
 

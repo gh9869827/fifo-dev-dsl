@@ -10,6 +10,23 @@ if TYPE_CHECKING:
 
 @dataclass
 class SameAsPreviousIntent(DSLValueBase):
+    """
+    Reuse the value of the same slot from the immediately preceding intent.
+
+    This node acts as a placeholder for a slot value that should be copied
+    from the previous intent. During resolution, it is replaced with the
+    value from the same-named slot in the most recent intent.
+
+    This is useful when the user makes a follow-up request that implicitly refers
+    to a previously specified value — such as saying "the same size" or "again".
+
+    Example:
+        Input:
+            "Give me two screws of 12mm, and then four of the same size."
+        Output:
+            retrieve_screw(count=2, length=12),
+            retrieve_screw(count=4, length=SAME_AS_PREVIOUS_INTENT())
+    """
 
     def eval(self,
              runtime_context: LLMRuntimeContext,
