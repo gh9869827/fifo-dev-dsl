@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
@@ -53,3 +54,11 @@ class ReturnValue(DSLValueBase):
                 A string representation of the nested intent.
         """
         return self.intent.to_dsl_representation()
+
+    def pretty_print_dsl(self, indent: int = 0) -> None:
+        prefix = "  " * indent
+        print(f"{prefix}{self.__class__.__name__}()")
+        self.intent.pretty_print_dsl(indent + 1)
+
+    def get_children(self) -> list[DslBase]:
+        return [self.intent]
