@@ -11,6 +11,25 @@ from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
 
 
 class Evaluator:
+    """
+    Execute a resolved DSL tree using depth-first traversal.
+
+    Each :class:`Intent` is evaluated in order. Once executed, the node is
+    replaced by an :class:`IntentEvaluatedSuccess`, preserving its outcome
+    and preventing re-execution. This ensures correct handling of non-idempotent
+    or side-effecting operations — such as sending commands, moving actuators,
+    or mutating external state.
+
+    The tree is traversed explicitly using a stack, enabling structured error
+    recovery and precise control over evaluation order. Tool calls are resolved
+    via the provided :class:`LLMRuntimeContext`.
+
+    Any exception raised during evaluation is intercepted and converted into
+    an :class:`EvaluationOutcome` with a status of either
+    :attr:`EvaluationStatus.ABORTED_RECOVERABLE` or
+    :attr:`EvaluationStatus.ABORTED_UNRECOVERABLE`, depending on the nature
+    of the error.
+    """
 
     def __init__(self, runtime_context: LLMRuntimeContext, root: DslBase):
         self._runtime_context = runtime_context
@@ -19,6 +38,30 @@ class Evaluator:
         ]
 
     def evaluate(self, expected_type: MiniDocStringType | None = None) -> EvaluationOutcome:
+        """
+        Evaluate the DSL tree and return the final result.
+
+        The traversal is depth-first and performed using an explicit stack.
+        Each :class:`Intent` is evaluated within the provided
+        :class:`LLMRuntimeContext`, which supplies available tools and type
+        information. The intent node is then replaced with an
+        :class:`IntentEvaluatedSuccess` to prevent re-execution and preserve
+        the result.
+
+        If an exception occurs during evaluation, it is intercepted and
+        returned as an :class:`EvaluationOutcome` with status set to either
+        :attr:`EvaluationStatus.ABORTED_RECOVERABLE` or
+        :attr:`EvaluationStatus.ABORTED_UNRECOVERABLE`.
+
+        Args:
+            expected_type (MiniDocStringType | None):
+                Optional type to cast the final return value.
+
+        Returns:
+            EvaluationOutcome:
+                Outcome of the evaluation, including value, status, and any error.
+        """
+
         while self._call_stack:
             current = self._call_stack[-1]
 
@@ -74,7 +117,7 @@ class Evaluator:
 
             else:
                 return EvaluationOutcome(
-                    status=EvaluationStatus.ABORTED_UNRECOVERABLE, 
+                    status=EvaluationStatus.ABORTED_UNRECOVERABLE,
                     error=TypeError(f"Unexpected node type in eval: {type(current.obj).__name__}")
                 )
 
