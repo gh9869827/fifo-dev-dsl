@@ -213,3 +213,60 @@ def test_ask() -> None:
 
     assert outcome_evalutor.status is EvaluationStatus.SUCCESS
     assert demo.call_trace == expected_call_trace
+
+
+def test_query_user() -> None:
+    """
+    Test interactive resolution using QUERY_USER followed by evaluation.
+    """
+
+    prompt = "What is the longest screw length in the inventory?"
+    mock_dsl_response = (
+        "QUERY_USER('What is the longest screw length in the inventory?')"
+    )
+    mock_query_user_llm_answer = (
+        "reasoning: the longest screw is 12mm\nuser friendly answer: 12mm"
+    )
+    mock_user_answer = "ok"
+    mock_followup_llm_answer = "ABORT()"
+    expected_call_trace: list[tuple[str, Any]] = []
+
+    demo = Demo()
+
+    runtime_context = LLMRuntimeContext(
+        tools=[demo.retrieve_screw],
+        query_sources=[],
+    )
+
+    with patch(
+        "fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+        return_value=mock_dsl_response,
+    ), patch(
+        "fifo_dev_dsl.dia.dsl.elements.query_user.call_airlock_model_server",
+        return_value=mock_query_user_llm_answer,
+    ):
+        resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
+        first_outcome = resolver(interaction_reply=None)
+
+    assert first_outcome.result is ResolutionResult.INTERACTION_REQUESTED
+    assert first_outcome.interaction is not None
+    assert first_outcome.interaction.message == "12mm"
+
+    interaction = Interaction(
+        request=first_outcome.interaction,
+        answer=InteractionAnswer(mock_user_answer),
+    )
+
+    with patch(
+        "fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+        return_value=mock_followup_llm_answer,
+    ):
+        final_outcome = resolver(interaction)
+
+    assert final_outcome.result is ResolutionResult.UNCHANGED
+
+    evaluator = Evaluator(runtime_context, resolver.dsl_elements)
+    outcome_evalutor = evaluator.evaluate()
+
+    assert outcome_evalutor.status is EvaluationStatus.SUCCESS
+    assert demo.call_trace == expected_call_trace
