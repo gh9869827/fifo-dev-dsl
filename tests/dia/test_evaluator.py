@@ -411,7 +411,7 @@ def test_recoverable_error_intent_execution() -> None:
         """
         raise ApiErrorAbortAndResolve(error_message)
 
-    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw
+    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw  # pyright: ignore[reportPrivateUsage]  # pylint: disable=protected-access
 
     evaluator = Evaluator(runtime_context, dsl)
     outcome = evaluator.evaluate()
@@ -420,7 +420,7 @@ def test_recoverable_error_intent_execution() -> None:
     assert isinstance(outcome.error, ApiErrorAbortAndResolve)
     assert isinstance(dsl.get_children()[0], IntentRuntimeErrorResolver)
 
-    runtime_context._tool_name_to_tool["retrieve_screw"] = demo.retrieve_screw
+    runtime_context._tool_name_to_tool["retrieve_screw"] = demo.retrieve_screw  # pyright: ignore[reportPrivateUsage]  # pylint: disable=protected-access
 
     resolver_error = Resolver(runtime_context=runtime_context, dsl=dsl)
 
@@ -448,4 +448,3 @@ def test_recoverable_error_intent_execution() -> None:
 
     assert outcome_evalutor.status is EvaluationStatus.SUCCESS
     assert demo.call_trace == expected_call_trace
-
