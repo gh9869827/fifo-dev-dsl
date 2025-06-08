@@ -186,7 +186,19 @@ class MiniDateConverterDSL:
             if unit.startswith("WEEKDAY="):
                 target_day = int(unit.split("=")[-1])
                 weekday_func = self.WEEKDAY_MAP[target_day]
-                return base + relativedelta(weekday=weekday_func(+value)), base_time_mod
+
+                # ``dateutil`` returns the same day when the base already falls
+                # on the requested weekday. The DSL expects "next" or
+                # "previous" weekday depending on the sign of ``value``.
+                # Adjust the search start by one day in that case so that
+                # ``OFFSET(TODAY, 1, WEEKDAY=x)`` always moves away from today
+                # when today is already the target weekday.
+                extra_day = 0
+                if base.weekday() == target_day and value != 0:
+                    extra_day = 1 if value > 0 else -1
+
+                return base + relativedelta(days=extra_day,
+                                            weekday=weekday_func(value)), base_time_mod
 
             raise ValueError(f"Unknown unit in OFFSET: {unit}")
 
