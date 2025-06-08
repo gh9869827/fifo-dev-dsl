@@ -8,6 +8,10 @@ from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
+from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
+from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import (
+    IntentRuntimeErrorResolver,
+)
 
 class Demo:
 
@@ -365,3 +369,83 @@ def test_propagate_slots() -> None:
 
     assert outcome_evalutor.status is EvaluationStatus.SUCCESS
     assert demo.call_trace == expected_call_trace
+
+def test_recoverable_error_intent_execution() -> None:
+    """Validate intent execution recovery when a tool raises an error."""
+    prompt = "Give me 4 screws of 12mm"
+    mock_dsl_response = "retrieve_screw(count=4, length=12)"
+    error_message = (
+        "not enough available screws, only 2 screw of 12mm are available."
+    )
+    user_answer = "ok, give me those 2 screws then"
+    mock_error_resolution_dsl = "retrieve_screw(count=2, length=12)"
+    expected_call_trace = [("retrieve_screw", (2, 12))]
+
+    demo = Demo()
+    runtime_context = LLMRuntimeContext(
+        tools=[demo.retrieve_screw],
+        query_sources=[],
+    )
+
+    with patch(
+        "fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+        return_value=mock_dsl_response,
+    ):
+        resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
+
+    dsl = resolver.dsl_elements
+
+    @tool_handler("retrieve_screw")
+    def failing_retrieve_screw(count: int, length: int) -> str:
+        """Retrieve screws of a given length.
+
+        Args:
+            count (int):
+                number of screws to retrieve
+            length (int):
+                length of the screws in millimeters
+
+        Returns:
+            str:
+                confirmation message
+        """
+        raise ApiErrorAbortAndResolve(error_message)
+
+    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw
+
+    evaluator = Evaluator(runtime_context, dsl)
+    outcome = evaluator.evaluate()
+
+    assert outcome.status is EvaluationStatus.ABORTED_RECOVERABLE
+    assert isinstance(outcome.error, ApiErrorAbortAndResolve)
+    assert isinstance(dsl.get_children()[0], IntentRuntimeErrorResolver)
+
+    runtime_context._tool_name_to_tool["retrieve_screw"] = demo.retrieve_screw
+
+    resolver_error = Resolver(runtime_context=runtime_context, dsl=dsl)
+
+    first_outcome = resolver_error(interaction_reply=None)
+
+    assert first_outcome.result is ResolutionResult.INTERACTION_REQUESTED
+    assert first_outcome.interaction is not None
+    assert first_outcome.interaction.message == error_message
+
+    interaction = Interaction(
+        request=first_outcome.interaction,
+        answer=InteractionAnswer(user_answer),
+    )
+
+    with patch(
+        "fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+        return_value=mock_error_resolution_dsl,
+    ):
+        final_outcome = resolver_error(interaction)
+
+    assert final_outcome.result is ResolutionResult.UNCHANGED
+
+    evaluator = Evaluator(runtime_context, resolver_error.dsl_elements)
+    outcome_evalutor = evaluator.evaluate()
+
+    assert outcome_evalutor.status is EvaluationStatus.SUCCESS
+    assert demo.call_trace == expected_call_trace
+
