@@ -1,5 +1,3 @@
-import pytest
-
 from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 from fifo_dev_dsl.dia.dsl.elements.ask import Ask
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
