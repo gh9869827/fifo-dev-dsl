@@ -7,6 +7,7 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
+from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 
 class Demo:
 
@@ -66,6 +67,25 @@ class Demo:
         """
         self.call_trace.append(("multiply", (a, b)))
         return a * b
+
+    @tool_handler("retrieve_screw")
+    def retrieve_screw(self, count: int, length: int) -> str:
+        """
+        Retrieve screws of a given length.
+
+        Args:
+            count (int):
+                number of screws to retrieve
+
+            length (int):
+                length of the screws in millimeters
+
+        Returns:
+            str:
+                confirmation message
+        """
+        self.call_trace.append(("retrieve_screw", (count, length)))
+        return f"retrieved {count} screws of {length}mm"
 
 @pytest.mark.parametrize(
     "prompt, mock_dsl_response, expected_call_trace",
@@ -148,3 +168,45 @@ def test_query_fill() -> None:
 
         assert outcome_evalutor.status is EvaluationStatus.SUCCESS
         assert demo.call_trace == expected_call_trace
+
+
+def test_ask() -> None:
+    """Test interactive resolution using ASK followed by evaluation."""
+
+    prompt = "retrieve 2 screws"
+    mock_dsl_response = 'retrieve_screw(count=2, length=ASK("what length?"))'
+    mock_ask_llm_answer = "12"
+    expected_call_trace = [("retrieve_screw", (2, 12))]
+
+    demo = Demo()
+
+    runtime_context = LLMRuntimeContext(
+        tools=[demo.retrieve_screw],
+        query_sources=[]
+    )
+
+    with patch("fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+               return_value=mock_dsl_response):
+        resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
+
+    first_outcome = resolver(interaction_reply=None)
+
+    assert first_outcome.result is ResolutionResult.INTERACTION_REQUESTED
+    assert first_outcome.interaction is not None
+
+    interaction = Interaction(
+        request=first_outcome.interaction,
+        answer=InteractionAnswer("12mm")
+    )
+
+    with patch("fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+               return_value=mock_ask_llm_answer):
+        final_outcome = resolver(interaction)
+
+    assert final_outcome.result is ResolutionResult.UNCHANGED
+
+    evaluator = Evaluator(runtime_context, resolver.dsl_elements)
+    outcome_evalutor = evaluator.evaluate()
+
+    assert outcome_evalutor.status is EvaluationStatus.SUCCESS
+    assert demo.call_trace == expected_call_trace
