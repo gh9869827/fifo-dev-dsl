@@ -7,6 +7,10 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
+from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl
+from fifo_dev_dsl.dia.dsl.elements.intent_evaluated_success import (
+    IntentEvaluatedSuccess,
+)
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
 from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import (
@@ -448,3 +452,23 @@ def test_recoverable_error_intent_execution() -> None:
 
     assert outcome_evalutor.status is EvaluationStatus.SUCCESS
     assert demo.call_trace == expected_call_trace
+
+
+def test_evaluate_skips_already_evaluated_intent() -> None:
+    """Ensure Evaluator ignores :class:`IntentEvaluatedSuccess` nodes."""
+
+    demo = Demo()
+    runtime_context = LLMRuntimeContext(tools=[demo.add], query_sources=[])
+
+    root = parse_dsl("add(a=1, b=2), add(a=3, b=4)")
+
+    first_outcome = Evaluator(runtime_context, root).evaluate()
+
+    assert first_outcome.status is EvaluationStatus.SUCCESS
+    assert demo.call_trace == [("add", (1, 2)), ("add", (3, 4))]
+    assert all(isinstance(child, IntentEvaluatedSuccess) for child in root.get_children())
+
+    second_outcome = Evaluator(runtime_context, root).evaluate()
+
+    assert second_outcome.status is EvaluationStatus.SUCCESS
+    assert demo.call_trace == [("add", (1, 2)), ("add", (3, 4))]
