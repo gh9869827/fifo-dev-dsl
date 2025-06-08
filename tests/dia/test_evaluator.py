@@ -171,10 +171,13 @@ def test_query_fill() -> None:
 
 
 def test_ask() -> None:
-    """Test interactive resolution using ASK followed by evaluation."""
+    """
+    Test interactive resolution using ASK followed by evaluation.
+    """
 
     prompt = "retrieve 2 screws"
     mock_dsl_response = 'retrieve_screw(count=2, length=ASK("what length?"))'
+    mock_user_answer = "12mm"
     mock_ask_llm_answer = "12"
     expected_call_trace = [("retrieve_screw", (2, 12))]
 
@@ -196,7 +199,7 @@ def test_ask() -> None:
 
     interaction = Interaction(
         request=first_outcome.interaction,
-        answer=InteractionAnswer("12mm")
+        answer=InteractionAnswer(mock_user_answer)
     )
 
     with patch("fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
