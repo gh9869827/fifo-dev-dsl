@@ -270,3 +270,48 @@ def test_query_user() -> None:
 
     assert outcome_evalutor.status is EvaluationStatus.SUCCESS
     assert demo.call_trace == expected_call_trace
+
+
+def test_query_gather() -> None:
+    """Test automatic resolution using QUERY_GATHER followed by evaluation."""
+
+    prompt = "Give me all the longest screws in the inventory"
+    mock_dsl_response = (
+        'QUERY_GATHER("Give me all the longest screws in the inventory", '
+        '"Longest screw length and count in the inventory")'
+    )
+    mock_query_gather_llm_answer = (
+        "reasoning: the inventory was inspected\nuser friendly answer: "
+        "10 screws of 12mm"
+    )
+    mock_intent_sequencer_answer = "retrieve_screw(count=10, length=12)"
+    expected_call_trace = [("retrieve_screw", (10, 12))]
+
+    demo = Demo()
+
+    runtime_context = LLMRuntimeContext(
+        tools=[demo.retrieve_screw],
+        query_sources=[],
+    )
+
+    with patch(
+        "fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+        return_value=mock_dsl_response,
+    ), patch(
+        "fifo_dev_dsl.dia.dsl.elements.query_gather.call_airlock_model_server",
+        return_value=mock_query_gather_llm_answer,
+    ), patch(
+        "fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+        return_value=mock_intent_sequencer_answer,
+    ):
+        resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
+        outcome_resolver = resolver(interaction_reply=None)
+
+    assert outcome_resolver is not None
+    assert outcome_resolver.result is ResolutionResult.UNCHANGED
+
+    evaluator = Evaluator(runtime_context, resolver.dsl_elements)
+    outcome_evalutor = evaluator.evaluate()
+
+    assert outcome_evalutor.status is EvaluationStatus.SUCCESS
+    assert demo.call_trace == expected_call_trace
