@@ -1,8 +1,13 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
+
+if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
 @dataclass
@@ -52,3 +57,21 @@ class AbortWithNewDsl(DslBase):
                 False, indicating this node requires further transformation.
         """
         return False
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Raise a :class:`RuntimeError` for unresolved abort redirections.
+
+        ``AbortWithNewDsl`` nodes should be replaced with ``new_dsl`` during
+        resolution. If one remains during evaluation, a ``RuntimeError`` is
+        raised to signal unresolved state.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                ``"Unresolved DSL node: AbortWithNewDsl"``.
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

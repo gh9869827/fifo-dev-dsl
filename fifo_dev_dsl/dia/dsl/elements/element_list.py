@@ -2,6 +2,13 @@ from __future__ import annotations
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 
 
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
+
+
 class ListElement(make_dsl_container(DslBase)):
     """
     A container node that holds a sequence of heterogeneous DSL elements.
@@ -19,3 +26,30 @@ class ListElement(make_dsl_container(DslBase)):
                 ])
             )
     """
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Evaluate each child and return a list of their values.
+
+        The list element is resolved only if all contained nodes are resolved.
+        Attempting to evaluate while unresolved raises a :class:`RuntimeError`.
+
+        Args:
+            runtime_context: Execution context forwarded to each child.
+            value_type: Expected list type. When provided and represents
+                ``list[T]``, each child is evaluated with ``T``.
+
+        Returns:
+            list[Any]: The list of evaluated child values.
+        """
+
+        if not self.is_resolved():
+            raise RuntimeError(
+                f"Unresolved DSL node: {self.__class__.__name__}"
+            )
+
+        inner = value_type.is_list() if value_type is not None else None
+        return [child.eval(runtime_context, inner) for child in self.get_items()]

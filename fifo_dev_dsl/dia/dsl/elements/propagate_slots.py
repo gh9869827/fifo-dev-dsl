@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 class PropagateSlots(make_dsl_container(Slot)):
     """
@@ -39,4 +44,33 @@ class PropagateSlots(make_dsl_container(Slot)):
     def to_dict(self) -> dict[str, DslBase]:
         return {
             propagated_slot.name : propagated_slot.value for propagated_slot in self.get_items()
+        }
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Evaluate to a dictionary of propagated slot values.
+
+        If all contained slots are resolved, each slot's value is evaluated and
+        returned in a mapping of slot name to Python value. If any slot remains
+        unresolved, a :class:`RuntimeError` is raised.
+
+        Args:
+            runtime_context: Execution context forwarded to each slot value.
+            value_type: Unused. Propagated values may be of heterogeneous types.
+
+        Returns:
+            dict[str, Any]: Mapping of slot names to evaluated Python values.
+        """
+
+        if not self.is_resolved():
+            raise RuntimeError(
+                f"Unresolved DSL node: {self.__class__.__name__}"
+            )
+
+        return {
+            slot.name: slot.value.eval(runtime_context)
+            for slot in self.get_items()
         }

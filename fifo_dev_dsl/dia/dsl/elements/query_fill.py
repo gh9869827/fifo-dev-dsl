@@ -1,6 +1,6 @@
 from __future__ import annotations
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
@@ -15,6 +15,7 @@ from fifo_dev_dsl.dia.dsl.elements.value import Value
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
@@ -66,6 +67,24 @@ class QueryFill(DslBase):
                 For example: QUERY_FILL("query").
         """
         return f'QUERY_FILL({quote_and_escape(self.query)})'
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Raise a :class:`RuntimeError` because QUERY_FILL is unresolved.
+
+        These nodes must be replaced by a concrete :class:`Value` during
+        resolution. Attempting to evaluate them directly indicates that
+        resolution has not completed successfully.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                ``"Unresolved DSL node: QueryFill"``.
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,

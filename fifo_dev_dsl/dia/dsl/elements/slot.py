@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 
 if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
@@ -109,3 +110,29 @@ class Slot(make_dsl_container(DslBase)):
         super().post_resolution(runtime_context, resolution_context, abort_behavior, interaction)
         resolution_context.slot = None
         resolution_context.other_slots = None
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Evaluate the contained value and return its result.
+
+        A slot is considered resolved only when its stored value is resolved.
+        If not, evaluation raises a :class:`RuntimeError`. Otherwise the slot
+        delegates evaluation to its value.
+
+        Args:
+            runtime_context: Execution context forwarded to the child value.
+            value_type: Expected type of the slot value.
+
+        Returns:
+            Any: The result from evaluating ``self.value``.
+        """
+
+        if not self.is_resolved():
+            raise RuntimeError(
+                f"Unresolved DSL node: {self.__class__.__name__}"
+            )
+
+        return self.value.eval(runtime_context, value_type)

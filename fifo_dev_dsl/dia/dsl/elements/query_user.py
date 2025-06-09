@@ -1,6 +1,6 @@
 from __future__ import annotations
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
@@ -15,6 +15,7 @@ from fifo_dev_dsl.dia.resolution.interaction import Interaction
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
@@ -70,6 +71,23 @@ class QueryUser(DslBase):
                 For example: QUERY_USER("query").
         """
         return f'QUERY_USER({quote_and_escape(self.query)})'
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Raise a :class:`RuntimeError` because QUERY_USER is unresolved.
+
+        These nodes encapsulate a user question awaiting a response. They must
+        be resolved to a concrete value before evaluation can proceed.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                ``"Unresolved DSL node: QueryUser"``.
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,

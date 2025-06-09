@@ -123,18 +123,38 @@ class Intent(make_dsl_container(Slot)):
     def eval(self,
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:
+        """Execute the referenced tool with evaluated slot values.
+
+        Evaluation fails with a :class:`RuntimeError` if the intent or any of
+        its slots contain unresolved placeholders. Otherwise, the tool is looked
+        up in the runtime context and invoked with the evaluated slot
+        arguments.
+
+        Args:
+            runtime_context: Runtime environment providing tool handlers.
+            value_type: Optional expected return type used to cast the result.
+
+        Returns:
+            Any: The value returned by the invoked tool, optionally cast to
+                ``value_type``.
+        """
+
+        if not self.is_resolved():
+            raise RuntimeError(
+                f"Unresolved DSL node: {self.__class__.__name__}"
+            )
 
         tool = runtime_context.get_tool(self.name)
 
         args = {
             slot.name: slot.value.eval(
                 runtime_context, tool.tool_docstring.get_arg_by_name(slot.name).pytype
-            ) for slot in self._items
+            )
+            for slot in self._items
         }
 
         if tool.tool_docstring.return_type is None:
             tool(**args)
-
             return None
 
         ret = tool.tool_docstring.return_type.cast(tool(**args))

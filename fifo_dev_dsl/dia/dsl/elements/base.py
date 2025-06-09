@@ -1,18 +1,19 @@
 from __future__ import annotations
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar, cast
 
 from fifo_dev_common.typeutils.strict_cast import strict_cast
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.resolver import AbortBehavior
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
-class DslBase:
+class DslBase(ABC):
     """
     Base class for all DSL elements.
 
@@ -171,6 +172,29 @@ class DslBase:
                 True if the element is resolved, False otherwise.
         """
         return True
+
+    @abstractmethod
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Evaluate this DSL element and return its runtime value.
+
+        Subclasses implement the actual evaluation logic. If the element is not
+        resolved, ``eval`` must raise a :class:`RuntimeError` indicating which
+        node is unresolved.
+
+        Args:
+            runtime_context: Execution context providing tool access and runtime
+                helpers.
+            value_type: Optional expected return type used to cast or interpret
+                the result.
+
+        Returns:
+            Any: The value produced by evaluating this DSL node.
+        """
+        raise NotImplementedError
 
 
 T = TypeVar("T", bound=DslBase)
