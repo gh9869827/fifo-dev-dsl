@@ -1,4 +1,3 @@
-import pytest
 from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorRetry, ApiErrorAbortAndResolve
 
 
