@@ -34,3 +34,21 @@ class AbortWithNewDsl(DslBase):
                 e.g., 'ABORT_WITH_NEW_INTENTS([foo(), bar(x=2)])'.
         """
         return f"ABORT_WITH_NEW_INTENTS({self.new_dsl.to_dsl_representation()})"
+
+    def is_resolved(self) -> bool:
+        """
+        Always returns False, as this node represents an unresolved redirection.
+
+        This element aborts the current resolution path and must be replaced
+        by its `new_dsl` before evaluation can proceed. It serves as a signal
+        that resolution is incomplete and should not remain in a fully resolved
+        DSL tree.
+
+        The Resolver in the resolution module guarantees that this node is removed
+        before the final DSL tree is considered resolved.
+
+        Returns:
+            bool:
+                False, indicating this node requires further transformation.
+        """
+        return False
