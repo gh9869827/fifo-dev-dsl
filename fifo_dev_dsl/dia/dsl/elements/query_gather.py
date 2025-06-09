@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 import re
 from dataclasses import dataclass
 
@@ -13,6 +13,7 @@ from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
@@ -79,6 +80,23 @@ class QueryGather(DslBase):
         i = quote_and_escape(self.original_intent)
         q = quote_and_escape(self.query)
         return f'QUERY_GATHER({i}, {q})'
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Raise a :class:`RuntimeError` because QUERY_GATHER is unresolved.
+
+        These placeholders must be replaced with fully specified intents before
+        evaluation. Encountering one during evaluation indicates a logic error.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                ``"Unresolved DSL node: QueryGather"``.
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     def do_resolution(self,
                        runtime_context: LLMRuntimeContext,

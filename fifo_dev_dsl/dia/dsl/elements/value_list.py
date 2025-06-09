@@ -27,12 +27,36 @@ class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
     def eval(self,
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:
+        """Evaluate each child value and return a list of results.
+
+        Evaluation requires that ``value_type`` represents a list type. Each
+        contained value is then evaluated with the inner element type. If the
+        node or any of its children are unresolved, a :class:`RuntimeError` is
+        raised.
+
+        Args:
+            runtime_context: Execution context passed to child evaluations.
+            value_type: Expected list type (e.g., ``list[int]``).
+
+        Returns:
+            list[Any]: The list of evaluated child values.
+        """
+
+        if not self.is_resolved():
+            raise RuntimeError(
+                f"Unresolved DSL node: {self.__class__.__name__}"
+            )
 
         if value_type is None:
-            raise RuntimeError("Missing expected type for evaluation of ListValue")
+            raise RuntimeError(
+                "Missing expected type for evaluation of ListValue"
+            )
 
         if (inner_type := value_type.is_list()) is not None:
-            return [e.eval(runtime_context, inner_type) for e in self.get_items()]
+            return [
+                e.eval(runtime_context, inner_type)
+                for e in self.get_items()
+            ]
 
         raise ValueError(f"Invalid type for ListValue eval(): {value_type}")
 

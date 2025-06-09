@@ -1,10 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 
 if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
     from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 
@@ -42,3 +44,33 @@ class IntentEvaluatedSuccess(DslBase):
 
     def get_children(self) -> list[DslBase]:
         return [self.intent]
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Return the stored evaluation value.
+
+        This node records the result of a previous evaluation pass. Evaluation
+        simply returns the preserved value without re-invoking the wrapped
+        intent. If an unresolved placeholder somehow remains, a
+        :class:`RuntimeError` is raised.
+
+        Args:
+            runtime_context: Execution context (unused).
+            value_type: Optional type hint used to cast the stored result.
+
+        Returns:
+            Any: The previously computed value from ``evaluation_outcome``.
+        """
+
+        if not self.is_resolved():
+            raise RuntimeError(
+                f"Unresolved DSL node: {self.__class__.__name__}"
+            )
+
+        result = self.evaluation_outcome.value
+        return (
+            value_type.cast(result) if value_type is not None else result
+        )

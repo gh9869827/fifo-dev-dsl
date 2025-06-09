@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
 
 if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
@@ -74,3 +75,23 @@ class IntentRuntimeErrorResolver(DslBase):
                 Always ``False``.
         """
         return False
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Raise a :class:`RuntimeError` for unresolved error resolvers.
+
+        ``IntentRuntimeErrorResolver`` nodes signal that an intent failed during
+        evaluation and requires user intervention. They must be transformed by
+        the resolution process before evaluation can continue.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                ``"Unresolved DSL node: IntentRuntimeErrorResolver"``.
+        """
+
+        raise RuntimeError(
+            f"Unresolved DSL node: {self.__class__.__name__}"
+        )

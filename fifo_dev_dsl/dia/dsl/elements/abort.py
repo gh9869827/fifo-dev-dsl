@@ -1,7 +1,12 @@
 from __future__ import annotations
 from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+
+if TYPE_CHECKING:  # pragma: no cover
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
 @dataclass
@@ -43,3 +48,22 @@ class Abort(DslBase):
                 False, indicating the node must be intercepted and removed before evaluation.
         """
         return False
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Raise a :class:`RuntimeError` because Abort nodes are unresolved.
+
+        Abort elements signal that an intent sequence should be terminated.
+        They are removed by the resolver before a fully resolved DSL tree is
+        produced. Encountering one during evaluation therefore indicates
+        unresolved state.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                ``"Unresolved DSL node: Abort"``.
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

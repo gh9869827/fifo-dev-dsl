@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass
 
 from fifo_dev_dsl.common.dsl_utils import quote_and_escape
@@ -10,6 +10,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
+    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
@@ -72,3 +73,21 @@ class Ask(DslBase):
                 Always ``False``.
         """
         return False
+
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        """Raise a :class:`RuntimeError` because ASK nodes are unresolved.
+
+        ASK elements represent pending user input and remain unresolved until
+        they are replaced with a concrete value during resolution. Attempting to
+        evaluate such a node directly is invalid and results in an error.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                ``"Unresolved DSL node: Ask"``.
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
