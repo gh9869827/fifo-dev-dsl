@@ -78,7 +78,7 @@ class Evaluator:
                     self._call_stack.pop()
                     if self._call_stack:
                         self._call_stack[-1].idx += 1
-                except Exception as ex:
+                except (RuntimeError, ApiErrorAbortAndResolve) as ex:
                     outcome = self._handle_eval_error(current.obj, ex)
                     if outcome:
                         if len(self._call_stack) >= 2:
