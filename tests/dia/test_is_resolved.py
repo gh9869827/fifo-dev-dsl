@@ -43,8 +43,6 @@ def test_is_resolved_unresolved_elements(element: DslBase):
 @pytest.mark.parametrize(
     "element",
     [
-        Abort(),
-        AbortWithNewDsl(ListElement([])),
         Value("1"),
         FuzzyValue("a few"),
         SameAsPreviousIntent(),
@@ -66,7 +64,8 @@ def test_is_resolved_resolved_elements(element: DslBase):
         (Intent("foo", [Slot("x", Ask("?"))]), False),
         (PropagateSlots([Slot("x", Value("1"))]), True),
         (PropagateSlots([Slot("x", Ask("?"))]), False),
-        (ListElement([Value("1"), Abort()]), True),
+        (ListElement([Value("1"), Value("42")]), True),
+        (ListElement([Value("1"), Abort()]), False),
         (ListElement([Value("1"), Ask("?")]), False),
         (ListValue([Value("1"), FuzzyValue("few")]), True),
     ],

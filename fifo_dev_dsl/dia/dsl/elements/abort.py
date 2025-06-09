@@ -25,3 +25,21 @@ class Abort(DslBase):
                 The fixed DSL syntax for aborting, always returns 'ABORT()'.
         """
         return "ABORT()"
+
+    def is_resolved(self) -> bool:
+        """
+        Always returns False, as this node halts resolution and should not appear
+        in a fully resolved DSL tree.
+
+        This node triggers an immediate abort of the current intent resolution path.
+        It is typically injected during user cancellation or early termination and
+        signals that no further evaluation should occur.
+
+        The Resolver in the resolution module guarantees that this node is removed
+        before the final DSL tree is considered resolved.
+        
+        Returns:
+            bool:
+                False, indicating the node must be intercepted and removed before evaluation.
+        """
+        return False
