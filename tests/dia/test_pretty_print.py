@@ -2,6 +2,7 @@
 
 import io
 from contextlib import redirect_stdout
+from typing import Callable
 import pytest
 
 from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl_element
@@ -54,7 +55,7 @@ def expected_pretty(obj: DslBase, indent: int = 0) -> str:
         lambda: IntentRuntimeErrorResolver(Intent('foo', []), 'err'),
     ],
 )
-def test_pretty_print_dsl(builder):
+def test_pretty_print_dsl(builder: Callable[[], DslBase]):
     obj = builder()
     f = io.StringIO()
     with redirect_stdout(f):
