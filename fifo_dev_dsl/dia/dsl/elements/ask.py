@@ -79,7 +79,8 @@ class Ask(DslBase):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Raise a :class:`RuntimeError` because ASK nodes are unresolved.
+        """
+        Raise a :class:`RuntimeError` because Ask nodes are unresolved.
 
         ASK elements represent pending user input and remain unresolved until
         they are replaced with a concrete value during resolution. Attempting to
@@ -87,7 +88,6 @@ class Ask(DslBase):
 
         Raises:
             RuntimeError: Always raised with the message
-                ``"Unresolved DSL node: Ask"``.
+                Unresolved DSL node: Ask
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

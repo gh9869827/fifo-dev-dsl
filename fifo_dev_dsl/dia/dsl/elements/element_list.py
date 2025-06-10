@@ -32,24 +32,27 @@ class ListElement(make_dsl_container(DslBase)):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Evaluate each child and return a list of their values.
+        """
+        Evaluate each child and return a list of their values.
 
-        The list element is resolved only if all contained nodes are resolved.
-        Attempting to evaluate while unresolved raises a :class:`RuntimeError`.
+        This node delegates evaluation to each of its children. If any child is
+        unresolved, a RuntimeError will be raised during that child's evaluation.
 
         Args:
-            runtime_context: Execution context forwarded to each child.
-            value_type: Expected list type. When provided and represents
-                ``list[T]``, each child is evaluated with ``T``.
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+            value_type (MiniDocStringType | None):
+                Optional expected return type. When provided and represents
+                `list[T]`, each child is evaluated using `T` as its expected type.
 
         Returns:
-            list[Any]: The list of evaluated child values.
-        """
+            list[Any]:
+                The list of evaluated child values.
 
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
+        Raises:
+            RuntimeError: If any child is not resolved.
+        """
 
         inner = value_type.is_list() if value_type is not None else None
         return [child.eval(runtime_context, inner) for child in self.get_items()]

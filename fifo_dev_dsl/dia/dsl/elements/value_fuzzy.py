@@ -70,24 +70,26 @@ class FuzzyValue(DSLValueBase):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None
     ) -> Any:
-        """Map the fuzzy descriptor to a numeric value.
+        """
+        Map the fuzzy value to a numeric value.
 
-        This node is always resolved. If ``value_type`` is not provided or if
-        the descriptor is unknown, an error is raised.
+        During evaluation, the fuzzy value must be matched against known values. 
+        If no match is found or if `value_type` is missing, a RuntimeError is raised.
 
         Args:
-            runtime_context: Execution context (unused).
-            value_type: Expected numeric type used for casting.
+            runtime_context (LLMRuntimeContext):
+                Execution context (not used in this node).
+
+            value_type (MiniDocStringType | None):
+                Expected numeric type used to cast the resolved fuzzy value.
 
         Returns:
-            Any: Numeric representation of the fuzzy descriptor.
+            Any:
+                Numeric representation corresponding to the fuzzy value.
+
+        Raises:
+            RuntimeError: If the fuzzy value is unknown or `value_type` is not provided.
         """
-
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
-
         if value_type is None:
             raise RuntimeError(
                 "Missing expected type for evaluation of FuzzyValue"

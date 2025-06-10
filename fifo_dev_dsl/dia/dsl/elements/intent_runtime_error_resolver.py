@@ -81,15 +81,16 @@ class IntentRuntimeErrorResolver(DslBase):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Raise a :class:`RuntimeError` for unresolved error resolvers.
+        """
+        Raise a RuntimeError because IntentRuntimeErrorResolver nodes are unresolved.
 
-        ``IntentRuntimeErrorResolver`` nodes signal that an intent failed during
-        evaluation and requires user intervention. They must be transformed by
-        the resolution process before evaluation can continue.
+        These nodes indicate that an intent failed during evaluation and requires
+        user intervention. They must be replaced during resolution before evaluation
+        can proceed.
 
         Raises:
             RuntimeError: Always raised with the message
-                ``"Unresolved DSL node: IntentRuntimeErrorResolver"``.
+                Unresolved DSL node: IntentRuntimeErrorResolver
         """
 
         raise RuntimeError(

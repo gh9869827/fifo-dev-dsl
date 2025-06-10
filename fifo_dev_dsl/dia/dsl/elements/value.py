@@ -62,25 +62,25 @@ class Value(DSLValueBase):
     def eval(self,
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:
-        """Return the stored constant after casting to ``value_type``.
+        """
+        Return the stored constant after casting to the given value type.
 
-        A ``Value`` node is always resolved. If this expectation is violated for
-        some reason, a :class:`RuntimeError` is raised. The result is cast to the
-        provided ``value_type`` using ``MiniDocStringType.cast``.
+        The result is cast using `MiniDocStringType.cast(value_type)`.
 
         Args:
-            runtime_context: Execution context (unused).
-            value_type: Expected type used to cast ``self.value``.
+            runtime_context (LLMRuntimeContext):
+                Execution context (not used in this node).
+
+            value_type (MiniDocStringType | None):
+                Expected type used to cast `self.value`.
 
         Returns:
-            Any: ``self.value`` converted to the requested type.
+            Any:
+                The stored value, converted to the requested type.
+
+        Raises:
+            RuntimeError: If `value_type` is not provided.
         """
-
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
-
         if value_type is None:
             raise RuntimeError(
                 "Missing expected type for evaluation of Value"

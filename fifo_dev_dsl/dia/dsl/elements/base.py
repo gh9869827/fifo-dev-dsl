@@ -179,22 +179,26 @@ class DslBase(ABC):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Evaluate this DSL element and return its runtime value.
+        """
+        Evaluate this DSL element and return its runtime value.
 
         Subclasses implement the actual evaluation logic. If the element is not
-        resolved, ``eval`` must raise a :class:`RuntimeError` indicating which
-        node is unresolved.
+        resolved, this method must raise a RuntimeError.
 
         Args:
-            runtime_context: Execution context providing tool access and runtime
-                helpers.
-            value_type: Optional expected return type used to cast or interpret
-                the result.
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources and runtime helpers.
+
+            value_type (MiniDocStringType | None):
+                Optional expected return type used to cast or interpret the result.
 
         Returns:
-            Any: The value produced by evaluating this DSL node.
+            Any:
+                The value produced by evaluating this DSL node.
+
+        Raises:
+            RuntimeError: If the node is not resolved.
         """
-        raise NotImplementedError
 
 
 T = TypeVar("T", bound=DslBase)

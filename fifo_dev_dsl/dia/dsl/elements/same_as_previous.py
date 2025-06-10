@@ -31,23 +31,17 @@ class SameAsPreviousIntent(DSLValueBase):
     def eval(self,
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:
-        """Retrieve the value from the previous intent.
+        """
+        Retrieve the value of the same-named slot from the previous intent.
 
-        This node is a placeholder. Encountering it during evaluation will
-        raise :class:`NotImplementedError` unless the node is unexpectedly
-        unresolved, in which case a :class:`RuntimeError` is raised first.
+        During evaluation, this node will return the value of the corresponding
+        slot from the most recently evaluated intent.
+
+        This method is not yet implemented and currently raises a NotImplementedError.
 
         Raises:
-            RuntimeError: If the node is unresolved.
-            NotImplementedError: Always, as the evaluation logic has not yet
-                been implemented.
+            NotImplementedError: Always, until evaluation logic is implemented.
         """
-
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
-
         raise NotImplementedError()
 
     def to_dsl_representation(self) -> str:

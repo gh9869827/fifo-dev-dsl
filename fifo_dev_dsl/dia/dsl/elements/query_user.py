@@ -77,16 +77,18 @@ class QueryUser(DslBase):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Raise a :class:`RuntimeError` because QUERY_USER is unresolved.
+        """
+        Raise a RuntimeError because QueryUser nodes are unresolved.
 
         These nodes encapsulate a user question awaiting a response. They must
-        be resolved to a concrete value before evaluation can proceed.
+        be resolved to a concrete value during resolution before evaluation can
+        proceed. Encountering one during evaluation indicates that resolution
+        has not completed successfully.
 
         Raises:
             RuntimeError: Always raised with the message
-                ``"Unresolved DSL node: QueryUser"``.
+                Unresolved DSL node: QueryUser
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     def do_resolution(self,

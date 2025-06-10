@@ -1,12 +1,7 @@
 from __future__ import annotations
 from abc import ABC
-from typing import TYPE_CHECKING, Any
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-
-if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
-    from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 class DSLValueBase(DslBase, ABC):
     """

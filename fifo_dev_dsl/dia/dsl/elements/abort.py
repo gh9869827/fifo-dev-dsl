@@ -54,7 +54,8 @@ class Abort(DslBase):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Raise a :class:`RuntimeError` because Abort nodes are unresolved.
+        """
+        Raise a RuntimeError because Abort nodes are unresolved.
 
         Abort elements signal that an intent sequence should be terminated.
         They are removed by the resolver before a fully resolved DSL tree is
@@ -63,7 +64,6 @@ class Abort(DslBase):
 
         Raises:
             RuntimeError: Always raised with the message
-                ``"Unresolved DSL node: Abort"``.
+                Unresolved DSL node: Abort
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

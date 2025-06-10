@@ -50,25 +50,24 @@ class IntentEvaluatedSuccess(DslBase):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Return the stored evaluation value.
+        """
+        Return the stored evaluation result.
 
-        This node records the result of a previous evaluation pass. Evaluation
-        simply returns the preserved value without re-invoking the wrapped
-        intent. If an unresolved placeholder somehow remains, a
-        :class:`RuntimeError` is raised.
+        This node records the output of a previous evaluation pass. It simply
+        returns the preserved value from `evaluation_outcome` without
+        re-evaluating the original intent.
 
         Args:
-            runtime_context: Execution context (unused).
-            value_type: Optional type hint used to cast the stored result.
+            runtime_context (LLMRuntimeContext):
+                Execution context (not used in this node).
+
+            value_type (MiniDocStringType | None):
+                Optional expected return type used to cast the stored result.
 
         Returns:
-            Any: The previously computed value from ``evaluation_outcome``.
+            Any:
+                The previously computed value from `evaluation_outcome`.
         """
-
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
 
         result = self.evaluation_outcome.value
         return (

@@ -51,25 +51,27 @@ class PropagateSlots(make_dsl_container(Slot)):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Evaluate to a dictionary of propagated slot values.
+        """
+        Evaluate to a dictionary of propagated slot values.
 
-        If all contained slots are resolved, each slot's value is evaluated and
-        returned in a mapping of slot name to Python value. If any slot remains
-        unresolved, a :class:`RuntimeError` is raised.
+        Each slot's value is evaluated and returned in a mapping from slot name
+        to Python value. If any slot or nested value is unresolved, a RuntimeError
+        is raised by the corresponding node during evaluation.
 
         Args:
-            runtime_context: Execution context forwarded to each slot value.
-            value_type: Unused. Propagated values may be of heterogeneous types.
+            runtime_context (LLMRuntimeContext):
+                Execution context forwarded to each slot value.
+
+            value_type (MiniDocStringType | None):
+                Ignored. Propagated values may be of heterogeneous types.
 
         Returns:
-            dict[str, Any]: Mapping of slot names to evaluated Python values.
+            dict[str, Any]:
+                Mapping of slot names to their evaluated Python values.
+
+        Raises:
+            RuntimeError: If any slot or nested value is not resolved.
         """
-
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
-
         return {
             slot.name: slot.value.eval(runtime_context)
             for slot in self.get_items()

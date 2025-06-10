@@ -36,25 +36,27 @@ class ReturnValue(DSLValueBase):
     def eval(self,
              runtime_context: LLMRuntimeContext,
              value_type: MiniDocStringType | None = None) -> Any:
-        """Evaluate the wrapped intent and return its value.
+        """
+        Evaluate the wrapped intent and return its value.
 
-        If the ``ReturnValue`` node contains unresolved placeholders, evaluation
-        fails with a :class:`RuntimeError`. Otherwise, it delegates to the
-        embedded intent and casts the result to ``value_type``.
+        This node delegates to the embedded intent and casts the result to
+        `value_type`. If the nested intent contains unresolved placeholders,
+        evaluation fails with a RuntimeError.
 
         Args:
-            runtime_context: Execution context used to evaluate the inner
-                intent.
-            value_type: Expected type of the returned value.
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+            value_type (MiniDocStringType | None):
+                Optional expected return type used to cast or interpret the result.
 
         Returns:
-            Any: The value produced by the nested intent evaluation.
-        """
+            Any:
+                The value produced by the nested intent evaluation.
 
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
+        Raises:
+            RuntimeError: If `value_type` is not provided or if the nested intent is not resolved.
+        """
 
         if value_type is None:
             raise RuntimeError(

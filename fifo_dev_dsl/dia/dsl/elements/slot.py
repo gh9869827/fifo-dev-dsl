@@ -116,23 +116,26 @@ class Slot(make_dsl_container(DslBase)):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Evaluate the contained value and return its result.
+        """
+        Evaluate the value stored in this slot and return the result of its evaluation.
 
-        A slot is considered resolved only when its stored value is resolved.
-        If not, evaluation raises a :class:`RuntimeError`. Otherwise the slot
-        delegates evaluation to its value.
+        The slot directly delegates evaluation to its stored value. If the
+        stored value is unresolved, it will raise a RuntimeError during its
+        own evaluation.
 
         Args:
-            runtime_context: Execution context forwarded to the child value.
-            value_type: Expected type of the slot value.
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+            value_type (MiniDocStringType | None):
+                Optional expected return type used to cast or interpret the result.
 
         Returns:
-            Any: The result from evaluating ``self.value``.
-        """
+            Any:
+                The result from evaluating the stored value.
 
-        if not self.is_resolved():
-            raise RuntimeError(
-                f"Unresolved DSL node: {self.__class__.__name__}"
-            )
+        Raises:
+            RuntimeError: If the stored value is not resolved.
+        """
 
         return self.value.eval(runtime_context, value_type)

@@ -73,17 +73,17 @@ class QueryFill(DslBase):
         runtime_context: LLMRuntimeContext,
         value_type: MiniDocStringType | None = None,
     ) -> Any:
-        """Raise a :class:`RuntimeError` because QUERY_FILL is unresolved.
+        """
+        Raise a RuntimeError because QueryFill nodes are unresolved.
 
-        These nodes must be replaced by a concrete :class:`Value` during
-        resolution. Attempting to evaluate them directly indicates that
-        resolution has not completed successfully.
+        These nodes must be replaced by a concrete Value during resolution.
+        Attempting to evaluate them directly indicates that resolution has
+        not completed successfully.
 
         Raises:
             RuntimeError: Always raised with the message
-                ``"Unresolved DSL node: QueryFill"``.
+                Unresolved DSL node: QueryFill
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     def do_resolution(self,
