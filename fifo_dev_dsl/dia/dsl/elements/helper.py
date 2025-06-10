@@ -85,11 +85,13 @@ def ask_helper_error_resolver(
     )
 
 def _ask_helper_no_interaction(
+        runtime_context: LLMRuntimeContext,
         system_prompt: str,
         current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
         resolution_context: ResolutionContext,
         resolution_text: str
 ) -> ResolutionOutcome:
+    """Resolve follow-up questions without further interaction."""
 
     answer = call_airlock_model_server(
         model=Model.Phi4MiniInstruct,
@@ -102,7 +104,7 @@ def _ask_helper_no_interaction(
             max_new_tokens=1024,
             do_sample=False
         ),
-        container_name="dev-phi"
+        container_name=runtime_context.container_name
     )
 
     resolution_context.llm_call_logs.append(
@@ -148,7 +150,11 @@ def ask_helper_no_interaction_slot_resolver(
     )
 
     return _ask_helper_no_interaction(
-        runtime_context.system_prompt_slot_resolver, current, resolution_context, resolution_text
+        runtime_context,
+        runtime_context.system_prompt_slot_resolver,
+        current,
+        resolution_context,
+        resolution_text,
     )
 
 def ask_helper_no_interaction_error_resolver(
@@ -176,7 +182,11 @@ def ask_helper_no_interaction_error_resolver(
     )
 
     return _ask_helper_no_interaction(
-        runtime_context.system_prompt_error_resolver, current, resolution_context, resolution_text
+        runtime_context,
+        runtime_context.system_prompt_error_resolver,
+        current,
+        resolution_context,
+        resolution_text,
     )
 
 def ask_helper_no_interaction_intent_sequencer(
@@ -198,5 +208,9 @@ Here is the data you should use to generate the intents:
     )
 
     return _ask_helper_no_interaction(
-        runtime_context.system_prompt_intent_sequencer, current, resolution_context, resolution_text
+        runtime_context,
+        runtime_context.system_prompt_intent_sequencer,
+        current,
+        resolution_context,
+        resolution_text,
     )
