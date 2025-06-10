@@ -21,12 +21,12 @@ from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
 @pytest.mark.parametrize("name,args,expected", [
     (
         "move",
-        "x=1, y=2",
+        "x=1.51, y=2.42",
         Intent(
             name="move",
             slots=[
-                Slot("x", Value("1")),
-                Slot("y", Value("2")),
+                Slot("x", Value(1.51)),
+                Slot("y", Value(2.42)),
             ]
         )
     ),
@@ -51,8 +51,8 @@ from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
                     Intent(
                         name="add",
                         slots=[
-                            Slot("a", Value("1")),
-                            Slot("b", Value("2")),
+                            Slot("a", Value(1)),
+                            Slot("b", Value(2)),
                         ]
                     )
                 ))
@@ -66,9 +66,9 @@ from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
             name="math",
             slots=[
                 Slot("v", ListValue([
-                    Value("1"),
-                    Value("2"),
-                    Value("3"),
+                    Value(1),
+                    Value(2),
+                    Value(3),
                 ]))
             ]
         )
@@ -112,10 +112,12 @@ def test_parse_intent_invalid(name: str, args: str):
     "text,wrap,expected",
     [
         ("'hello'", False, Value("hello")),
-        ("123", False, Value("123")),
-        ("[1, 2]", False, ListValue([Value("1"), Value("2")])),
-        ("foo(x=1)", False, Intent(name="foo", slots=[Slot("x", Value("1"))])),
-        ("foo(x=1)", True, ReturnValue(Intent(name="foo", slots=[Slot("x", Value("1"))]))),
+        ("123", False, Value(123)),
+        ("[1, 2]", False, ListValue([Value(1), Value(2)])),
+        ("foo(x=1)", False, Intent(name="foo", slots=[Slot("x", Value(1))])),
+        ("foo(x=\"1\")", False, Intent(name="foo", slots=[Slot("x", Value("1"))])),
+        ("foo(x='1')", False, Intent(name="foo", slots=[Slot("x", Value("1"))])),
+        ("foo(x=1)", True, ReturnValue(Intent(name="foo", slots=[Slot("x", Value(1))]))),
         ("F(\"some\")", False, FuzzyValue("some")),
         ("ASK(\"what?\")", False, Ask("what?")),
         ("QUERY_FILL(\"value\")", False, QueryFill("value")),
@@ -123,7 +125,7 @@ def test_parse_intent_invalid(name: str, args: str):
         ("QUERY_GATHER(\"orig\", \"info\")", False, QueryGather("orig", "info")),
         ("SAME_AS_PREVIOUS_INTENT()", False, SameAsPreviousIntent()),
         (
-            "PROPAGATE_SLOT(x=1, y=foo())",
+            "PROPAGATE_SLOT(x='1', y=foo())",
             False,
             PropagateSlots([
                 Slot("x", Value("1")),
@@ -136,7 +138,7 @@ def test_parse_intent_invalid(name: str, args: str):
             AbortWithNewDsl(
                 ListElement([
                     Intent(name="foo", slots=[]),
-                    Intent(name="bar", slots=[Slot("x", Value("2"))]),
+                    Intent(name="bar", slots=[Slot("x", Value(2))]),
                 ])
             ),
         ),
@@ -158,7 +160,7 @@ def test_parse_intent_invalid(name: str, args: str):
             Intent(
                 name="foo",
                 slots=[
-                    Slot("count", Value("4")),
+                    Slot("count", Value(4)),
                     Slot("length", SameAsPreviousIntent()),
                 ],
             ),

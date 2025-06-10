@@ -221,7 +221,10 @@ def parse_dsl_element(text: str,
         return parse_intent(name, args)
 
     # numbers
-    return Value(text)
+    try:
+        return Value(int(text, 0))
+    except ValueError:
+        return Value(float(text))
 
 def parse_dsl(dsl_input: str) -> ListElement:
     """

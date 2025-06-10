@@ -92,5 +92,22 @@ def test_intent_nested_pretty_print():
         "    ReturnValue()",
         "      Intent(name='bar')",
         "        Slot(name='y')",
-        "          Value(value='1')",
+        "          Value(value=1)",
+    ]
+
+def test_intent_nested_pretty_print_string():
+    """Check indentation for nested DSL elements."""
+    obj = parse_dsl_element("foo(x=bar(str='string'))", False)
+    f = io.StringIO()
+    with redirect_stdout(f):
+        obj.pretty_print_dsl()
+    out = f.getvalue().strip().splitlines()
+
+    assert out == [
+        "Intent(name='foo')",
+        "  Slot(name='x')",
+        "    ReturnValue()",
+        "      Intent(name='bar')",
+        "        Slot(name='str')",
+        "          Value(value='string')",
     ]
