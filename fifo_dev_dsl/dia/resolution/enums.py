@@ -1,10 +1,5 @@
 from __future__ import annotations
-from enum import Enum, IntEnum
-
-
-class AbortBehavior(Enum):
-    ABORT = 1
-    SKIP = 2
+from enum import IntEnum
 
 class ResolutionResult(IntEnum):
     """

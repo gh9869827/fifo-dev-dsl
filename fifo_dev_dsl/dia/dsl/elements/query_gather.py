@@ -11,7 +11,6 @@ import fifo_dev_dsl.dia.dsl.elements.helper as helper
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
@@ -99,12 +98,13 @@ class QueryGather(DslBase):
         """
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
-    def do_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None) -> ResolutionOutcome:
-        super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+    def do_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> ResolutionOutcome:
+        super().do_resolution(runtime_context, resolution_context, interaction)
 
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 

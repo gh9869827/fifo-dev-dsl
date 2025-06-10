@@ -10,16 +10,17 @@ from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
 from fifo_dev_dsl.dia.resolution.context import ResolutionContext, ResolutionContextStackElement
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
-from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
-def resolve(runtime_context: LLMRuntimeContext,
-            resolution_context: ResolutionContext,
-            abort_behavior: AbortBehavior,
-            interaction: Interaction | None) -> ResolutionOutcome:
+def resolve(
+    runtime_context: LLMRuntimeContext,
+    resolution_context: ResolutionContext,
+    interaction: Interaction | None,
+) -> ResolutionOutcome:
     """
     Resolve the current DSL structure using a resumable stack-based traversal.
 
@@ -33,9 +34,6 @@ def resolve(runtime_context: LLMRuntimeContext,
         resolution_context (ResolutionContext):
             The resolution context holding the call stack and current processing state.
 
-        abort_behavior (AbortBehavior):
-            Specifies how to handle abort signals and intent overrides.
-
         interaction (Interaction | None):
             User interaction data passed in from outside resolution.
 
@@ -44,7 +42,7 @@ def resolve(runtime_context: LLMRuntimeContext,
             The final result of the DSL tree resolution.
     """
 
-    args = (runtime_context, resolution_context, abort_behavior, interaction)
+    args = (runtime_context, resolution_context, interaction)
 
     def _replace_current_node_with(
         outcome: ResolutionOutcome
@@ -245,7 +243,7 @@ class Resolver:
 
     def __call__(self, interaction_reply: Interaction | None) -> ResolutionOutcome:
         return resolve(
-            self._runtime_context, self._resolution_context, AbortBehavior.SKIP, interaction_reply
+            self._runtime_context, self._resolution_context, interaction_reply
         )
 
     @property

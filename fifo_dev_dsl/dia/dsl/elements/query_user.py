@@ -10,7 +10,6 @@ from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
-from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
 from fifo_dev_dsl.dia.resolution.interaction import Interaction
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
@@ -91,12 +90,13 @@ class QueryUser(DslBase):
         """
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
-    def do_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None) -> ResolutionOutcome:
-        super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+    def do_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> ResolutionOutcome:
+        super().do_resolution(runtime_context, resolution_context, interaction)
 
         if interaction is not None and interaction.request.requester is self:
             return helper.ask_helper_slot_resolver(
