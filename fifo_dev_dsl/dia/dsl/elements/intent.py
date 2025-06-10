@@ -9,7 +9,6 @@ from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
-    from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
@@ -94,29 +93,32 @@ class Intent(make_dsl_container(Slot)):
                 if name not in updated:
                     self._items.append(Slot(name, value))
 
-    def pre_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None):
-        super().pre_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+    def pre_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> None:
+        super().pre_resolution(runtime_context, resolution_context, interaction)
         resolution_context.intent = self
 
-    def post_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None):
-        super().post_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+    def post_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> None:
+        super().post_resolution(runtime_context, resolution_context, interaction)
         resolution_context.intent = None
 
-    def on_reentry_resolution(self,
-                              runtime_context: LLMRuntimeContext,
-                              resolution_context: ResolutionContext,
-                              abort_behavior: AbortBehavior,
-                              interaction: Interaction | None):
+    def on_reentry_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> None:
         super().on_reentry_resolution(
-            runtime_context, resolution_context, abort_behavior, interaction
+            runtime_context, resolution_context, interaction
         )
         self._propagate_slots(resolution_context)
 

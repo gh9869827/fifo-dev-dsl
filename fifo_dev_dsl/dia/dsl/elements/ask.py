@@ -7,7 +7,6 @@ from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 import fifo_dev_dsl.dia.dsl.elements.helper as helper
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_dsl.dia.resolution.enums import AbortBehavior
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
     from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
@@ -48,12 +47,13 @@ class Ask(DslBase):
         """
         return f'ASK({quote_and_escape(self.question)})'
 
-    def do_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None) -> ResolutionOutcome:
-        super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+    def do_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> ResolutionOutcome:
+        super().do_resolution(runtime_context, resolution_context, interaction)
 
         return helper.ask_helper_slot_resolver(
             runtime_context=runtime_context,

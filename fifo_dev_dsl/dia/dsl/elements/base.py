@@ -8,7 +8,6 @@ from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
-    from fifo_dev_dsl.dia.resolution.resolver import AbortBehavior
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
@@ -125,37 +124,41 @@ class DslBase(ABC):
         pad = "  " * len(resolution_context.call_stack)
         print(f"{pad}[{label:<8}] {self}")
 
-    def pre_resolution(self,
-                    runtime_context: LLMRuntimeContext,
-                    resolution_context: ResolutionContext,
-                    abort_behavior: AbortBehavior,
-                    interaction: Interaction | None):
-        _ = runtime_context, abort_behavior, interaction
+    def pre_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> None:
+        _ = runtime_context, interaction
         self._log_resolution(" → pre", resolution_context)
 
-    def do_resolution(self,
-                    runtime_context: LLMRuntimeContext,
-                    resolution_context: ResolutionContext,
-                    abort_behavior: AbortBehavior,
-                    interaction: Interaction | None) -> ResolutionOutcome:
-        _ = runtime_context, abort_behavior, interaction
+    def do_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> ResolutionOutcome:
+        _ = runtime_context, interaction
         self._log_resolution("⚙️  do   ", resolution_context)
         return ResolutionOutcome()
 
-    def post_resolution(self,
-                        runtime_context: LLMRuntimeContext,
-                        resolution_context: ResolutionContext,
-                        abort_behavior: AbortBehavior,
-                        interaction: Interaction | None):
-        _ = runtime_context, abort_behavior, interaction
+    def post_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> None:
+        _ = runtime_context, interaction
         self._log_resolution(" ← post", resolution_context)
 
-    def on_reentry_resolution(self,
-                            runtime_context: LLMRuntimeContext,
-                            resolution_context: ResolutionContext,
-                            abort_behavior: AbortBehavior,
-                            interaction: Interaction | None):
-        _ = runtime_context, abort_behavior, interaction
+    def on_reentry_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> None:
+        _ = runtime_context, interaction
         self._log_resolution(" ↺ visit", resolution_context)
 
     def is_resolved(self) -> bool:
