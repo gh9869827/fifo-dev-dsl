@@ -1,6 +1,7 @@
 import pytest
 from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
-from fifo_dev_common.introspection.tool_decorator import tool_handler
+from fifo_dev_common.introspection.tool_decorator import ToolHandler, tool_handler
+from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.value import Value
 from fifo_dev_dsl.dia.dsl.elements.value_fuzzy import FuzzyValue
 from fifo_dev_dsl.dia.dsl.elements.value_list import ListValue
@@ -28,7 +29,7 @@ class Demo:
         return a + b
 
 
-def runtime_context(tools: list = None) -> LLMRuntimeContext:
+def runtime_context(tools: list[ToolHandler] | None = None) -> LLMRuntimeContext:
     return LLMRuntimeContext(tools or [], [])
 
 
@@ -59,6 +60,41 @@ def test_list_value_eval() -> None:
         lst.eval(ctx, MiniDocStringType("int"))
     with pytest.raises(RuntimeError):
         lst.eval(ctx)
+
+
+def test_list_element_eval_1() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("list[int]")
+    lst = ListElement([Value("1"), Value("2")])
+    assert lst.eval(ctx, ty) == [1, 2]
+
+
+def test_list_element_eval_2() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("list[str]")
+    lst = ListElement([Value("1"), Value("2")])
+    assert lst.eval(ctx, ty) == ["1", "2"]
+
+
+def test_list_element_eval_3() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("list[int]")
+    lst = ListElement([Value(1), Value(2)])
+    assert lst.eval(ctx, ty) == [1, 2]
+
+
+def test_list_element_eval_missing_type() -> None:
+    ctx = runtime_context()
+    lst = ListElement([Value("1"), Value("2")])
+    with pytest.raises(RuntimeError):
+        lst.eval(ctx)
+
+
+def test_list_element_eval_invalid_type() -> None:
+    ctx = runtime_context()
+    lst = ListElement([Value("1")])
+    with pytest.raises(RuntimeError):
+        lst.eval(ctx, MiniDocStringType("int"))
 
 
 def test_intent_and_return_value_eval() -> None:
