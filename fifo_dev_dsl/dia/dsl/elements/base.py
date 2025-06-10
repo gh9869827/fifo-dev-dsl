@@ -120,6 +120,26 @@ class DslBase:
         resolution_context: ResolutionContext,
         interaction: Interaction | None,
     ) -> None:
+        """
+        Hook executed before resolution begins for this node.
+
+        This method is called when the node is pushed onto the resolution call stack.
+        It runs before any resolution logic or child evaluation. Subclasses can override
+        this to initialize local state, prepare context, or annotate the resolution_context
+        with information required during resolution.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+            resolution_context (ResolutionContext):
+                Mutable state for the current resolution wave, including the call stack
+                and active intent/slot being processed.
+
+            interaction (Interaction | None):
+                Optional user interaction that was requested in a previous resolution step
+                and now contains the user's input.
+        """
         _ = runtime_context, interaction
         self._log_resolution(" → pre", resolution_context)
 
@@ -129,6 +149,40 @@ class DslBase:
         resolution_context: ResolutionContext,
         interaction: Interaction | None,
     ) -> ResolutionOutcome:
+        """
+        Perform the core resolution logic for this node.
+
+        Subclasses override this method to implement the behavior of a specific DSL element.
+        This method may request user interaction, indicate that the node should be replaced,
+        or signal that no further work is needed.
+
+        To modify the DSL tree, return a `ResolutionOutcome` with `NEW_DSL_NODES`.
+        Direct mutation of the DSL structure is not allowed within this method.
+
+        The return value tells the resolver what to do next:
+          - `UNCHANGED`: No changes were made; resolution continues.
+          - `INTERACTION_REQUESTED`: Pause and wait for user input.
+          - `NEW_DSL_NODES`: Replace this node with new elements.
+          - `ABORT`: Stop resolution and unwind the call stack,
+                     optionally installing new DSL node(s).
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+            resolution_context (ResolutionContext):
+                Mutable state for the current resolution wave, including the call stack,
+                active intent and slot, and previous interactions.
+
+            interaction (Interaction | None):
+                Optional user interaction that was requested in a previous resolution step
+                and now contains the user's input.
+
+        Returns:
+            ResolutionOutcome:
+                The result of this resolution step, which instructs the resolver how to proceed.
+        """
+
         _ = runtime_context, interaction
         self._log_resolution("⚙️  do   ", resolution_context)
         return ResolutionOutcome()
@@ -139,6 +193,30 @@ class DslBase:
         resolution_context: ResolutionContext,
         interaction: Interaction | None,
     ) -> None:
+        """
+        Hook executed after `do_resolution` completes for this node.
+
+        This method is called just before the node is removed from the resolution
+        call stack. Subclasses can override it to tear down or clean up any local
+        state that was set in `pre_resolution`, such as clearing the active slot
+        or temporary variables in the resolution context.
+
+        This method is guaranteed to be called unless resolution is paused by an
+        interaction request (e.g., when `do_resolution` returns INTERACTION_REQUESTED).
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+            resolution_context (ResolutionContext):
+                Mutable state for the current resolution wave, including the call stack,
+                active intent and slot, and previous interactions. May be cleaned
+                up or reset here before control returns to the parent.
+
+            interaction (Interaction | None):
+                Optional user interaction that was requested in a previous resolution step
+                and now contains the user's input.
+        """
         _ = runtime_context, interaction
         self._log_resolution(" ← post", resolution_context)
 
@@ -148,6 +226,28 @@ class DslBase:
         resolution_context: ResolutionContext,
         interaction: Interaction | None,
     ) -> None:
+        """
+        Hook called when control returns to this node after one of its children completes.
+
+        The resolver invokes this method just after a child node finishes resolution,
+        and before the next sibling (if any) is processed. Subclasses can override
+        this to perform post-processing based on the outcome of the child — such as
+        merging propagated slots, updating internal state, or preparing for the next step.
+
+        This hook is only triggered for non-leaf nodes.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+            resolution_context (ResolutionContext):
+                Mutable state for the current resolution wave, including the call stack,
+                active intent and slot, and previous interactions.
+
+            interaction (Interaction | None):
+                Optional user interaction that was requested in a previous resolution step
+                and now contains the user's input.
+        """
         _ = runtime_context, interaction
         self._log_resolution(" ↺ visit", resolution_context)
 
