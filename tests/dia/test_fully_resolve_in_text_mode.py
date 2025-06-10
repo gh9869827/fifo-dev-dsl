@@ -3,6 +3,8 @@ from unittest.mock import patch
 
 from pytest import CaptureFixture
 
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+
 from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl, parse_dsl_element
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import (
@@ -21,7 +23,7 @@ def test_fully_resolve_in_text_mode(capsys: CaptureFixture[str]):
     requester = parse_dsl_element("foo()", False)
     interaction_req = InteractionRequest(
         message="how many?",
-        expected_type="int",
+        expected_type=MiniDocStringType(int),
         requester=requester,
         slot=None,
     )

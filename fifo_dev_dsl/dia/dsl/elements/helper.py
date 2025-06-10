@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+
 import fifo_dev_dsl.dia.dsl.parser.parser as parser
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
@@ -37,7 +39,7 @@ def ask_helper_slot_resolver(
             result=ResolutionResult.INTERACTION_REQUESTED,
             interaction=InteractionRequest(
                 message=current_question,
-                expected_type="str",
+                expected_type=MiniDocStringType(str),
                 slot=resolution_context.slot,
                 requester=current_object
             )
@@ -68,7 +70,7 @@ def ask_helper_error_resolver(
             result=ResolutionResult.INTERACTION_REQUESTED,
             interaction=InteractionRequest(
                 message=current_question,
-                expected_type="str",
+                expected_type=MiniDocStringType(str),
                 slot=resolution_context.slot,
                 requester=current_object
             )

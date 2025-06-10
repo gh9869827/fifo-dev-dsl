@@ -1,4 +1,5 @@
 import pytest
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import InteractionRequest
@@ -10,7 +11,7 @@ from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 DUMMY_NODE = Intent("foo", [])
 
 def make_dummy_interaction(message: str="Choose:",
-                           expected_type: str="choice",
+                           expected_type: MiniDocStringType=MiniDocStringType(str),
                            requester: DslBase=DUMMY_NODE,
                            slot: Slot | None=None):
     return InteractionRequest(
@@ -21,7 +22,10 @@ def make_dummy_interaction(message: str="Choose:",
     )
 
 def test_valid_interaction_requested():
-    interaction = make_dummy_interaction(message="What's your name?", expected_type="str")
+    interaction = make_dummy_interaction(
+        message="What's your name?",
+        expected_type=MiniDocStringType(str)
+    )
     outcome = ResolutionOutcome(
         result=ResolutionResult.INTERACTION_REQUESTED,
         interaction=interaction
@@ -29,7 +33,7 @@ def test_valid_interaction_requested():
     assert outcome.result is ResolutionResult.INTERACTION_REQUESTED
     assert outcome.interaction is not None
     assert outcome.interaction.message == "What's your name?"
-    assert outcome.interaction.expected_type == "str"
+    assert outcome.interaction.expected_type == MiniDocStringType(str)
     assert outcome.interaction.requester is DUMMY_NODE
     assert outcome.interaction.slot is None
 
