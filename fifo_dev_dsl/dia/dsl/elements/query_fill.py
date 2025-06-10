@@ -9,7 +9,7 @@ from fifo_tool_airlock_model_env.common.models import GenerationParameters, Mess
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-from fifo_dev_dsl.dia.resolution.enums import AbortBehavior, ResolutionResult
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 from fifo_dev_dsl.dia.dsl.elements.value import Value
 
@@ -86,12 +86,13 @@ class QueryFill(DslBase):
         """
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
-    def do_resolution(self,
-                       runtime_context: LLMRuntimeContext,
-                       resolution_context: ResolutionContext,
-                       abort_behavior: AbortBehavior,
-                       interaction: Interaction | None) -> ResolutionOutcome:
-        super().do_resolution(runtime_context, resolution_context, abort_behavior, interaction)
+    def do_resolution(
+        self,
+        runtime_context: LLMRuntimeContext,
+        resolution_context: ResolutionContext,
+        interaction: Interaction | None,
+    ) -> ResolutionOutcome:
+        super().do_resolution(runtime_context, resolution_context, interaction)
 
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
