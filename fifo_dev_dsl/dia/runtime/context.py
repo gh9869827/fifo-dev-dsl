@@ -41,7 +41,12 @@ class LLMRuntimeContext:
     _prompt_slot_resolver: str
     _prompt_error_resolver: str
 
-    def __init__(self, tools: list[ToolHandler], query_sources: list[ToolQuerySource]):
+    def __init__(
+        self,
+        tools: list[ToolHandler],
+        query_sources: list[ToolQuerySource],
+        container_name: str = "dev-phi",
+    ):
         """
         Initialize the runtime context with tools and query sources.
 
@@ -54,6 +59,7 @@ class LLMRuntimeContext:
         """
         self._tools = ReadOnlyList(tools)
         self._query_sources = ReadOnlyList(query_sources)
+        self._container_name = container_name
 
         yaml_tools = "\n".join(tool.to_schema_yaml() for tool in self._tools)
         yaml_sources = "\n".join(source.get_description() for source in self._query_sources)
@@ -183,6 +189,11 @@ class LLMRuntimeContext:
                 The precompiled system prompt used during error resolution.
         """
         return self._prompt_error_resolver
+
+    @property
+    def container_name(self) -> str:
+        """Container used for calls to the model server."""
+        return self._container_name
 
     # formatting prompts
     # pylint: disable=line-too-long
