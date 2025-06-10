@@ -69,14 +69,6 @@ def test_invalid_unchanged_with_interaction():
     with pytest.raises(ValueError, match="Interaction is only allowed"):
         ResolutionOutcome(result=ResolutionResult.UNCHANGED, interaction=make_dummy_interaction())
 
-def test_valid_changed():
-    outcome = ResolutionOutcome(result=ResolutionResult.CHANGED)
-    assert outcome.result is ResolutionResult.CHANGED
-
-def test_invalid_changed_with_node():
-    with pytest.raises(ValueError, match="must not be set when result is CHANGED"):
-        ResolutionOutcome(result=ResolutionResult.CHANGED, node=DUMMY_NODE)
-
 def test_valid_new_dsl_nodes():
     outcome = ResolutionOutcome(result=ResolutionResult.NEW_DSL_NODES, nodes=[DUMMY_NODE])
     assert outcome.nodes == [DUMMY_NODE]

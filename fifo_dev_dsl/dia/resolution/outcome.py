@@ -11,30 +11,33 @@ if TYPE_CHECKING:  # pragma: no cover
 @dataclass
 class ResolutionOutcome:
     """
-    Captures the result of resolving a DSL element during tree traversal.
+    Captures the outcome of resolving a DSL element during tree traversal.
 
-    This object summarizes what happened during a resolution step and informs the resolution
-    loop what to do next: continue traversal, prompt for user input, integrate newly created nodes
-    into the DSL tree, or abort an intent.
+    This object summarizes the result of a resolution step and guides the next action:
+    continue traversal, prompt for user input, insert new nodes into the DSL tree, or
+    abort and replace an intent.
 
     Attributes:
         result (ResolutionResult):
-            The outcome of the resolution:
-              - UNCHANGED: No change was made to the current node.
-              - CHANGED: The node was updated internally (in-place); no structural change required.
-              - NEW_DSL_NODES: One or more nodes should be integrated into the DSL tree.
-              - INTERACTION_REQUESTED: User input is required to proceed.
-              - ABORT: The intent should be aborted or replaced entirely.
+            The outcome of resolving the current DSL node:
+              - UNCHANGED:
+                  No change was made. Traversal proceeds normally.
+              - NEW_DSL_NODES:
+                  One or more new DSL nodes should replace the current node.
+              - INTERACTION_REQUESTED:
+                  Evaluation paused pending user input or clarification.
+              - ABORT:
+                  Resolution should terminate or the current intent should be replaced.
 
         node (DslBase | None):
-            A single replacement node, if applicable.
+            A single replacement node, used if only one new node is produced.
 
         nodes (list[DslBase] | None):
-            A list of replacement nodes, if multiple are produced.
+            A list of replacement nodes, used when resolution yields multiple elements.
 
         interaction (InteractionRequest | None):
             A request for user input.
-            Must be provided only if `result` is INTERACTION_REQUESTED.
+            Required only when `result` is INTERACTION_REQUESTED.
     """
 
     result: ResolutionResult
@@ -55,25 +58,25 @@ class ResolutionOutcome:
         self.interaction = interaction
 
         # Validation logic
-        if result == ResolutionResult.INTERACTION_REQUESTED:
+        if result is ResolutionResult.INTERACTION_REQUESTED:
             if interaction is None:
                 raise ValueError("Missing interaction object for INTERACTION_REQUESTED")
             if node is not None or nodes is not None:
                 raise ValueError("node and nodes must be None for INTERACTION_REQUESTED")
 
-        elif result in (ResolutionResult.UNCHANGED, ResolutionResult.CHANGED):
+        elif result is ResolutionResult.UNCHANGED:
             if node is not None or nodes is not None:
                 raise ValueError(f"node and nodes must not be set when result is {result.name}")
             if interaction is not None:
                 raise ValueError("Interaction is only allowed for INTERACTION_REQUESTED")
 
-        elif result == ResolutionResult.NEW_DSL_NODES:
+        elif result is ResolutionResult.NEW_DSL_NODES:
             if not nodes:
                 raise ValueError("NEW_DSL_NODES requires a non-empty list of replacement nodes")
             if node is not None:
                 raise ValueError("node must be None when using nodes")
 
-        elif result == ResolutionResult.ABORT:
+        elif result is ResolutionResult.ABORT:
             if nodes is not None and not nodes:
                 raise ValueError("ABORT with empty list is invalid; use None or a non-empty list")
             if node is not None and nodes is not None:

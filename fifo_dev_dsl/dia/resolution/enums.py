@@ -8,35 +8,27 @@ class AbortBehavior(Enum):
 
 class ResolutionResult(IntEnum):
     """
-    Represents the outcome of attempting to resolve a DSL element during a resolution phase.
+    Represents the result of resolving a DSL element during a resolution pass.
 
-    Values (in order of precedence, highest first):
-        ABORT = 4
-            Critical failure or intent-level cancellation. Halts the current intent's resolution,
-            optionally replacing it with a new one.
+    Resolution outcomes are prioritized in the following order (highest first):
 
-        INTERACTION_REQUESTED = 3
-            The system requires user input or clarification before proceeding.
+        ABORT = 3
+            Critical failure or intent-level override. Halts resolution of the current
+            intent, optionally replacing it with a new one.
 
-        NEW_DSL_NODES = 2
-            One or more new DSL nodes were produced and should be integrated into the DSL tree.
-            This typically includes cases where resolution expands a placeholder into multiple
-            concrete nodes (e.g., a value and associated propagation metadata).
+        INTERACTION_REQUESTED = 2
+            Evaluation requires user input or clarification. Resolution is paused
+            until interaction is handled externally.
 
-        CHANGED = 1
-            The current node was updated in-place (e.g., internal state change).
-            No structural changes to the tree were made.
+        NEW_DSL_NODES = 1
+            Resolution expanded a placeholder into one or more new DSL nodes. These
+            should replace the current node in the DSL tree before traversal continues.
 
         UNCHANGED = 0
-            No changes occurred. Traversal continues normally.
-
-    Methods:
-        combine(other: ResolutionResult) -> ResolutionResult:
-            Combine two resolution results by selecting the one with higher precedence.
+            No changes were made during resolution. Traversal proceeds to the next node.
     """
 
-    ABORT = 4
-    INTERACTION_REQUESTED = 3
-    NEW_DSL_NODES = 2
-    CHANGED = 1
+    ABORT = 3
+    INTERACTION_REQUESTED = 2
+    NEW_DSL_NODES = 1
     UNCHANGED = 0
