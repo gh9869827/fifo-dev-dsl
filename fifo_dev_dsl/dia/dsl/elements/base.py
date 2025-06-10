@@ -1,5 +1,5 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Generic, Type, TypeVar, cast
 
 from fifo_dev_common.typeutils.strict_cast import strict_cast
@@ -12,7 +12,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
-class DslBase(ABC):
+class DslBase:
     """
     Base class for all DSL elements.
 
@@ -176,7 +176,6 @@ class DslBase(ABC):
         """
         return True
 
-    @abstractmethod
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
@@ -202,6 +201,7 @@ class DslBase(ABC):
         Raises:
             RuntimeError: If the node is not resolved.
         """
+        raise NotImplementedError("DslBase.eval must be implemented by subclasses")
 
 
 T = TypeVar("T", bound=DslBase)
