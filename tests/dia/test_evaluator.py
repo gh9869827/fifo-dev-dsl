@@ -11,6 +11,7 @@ from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl
 from fifo_dev_dsl.dia.dsl.elements.intent_evaluated_success import (
     IntentEvaluatedSuccess,
 )
+from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
 from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import (
@@ -452,6 +453,41 @@ def test_recoverable_error_intent_execution() -> None:
 
     assert outcome_evalutor.status is EvaluationStatus.SUCCESS
     assert demo.call_trace == expected_call_trace
+
+
+def test_unrecoverable_error_intent_execution() -> None:
+    """Ensure unrecoverable errors abort evaluation."""
+
+    demo = Demo()
+    runtime_context = LLMRuntimeContext(tools=[demo.retrieve_screw], query_sources=[])
+    root = parse_dsl("retrieve_screw(count=4, length=12)")
+
+    @tool_handler("retrieve_screw")
+    def failing_retrieve_screw(count: int, length: int) -> str:
+        """
+        Retrieve screws of a given length.
+
+        Args:
+            count (int):
+                number of screws to retrieve
+
+            length (int):
+                length of the screws in millimeters
+
+        Returns:
+            str:
+                confirmation message
+        """
+        raise RuntimeError("boom")
+
+    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw  # pyright: ignore[reportPrivateUsage]  # pylint: disable=protected-access
+
+    evaluator = Evaluator(runtime_context, root)
+    outcome = evaluator.evaluate()
+
+    assert outcome.status is EvaluationStatus.ABORTED_UNRECOVERABLE
+    assert isinstance(outcome.error, RuntimeError)
+    assert isinstance(root.get_children()[0], Intent)
 
 
 def test_evaluate_skips_already_evaluated_intent() -> None:
