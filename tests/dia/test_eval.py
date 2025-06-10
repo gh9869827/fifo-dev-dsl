@@ -1,7 +1,15 @@
 import pytest
 from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_common.introspection.tool_decorator import ToolHandler, tool_handler
+from fifo_dev_dsl.dia.dsl.elements.abort import Abort
+from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
+from fifo_dev_dsl.dia.dsl.elements.ask import Ask
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
+from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
+from fifo_dev_dsl.dia.dsl.elements.query_fill import QueryFill
+from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
+from fifo_dev_dsl.dia.dsl.elements.query_user import QueryUser
 from fifo_dev_dsl.dia.dsl.elements.value import Value
 from fifo_dev_dsl.dia.dsl.elements.value_fuzzy import FuzzyValue
 from fifo_dev_dsl.dia.dsl.elements.value_list import ListValue
@@ -112,3 +120,20 @@ def test_intent_and_return_value_eval() -> None:
 def test_same_as_previous_intent_eval() -> None:
     with pytest.raises(NotImplementedError):
         SameAsPreviousIntent().eval(runtime_context(), MiniDocStringType("int"))
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        Abort(),
+        Ask("question"),
+        QueryFill("value"),
+        QueryGather("orig", "info"),
+        QueryUser("query"),
+        AbortWithNewDsl(ListElement([])),
+        IntentRuntimeErrorResolver(Intent("foo", []), "error"),
+    ],
+)
+def test_eval_unresolved(obj: DslBase) -> None:
+    with pytest.raises(RuntimeError):
+        obj.eval(LLMRuntimeContext([], []), MiniDocStringType(str))
