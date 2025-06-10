@@ -108,16 +108,6 @@ class DslBase:
         """
         raise RuntimeError(f"{self.__class__.__name__} is a leaf node; it cannot remove children.")
 
-    def is_abort_boundary(self) -> bool:
-        """
-        Return True if this node represents a boundary for abort pruning.
-
-        Returns:
-            bool:
-                True if this node defines an abort scope boundary.
-        """
-        return False
-
     def _log_resolution(self,
                         label: str,
                         resolution_context: ResolutionContext):
