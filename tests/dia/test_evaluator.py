@@ -12,6 +12,7 @@ from fifo_dev_dsl.dia.dsl.elements.intent_evaluated_success import (
     IntentEvaluatedSuccess,
 )
 from fifo_dev_dsl.dia.dsl.elements.intent import Intent
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
 from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import (
@@ -511,3 +512,33 @@ def test_evaluate_skips_already_evaluated_intent() -> None:
 
     assert second_outcome.status is EvaluationStatus.SUCCESS
     assert demo.call_trace == [("add", (1, 2)), ("add", (3, 4))]
+
+
+class _BadNode(DslBase):
+    """Minimal DSL node not handled by :class:`Evaluator`."""
+
+
+def test_evaluate_unexpected_node_type() -> None:
+    """Ensure Evaluator aborts on unknown DSL node types."""
+
+    runtime_context = LLMRuntimeContext(tools=[], query_sources=[])
+    root = _BadNode()
+    outcome = Evaluator(runtime_context, root).evaluate()
+
+    assert outcome.status is EvaluationStatus.ABORTED_UNRECOVERABLE
+    assert isinstance(outcome.error, TypeError)
+    assert "Unexpected node type" in str(outcome.error)
+
+
+def test_evaluate_empty_call_stack() -> None:
+    """Ensure Evaluator handles an empty call stack gracefully."""
+
+    runtime_context = LLMRuntimeContext(tools=[], query_sources=[])
+    root = parse_dsl("add(a=1, b=2)")
+    evaluator = Evaluator(runtime_context, root)
+    evaluator._call_stack = []  # pyright: ignore[reportPrivateUsage]
+    outcome = evaluator.evaluate()
+
+    assert outcome.status is EvaluationStatus.ABORTED_UNRECOVERABLE
+    assert isinstance(outcome.error, RuntimeError)
+    assert str(outcome.error) == "Evaluation terminated unexpectedly."
