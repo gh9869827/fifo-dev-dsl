@@ -1,6 +1,6 @@
 
 import copy
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl
 from fifo_dev_dsl.dia.dsl.elements.abort import Abort
@@ -253,8 +253,8 @@ class Resolver:
     def _process_user_prompt(self, prompt: str):
 
         answer = call_airlock_model_server(
-            model=Model.Phi4MiniInstruct,
-            adapter="intent-sequencer",
+            model=self._runtime_context.base_model,
+            adapter=self._runtime_context.intent_sequencer_adapter,
             messages=[
                 Message(
                     role=Role.system,

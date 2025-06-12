@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass
 
 from fifo_dev_dsl.common.dsl_utils import quote_and_escape
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Model, Role
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
@@ -97,7 +97,7 @@ class QueryFill(DslBase):
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
         answer = call_airlock_model_server(
-                    model=Model.Phi4MiniInstruct,
+                    model=runtime_context.base_model,
                     messages=[
                         Message(
                             role=Role.system,

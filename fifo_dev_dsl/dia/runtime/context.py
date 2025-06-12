@@ -4,6 +4,7 @@ import textwrap
 
 from fifo_dev_common.containers.read_only.read_only_list import ReadOnlyList
 from fifo_dev_common.introspection.tool_decorator import ToolHandler, ToolQuerySource
+from fifo_tool_airlock_model_env.common.models import Model
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
@@ -40,12 +41,17 @@ class LLMRuntimeContext:
     _prompt_intent_sequencer: str
     _prompt_slot_resolver: str
     _prompt_error_resolver: str
+    _container_name: str
+    _base_model: Model
+    _intent_sequencer_adapter: str
 
     def __init__(
         self,
         tools: list[ToolHandler],
         query_sources: list[ToolQuerySource],
         container_name: str = "dev-phi",
+        base_model: Model = Model.Phi4MiniInstruct,
+        intent_sequencer_adapter: str = "intent-sequencer",
     ):
         """
         Initialize the runtime context with tools and query sources.
@@ -56,10 +62,21 @@ class LLMRuntimeContext:
 
             query_sources (list[ToolQuerySource]):
                 Sources that can be queried at runtime to answer user or slot-filling questions.
+
+            container_name (str):
+                Container used for calls to the model server.
+
+            base_model (Model):
+                Base model used for all LLM calls.
+
+            intent_sequencer_adapter (str):
+                Adapter used when generating DSL from text.
         """
         self._tools = ReadOnlyList(tools)
         self._query_sources = ReadOnlyList(query_sources)
         self._container_name = container_name
+        self._base_model = base_model
+        self._intent_sequencer_adapter = intent_sequencer_adapter
 
         yaml_tools = "\n".join(tool.to_schema_yaml() for tool in self._tools)
         yaml_sources = "\n".join(source.get_description() for source in self._query_sources)
@@ -194,6 +211,16 @@ class LLMRuntimeContext:
     def container_name(self) -> str:
         """Container used for calls to the model server."""
         return self._container_name
+
+    @property
+    def base_model(self) -> Model:
+        """Default model used for LLM calls."""
+        return self._base_model
+
+    @property
+    def intent_sequencer_adapter(self) -> str:
+        """Adapter used for intent sequencing calls."""
+        return self._intent_sequencer_adapter
 
     # formatting prompts
     # pylint: disable=line-too-long
