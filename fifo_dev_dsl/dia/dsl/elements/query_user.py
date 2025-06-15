@@ -4,17 +4,20 @@ from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
-from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
-import fifo_dev_dsl.dia.dsl.elements.helper as helper
-from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
-from fifo_dev_dsl.dia.resolution.interaction import Interaction
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionRequest
+from fifo_dev_dsl.dia.dsl.elements import helper
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase
+from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
@@ -96,14 +99,20 @@ class QueryUser(DslBase):
         resolution_context: ResolutionContext,
         interaction: Interaction | None,
     ) -> ResolutionOutcome:
+
         super().do_resolution(runtime_context, resolution_context, interaction)
 
         if interaction is not None and interaction.request.requester is self:
-            return helper.ask_helper_slot_resolver(
-                runtime_context=runtime_context,
-                current=(self, interaction.request.message),
-                resolution_context=resolution_context,
-                interaction=interaction
+
+            assert interaction.answer.consumed is False
+            user_answer = interaction.answer.content
+            interaction.answer.consumed = True
+
+            return helper.ask_helper_no_interaction_slot_resolver(
+                runtime_context,
+                (self, interaction.request.message),
+                resolution_context,
+                user_answer
             )
 
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
@@ -147,9 +156,12 @@ class QueryUser(DslBase):
         else:
             value = "unknown"
 
-        return helper.ask_helper_slot_resolver(
-            runtime_context=runtime_context,
-            current=(self, value),
-            resolution_context=resolution_context,
-            interaction=interaction
+        return ResolutionOutcome(
+            result=ResolutionResult.INTERACTION_REQUESTED,
+            interaction=InteractionRequest(
+                message=value,
+                expected_type=MiniDocStringType(str),
+                slot=resolution_context.slot,
+                requester=self
+            )
         )

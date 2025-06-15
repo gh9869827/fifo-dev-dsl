@@ -2,14 +2,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass
 
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+
 from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-import fifo_dev_dsl.dia.dsl.elements.helper as helper
+from fifo_dev_dsl.dia.dsl.elements import helper
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionRequest
+from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_dsl.dia.resolution.interaction import Interaction
-    from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
@@ -53,13 +55,33 @@ class Ask(DslBase):
         resolution_context: ResolutionContext,
         interaction: Interaction | None,
     ) -> ResolutionOutcome:
+
         super().do_resolution(runtime_context, resolution_context, interaction)
 
-        return helper.ask_helper_slot_resolver(
+        if (
+            interaction is None
+            or interaction.request.requester is not self
+        ):
+            return ResolutionOutcome(
+                result=ResolutionResult.INTERACTION_REQUESTED,
+                interaction=InteractionRequest(
+                    message=self.question,
+                    expected_type=MiniDocStringType(str),
+                    slot=resolution_context.slot,
+                    requester=self
+                )
+            )
+
+        assert interaction.answer.consumed is False
+        user_answer = interaction.answer.content
+        interaction.answer.consumed = True
+
+        return helper.ask_helper_no_interaction_slot_resolver(
             runtime_context=runtime_context,
             current=(self, self.question),
             resolution_context=resolution_context,
-            interaction=interaction)
+            user_answer=user_answer
+        )
 
     def is_resolved(self) -> bool:
         """

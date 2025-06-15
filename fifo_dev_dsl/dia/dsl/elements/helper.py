@@ -22,37 +22,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
 
-def ask_helper_slot_resolver(
-        runtime_context: LLMRuntimeContext,
-        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
-        resolution_context: ResolutionContext,
-        interaction: Interaction | None = None
-) -> ResolutionOutcome:
-
-    current_object, current_question = current
-
-    if (
-           interaction is None
-        or interaction.request.requester is not current_object
-    ):
-        return ResolutionOutcome(
-            result=ResolutionResult.INTERACTION_REQUESTED,
-            interaction=InteractionRequest(
-                message=current_question,
-                expected_type=MiniDocStringType(str),
-                slot=resolution_context.slot,
-                requester=current_object
-            )
-        )
-
-    assert interaction.answer.consumed is False
-    user_answer = interaction.answer.content
-    interaction.answer.consumed = True
-
-    return ask_helper_no_interaction_slot_resolver(
-        runtime_context, current, resolution_context, user_answer
-    )
-
 def ask_helper_error_resolver(
         runtime_context: LLMRuntimeContext,
         current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
