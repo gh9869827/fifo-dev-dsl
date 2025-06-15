@@ -1,8 +1,8 @@
 from __future__ import annotations
-from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
-
-
 from typing import TYPE_CHECKING, Any
+
+
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_common.introspection.mini_docstring import MiniDocStringType

@@ -1,8 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
+from typing import Any, TYPE_CHECKING
 from dataclasses import dataclass
-from typing import Any
 
 from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase

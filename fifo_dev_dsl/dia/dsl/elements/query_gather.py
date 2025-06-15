@@ -3,12 +3,13 @@ from typing import TYPE_CHECKING, Any
 import re
 from dataclasses import dataclass
 
-from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Role
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
+
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-import fifo_dev_dsl.dia.dsl.elements.helper as helper
+from fifo_dev_dsl.dia.dsl.elements import helper
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
+from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.interaction import Interaction

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-import fifo_dev_dsl.dia.dsl.elements.helper as helper
+from fifo_dev_dsl.dia.dsl.elements import helper
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
