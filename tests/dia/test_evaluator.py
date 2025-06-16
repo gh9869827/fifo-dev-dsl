@@ -2,6 +2,7 @@ from typing import Any
 from unittest.mock import patch
 import pytest
 from fifo_dev_common.introspection.tool_decorator import tool_handler
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
@@ -515,8 +516,16 @@ def test_evaluate_skips_already_evaluated_intent() -> None:
 
 
 class _BadNode(DslBase):
-    """Minimal DSL node not handled by :class:`Evaluator`."""
+    """
+    Minimal DSL node not handled by Evaluator.
+    """
 
+    def eval(
+        self,
+        runtime_context: LLMRuntimeContext,
+        value_type: MiniDocStringType | None = None,
+    ) -> Any:
+        pass  # pragma: no cover
 
 def test_evaluate_unexpected_node_type() -> None:
     """Ensure Evaluator aborts on unknown DSL node types."""
@@ -536,7 +545,7 @@ def test_evaluate_empty_call_stack() -> None:
     runtime_context = LLMRuntimeContext(tools=[], query_sources=[])
     root = parse_dsl("add(a=1, b=2)")
     evaluator = Evaluator(runtime_context, root)
-    evaluator._call_stack = []  # pyright: ignore[reportPrivateUsage]
+    evaluator._call_stack = []  # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access
     outcome = evaluator.evaluate()
 
     assert outcome.status is EvaluationStatus.ABORTED_UNRECOVERABLE
