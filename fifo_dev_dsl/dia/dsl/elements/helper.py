@@ -4,17 +4,13 @@ from typing import TYPE_CHECKING
 from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
-from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
-
-import fifo_dev_dsl.dia.dsl.parser.parser as parser
+from fifo_dev_dsl.dia.dsl.parser import parser
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
-from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionRequest
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
-    from fifo_dev_dsl.dia.dsl.elements.intent import Intent
     from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
     from fifo_dev_dsl.dia.dsl.elements.query_user import QueryUser
     from fifo_dev_dsl.dia.dsl.elements.ask import Ask
@@ -22,45 +18,19 @@ if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 
 
-def ask_helper_error_resolver(
-        runtime_context: LLMRuntimeContext,
-        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
-        resolution_context: ResolutionContext,
-        intent: Intent,
-        interaction: Interaction | None = None) -> ResolutionOutcome:
-
-    current_object, current_question = current
-
-    if (
-           interaction is None
-        or interaction.request.requester is not current_object
-    ):
-        return ResolutionOutcome(
-            result=ResolutionResult.INTERACTION_REQUESTED,
-            interaction=InteractionRequest(
-                message=current_question,
-                expected_type=MiniDocStringType(str),
-                slot=resolution_context.slot,
-                requester=current_object
-            )
-        )
-
-    assert interaction.answer.consumed is False
-    user_answer = interaction.answer.content
-    interaction.answer.consumed = True
-
-    return ask_helper_no_interaction_error_resolver(
-        runtime_context, current, resolution_context, user_answer, intent
-    )
-
-def _ask_helper_no_interaction(
+def ask_helper_no_interaction(
         runtime_context: LLMRuntimeContext,
         system_prompt: str,
         current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
         resolution_context: ResolutionContext,
-        resolution_text: str
+        resolution_text: str,
+        gatherered_data_or_user_answer: str
 ) -> ResolutionOutcome:
     """Resolve follow-up questions without further interaction."""
+
+    resolution_context.questions_being_clarified.append(
+        (*current, gatherered_data_or_user_answer)
+    )
 
     answer = call_airlock_model_server(
         model=runtime_context.base_model,
@@ -85,101 +55,11 @@ def _ask_helper_no_interaction(
         )
     )
 
+
+    print(answer)
     parsed_dsl = parser.parse_dsl(answer)
 
     return ResolutionOutcome(
         nodes=parsed_dsl.get_children(),
         result=ResolutionResult.NEW_DSL_NODES
-    )
-
-def ask_helper_no_interaction_slot_resolver(
-        runtime_context: LLMRuntimeContext,
-        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
-        resolution_context: ResolutionContext,
-        user_answer: str
-) -> ResolutionOutcome:
-
-    current_object, current_question = current
-
-    previous_qna_block = resolution_context.format_previous_qna_block()
-    # intent and slot can be None if for example the user only ask a question without
-    # mentioning any intent at all.
-    intent_name = resolution_context.intent.name if resolution_context.intent else "none"
-    slot_name = resolution_context.slot.name if resolution_context.slot else "none"
-
-    resolution_text = f"""resolution_context:
-  intent: {intent_name}
-  slot: {slot_name}
-{previous_qna_block}
-  current_question: {current_question}
-  current_user_answer: {user_answer}"""
-
-    resolution_context.questions_being_clarified.append(
-        (current_object, current_question, user_answer)
-    )
-
-    return _ask_helper_no_interaction(
-        runtime_context,
-        runtime_context.system_prompt_slot_resolver,
-        current,
-        resolution_context,
-        resolution_text,
-    )
-
-def ask_helper_no_interaction_error_resolver(
-        runtime_context: LLMRuntimeContext,
-        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
-        resolution_context: ResolutionContext,
-        user_answer: str,
-        intent: Intent
-) -> ResolutionOutcome:
-
-    current_object, error = current
-
-    previous_qna_block = resolution_context.format_previous_qna_block()
-    # intent and slot can be None if for example the user only ask a question without
-    # mentioning any intent at all.
-
-    resolution_text = f"""resolution_context:
-  intent: {intent.to_dsl_representation()}
-{previous_qna_block}
-  error: {error}
-  current_user_answer: {user_answer}"""
-
-    resolution_context.questions_being_clarified.append(
-        (current_object, error, user_answer)
-    )
-
-    return _ask_helper_no_interaction(
-        runtime_context,
-        runtime_context.system_prompt_error_resolver,
-        current,
-        resolution_context,
-        resolution_text,
-    )
-
-def ask_helper_no_interaction_intent_sequencer(
-        runtime_context: LLMRuntimeContext,
-        current: tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str],
-        resolution_context: ResolutionContext,
-        gathered_data: str
-) -> ResolutionOutcome:
-
-    current_object, current_question = current
-
-    resolution_text = f"""{current_question}
-
-Here is the data you should use to generate the intents:
-{gathered_data}"""
-
-    resolution_context.questions_being_clarified.append(
-        (current_object, current_question, gathered_data)
-    )
-
-    return _ask_helper_no_interaction(
-        runtime_context,
-        runtime_context.system_prompt_intent_sequencer,
-        current,
-        resolution_context,
-        resolution_text,
     )

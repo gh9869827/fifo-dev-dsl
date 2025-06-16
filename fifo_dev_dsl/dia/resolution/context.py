@@ -172,3 +172,23 @@ $
         slots = self._propagate_slots
         self._propagate_slots = []
         return slots
+
+    def get_intent_name(self) -> str:
+        """
+        Returns the name of the current intent, or `"none"` if no intent is set.
+
+        Returns:
+            str:
+                The intent name, or `"none"` if `self.intent` is `None`.
+        """
+        return self.intent.name if self.intent else "none"
+
+    def get_slot_name(self) -> str:
+        """
+        Returns the name of the current slot, or `"none"` if no slot is set.
+
+        Returns:
+            str:
+                The slot name, or `"none"` if `self.slot` is `None`.
+        """
+        return self.slot.name if self.slot else "none"

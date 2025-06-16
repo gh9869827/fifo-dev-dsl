@@ -13,7 +13,7 @@ from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionRequest
-from fifo_dev_dsl.dia.dsl.elements import helper
+from fifo_dev_dsl.dia.dsl.elements.helper import ask_helper_no_interaction
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 
@@ -108,10 +108,17 @@ class QueryUser(DslBase):
             user_answer = interaction.answer.content
             interaction.answer.consumed = True
 
-            return helper.ask_helper_no_interaction_slot_resolver(
+            resolution_text = f"""resolution_context:
+{resolution_context.format_previous_qna_block()}
+  current_question: {interaction.request.message}
+  current_user_answer: {user_answer}"""
+
+            return ask_helper_no_interaction(
                 runtime_context,
+                runtime_context.system_prompt_intent_sequencer,
                 (self, interaction.request.message),
                 resolution_context,
+                resolution_text,
                 user_answer
             )
 

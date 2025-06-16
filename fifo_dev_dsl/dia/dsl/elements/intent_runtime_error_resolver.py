@@ -2,13 +2,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 from dataclasses import dataclass
 
+from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
+
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-from fifo_dev_dsl.dia.dsl.elements import helper
+from fifo_dev_dsl.dia.dsl.elements.helper import ask_helper_no_interaction
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import InteractionRequest
+from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
-    from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
@@ -54,14 +57,41 @@ class IntentRuntimeErrorResolver(DslBase):
         resolution_context: ResolutionContext,
         interaction: Interaction | None,
     ) -> ResolutionOutcome:
+
         super().do_resolution(runtime_context, resolution_context, interaction)
 
-        return helper.ask_helper_error_resolver(
-            runtime_context=runtime_context,
-            current=(self, self.error_message),
-            resolution_context=resolution_context,
-            intent=self.intent,
-            interaction=interaction)
+        if (
+            interaction is None
+            or interaction.request.requester is not self
+        ):
+            return ResolutionOutcome(
+                result=ResolutionResult.INTERACTION_REQUESTED,
+                interaction=InteractionRequest(
+                    message=self.error_message,
+                    expected_type=MiniDocStringType(str),
+                    slot=resolution_context.slot,
+                    requester=self
+                )
+            )
+
+        assert interaction.answer.consumed is False
+        user_answer = interaction.answer.content
+        interaction.answer.consumed = True
+
+        resolution_text = f"""resolution_context:
+  intent: {self.intent.to_dsl_representation()}
+{resolution_context.format_previous_qna_block()}
+  error: {self.error_message}
+  current_user_answer: {user_answer}"""
+
+        return ask_helper_no_interaction(
+            runtime_context,
+            runtime_context.system_prompt_error_resolver,
+            (self, self.error_message),
+            resolution_context,
+            resolution_text,
+            user_answer
+        )
 
     def is_resolved(self) -> bool:
         """

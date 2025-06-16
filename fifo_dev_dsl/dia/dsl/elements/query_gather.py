@@ -7,7 +7,7 @@ from fifo_tool_airlock_model_env.common.models import GenerationParameters, Mess
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-from fifo_dev_dsl.dia.dsl.elements import helper
+from fifo_dev_dsl.dia.dsl.elements.helper import ask_helper_no_interaction
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 
@@ -138,10 +138,20 @@ class QueryGather(DslBase):
         )
 
         if match:
-            value = match[2].strip()
+            gathered_data = match[2].strip()
         else:
-            value = "unknown"
+            gathered_data = "unknown"
 
-        return helper.ask_helper_no_interaction_intent_sequencer(
-            runtime_context, (self, self.original_intent), resolution_context, value
+        resolution_text = f"""{self.original_intent}
+
+Here is the data you should use to generate the intents:
+{gathered_data}"""
+
+        return ask_helper_no_interaction(
+            runtime_context,
+            runtime_context.system_prompt_intent_sequencer,
+            (self, self.original_intent),
+            resolution_context,
+            resolution_text,
+            gathered_data
         )

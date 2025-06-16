@@ -6,7 +6,7 @@ from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 
 from fifo_dev_dsl.common.dsl_utils import quote_and_escape
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
-from fifo_dev_dsl.dia.dsl.elements import helper
+from fifo_dev_dsl.dia.dsl.elements.helper import ask_helper_no_interaction
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionRequest
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
@@ -76,11 +76,20 @@ class Ask(DslBase):
         user_answer = interaction.answer.content
         interaction.answer.consumed = True
 
-        return helper.ask_helper_no_interaction_slot_resolver(
-            runtime_context=runtime_context,
-            current=(self, self.question),
-            resolution_context=resolution_context,
-            user_answer=user_answer
+        resolution_text = f"""resolution_context:
+  intent: {resolution_context.get_intent_name()}
+  slot: {resolution_context.get_slot_name()}
+{resolution_context.format_previous_qna_block()}
+  current_question: {self.question}
+  current_user_answer: {user_answer}"""
+
+        return ask_helper_no_interaction(
+            runtime_context,
+            runtime_context.system_prompt_slot_resolver,
+            (self, self.question),
+            resolution_context,
+            resolution_text,
+            user_answer
         )
 
     def is_resolved(self) -> bool:
