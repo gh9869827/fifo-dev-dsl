@@ -1,5 +1,5 @@
 import copy
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Role
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl
 from fifo_dev_dsl.dia.dsl.elements.abort import Abort
@@ -255,14 +255,8 @@ class Resolver:
             model=self._runtime_context.base_model,
             adapter=self._runtime_context.intent_sequencer_adapter,
             messages=[
-                Message(
-                    role=Role.system,
-                    content=self._runtime_context.system_prompt_intent_sequencer
-                ),
-                Message(
-                    role=Role.user,
-                    content=prompt
-                )
+                Message.system(self._runtime_context.system_prompt_intent_sequencer),
+                Message.user(prompt)
             ],
             parameters=GenerationParameters(
                 max_new_tokens=1024,

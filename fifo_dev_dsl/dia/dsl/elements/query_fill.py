@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Role
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
@@ -100,14 +100,8 @@ class QueryFill(DslBase):
         answer = call_airlock_model_server(
                     model=runtime_context.base_model,
                     messages=[
-                        Message(
-                            role=Role.system,
-                            content=runtime_context.system_prompt_query_fill
-                        ),
-                        Message(
-                            role=Role.user,
-                            content=prompt_user
-                        ),
+                        Message.system(runtime_context.system_prompt_query_fill),
+                        Message.user(prompt_user),
                     ],
                     parameters=GenerationParameters(
                         max_new_tokens=1024,

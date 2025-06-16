@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message, Role
+from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
 from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 
 from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
@@ -66,8 +66,8 @@ def _ask_helper_no_interaction(
         model=runtime_context.base_model,
         adapter=runtime_context.intent_sequencer_adapter,
         messages=[
-            Message(role=Role.system, content=system_prompt),
-            Message(role=Role.user, content=resolution_text)
+            Message.system(system_prompt),
+            Message.user(resolution_text)
         ],
         parameters=GenerationParameters(
             max_new_tokens=1024,

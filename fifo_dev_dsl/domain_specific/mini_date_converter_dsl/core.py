@@ -4,8 +4,7 @@ from typing import Tuple
 from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
 from fifo_tool_airlock_model_env.common.models import (
     GenerationParameters,
-    Message,
-    Role
+    Message
 )
 from fifo_tool_airlock_model_env.sdk.client_sdk import (
     call_airlock_model_server,
@@ -43,8 +42,8 @@ def parse_natural_date_expression(question: str, container_name: str) -> Tuple[s
         model=Model.Phi4MiniInstruct,
         adapter="mini-date-converter-dsl",
         messages=[
-            Message(role=Role.system, content=SYSTEM_PROMPT),
-            Message(role=Role.user, content=question)
+            Message.system(SYSTEM_PROMPT),
+            Message.user(question)
         ],
         parameters=GenerationParameters(
             max_new_tokens=1024,
