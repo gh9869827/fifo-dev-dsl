@@ -135,7 +135,7 @@ class LLMRuntimeContext:
                 information.
         """
         dynamic_runtime_info = "\n".join(
-            source.get_description() for source in self._query_sources
+            source() for source in self._query_sources
         )
 
         # intent and slot can be None if for example the user only ask a question without
