@@ -24,7 +24,6 @@ Key Features:
 Parsing API:
 - `parse_dsl_element()`: Recursively parses a single expression into a `DslBase` instance
 - `parse_intent()`: Parses a structured intent call with named parameters
-- `split_top_level_commas()`: Robust splitting of nested argument lists
 - `parse_dsl()`: Parses a comma-separated sequence of DSL expressions
 
 DIA is ideal for AI systems where the user may start a command without specifying
