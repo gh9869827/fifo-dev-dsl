@@ -2,11 +2,31 @@ from dataclasses import dataclass
 
 @dataclass
 class LLMCallLog:
-    # each llm call is composed exactly of a system prompt a assistant prompt and a user(answer)
-    # prompt the system prompt gives the instructions, the assistant prompt gives the 
-    # resolution/runtime specific context and the answer/user is the actual output of the llm.
-    # a Call Log can be used to fine tune the model behavior by correcting the answer of a model
-    # and retraining on the new expected output.
+    """
+    Represents a single LLM interaction during DSL resolution.
+
+    Each call log captures the full context of a model invocation, including:
+      - the system prompt (high-level role or instruction),
+      - the assistant prompt (runtime-specific or resolution context),
+      - and the user field (the model's actual output, treated as an 'answer').
+
+    These logs are useful for debugging, tracing resolution steps, or fine-tuning
+    model behavior by replacing the answer with an improved output.
+
+    Attributes:
+        description (str):
+            A short label or tag describing the purpose of this LLM call
+            (e.g., "intent sequencing").
+
+        system_prompt (str):
+            The system-level prompt used to set the behavior or role of the model.
+
+        assistant (str):
+            The assistant prompt containing the DSL resolution context or generated input.
+
+        answer (str):
+            The model's response, treated as the 'user' answer in the conversational schema.
+    """
     description: str
     system_prompt: str
     assistant: str
