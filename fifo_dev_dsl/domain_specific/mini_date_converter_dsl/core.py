@@ -188,9 +188,13 @@ class MiniDateConverterDSL:
             raise ValueError("DSL function names must be uppercase")
 
         if func == "TODAY":
+            if len(args) != 0:
+                raise ValueError("TODAY takes no arguments")
             return self.input_now, False
 
         if func == "OFFSET":
+            if len(args) > 3:
+                raise ValueError("OFFSET requires exactly 3 arguments")
             base, base_time_mod = self._parse(args[0])
             value = int(args[1])
             unit = args[2].upper()
@@ -222,6 +226,8 @@ class MiniDateConverterDSL:
             raise ValueError(f"Unknown unit in OFFSET: {unit}")
 
         if func == "DATE_FROM_MONTH_DAY":
+            if len(args) > 2:
+                raise ValueError("DATE_FROM_MONTH_DAY requires exactly 2 arguments")
             month = extract_month(args, 0, func)
             day = extract_int(args, 1, "day", func)
             year = self.input_now.year
@@ -237,6 +243,8 @@ class MiniDateConverterDSL:
             raise ValueError(f"DATE_FROM_MONTH_DAY({month}, {day}) is invalid")
 
         if func == "DATE_FROM_YEAR_MONTH_DAY":
+            if len(args) > 3:
+                raise ValueError("DATE_FROM_YEAR_MONTH_DAY requires exactly 3 arguments")
             year = extract_int(args, 0, "year", func)
             month = extract_month(args, 1, func)
             day = extract_int(args, 2, "day", func)
@@ -247,6 +255,8 @@ class MiniDateConverterDSL:
                 raise ValueError(f"{func}({year}, {month}, {day}) is invalid") from e
 
         if func == "DATE_FROM_MONTH_WEEKDAY":
+            if len(args) > 3:
+                raise ValueError("DATE_FROM_MONTH_WEEKDAY requires exactly 3 arguments")
             month = extract_month(args, 0, func)
             weekday_index = extract_int(args, 1, "weekday", func)
 
@@ -265,6 +275,8 @@ class MiniDateConverterDSL:
                 ) from e
 
         if func == "DATE_FROM_YEAR_MONTH_WEEKDAY":
+            if len(args) > 4:
+                raise ValueError("DATE_FROM_YEAR_MONTH_WEEKDAY requires exactly 4 arguments")
             year = extract_int(args, 0, "year", func)
             month = extract_month(args, 1, func)
             weekday_index = extract_int(args, 2, "weekday", func)
@@ -284,6 +296,8 @@ class MiniDateConverterDSL:
                 ) from e
 
         if func == "SET_MONTH_DAY":
+            if len(args) > 2:
+                raise ValueError("SET_MONTH_DAY requires exactly 2 arguments")
             try:
                 base, base_time_mod = self._parse(args[0])
             except (IndexError, ValueError) as e:
@@ -311,6 +325,8 @@ class MiniDateConverterDSL:
             return base.replace(day=new_day), base_time_mod
 
         if func == "SET_TIME":
+            if len(args) > 3:
+                raise ValueError("SET_TIME requires exactly 3 arguments")
             try:
                 base, _ = self._parse(args[0])
             except (IndexError, ValueError) as e:
@@ -321,6 +337,8 @@ class MiniDateConverterDSL:
             return base.replace(hour=hour, minute=minute, second=0, microsecond=0), True
 
         if func == "OFFSET_TIME":
+            if len(args) > 3:
+                raise ValueError("OFFSET_TIME requires exactly 3 arguments")
             try:
                 base, _ = self._parse(args[0])
             except (IndexError, ValueError) as e:
