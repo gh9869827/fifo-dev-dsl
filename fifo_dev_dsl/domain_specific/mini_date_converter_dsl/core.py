@@ -22,7 +22,11 @@ SYSTEM_PROMPT = ("You are a precise temporal parser. Your only job is to transla
                  " date expressions into structured DSL function calls such as OFFSET(...) or"
                  " DATE_FROM_MONTH_DAY(...). Do not explain or elaborate. Only return the code.")
 
-def parse_natural_date_expression(question: str, container_name: str) -> Tuple[str, datetime]:
+def parse_natural_date_expression(
+        question: str,
+        container_name: str,
+        adapter: str = "mini-date-converter-dsl",
+        now: datetime | None = None) -> Tuple[str, datetime]:
     """
     Given a natural language date expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding datetime.
@@ -33,6 +37,12 @@ def parse_natural_date_expression(question: str, container_name: str) -> Tuple[s
 
         container_name (str):
             Container for the model server.
+        adapter (str, optional):
+            Adapter name used when calling ``call_airlock_model_server``. Defaults to
+            ``"mini-date-converter-dsl"``.
+        now (datetime | None, optional):
+            Overrides the current datetime for evaluation. Passed to
+            :class:`MiniDateConverterDSL`.
 
     Returns:
         Tuple[str, datetime]:
@@ -40,7 +50,7 @@ def parse_natural_date_expression(question: str, container_name: str) -> Tuple[s
     """
     answer = call_airlock_model_server(
         model=Model.Phi4MiniInstruct,
-        adapter="mini-date-converter-dsl",
+        adapter=adapter,
         messages=[
             Message.system(SYSTEM_PROMPT),
             Message.user(question)
@@ -51,7 +61,7 @@ def parse_natural_date_expression(question: str, container_name: str) -> Tuple[s
         ),
         container_name=container_name
     )
-    dt = MiniDateConverterDSL().parse(answer)
+    dt = MiniDateConverterDSL(now=now).parse(answer)
     return answer, dt
 
 
