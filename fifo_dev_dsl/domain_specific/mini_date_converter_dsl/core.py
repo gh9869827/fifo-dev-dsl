@@ -37,12 +37,14 @@ def parse_natural_date_expression(
 
         container_name (str):
             Container for the model server.
+
         adapter (str, optional):
-            Adapter name used when calling ``call_airlock_model_server``. Defaults to
-            ``"mini-date-converter-dsl"``.
+            Adapter name used when calling `call_airlock_model_server`. Defaults to
+            `"mini-date-converter-dsl"`.
+
         now (datetime | None, optional):
             Overrides the current datetime for evaluation. Passed to
-            :class:`MiniDateConverterDSL`.
+            `MiniDateConverterDSL`.
 
     Returns:
         Tuple[str, datetime]:
