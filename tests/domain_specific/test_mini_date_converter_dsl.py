@@ -317,11 +317,17 @@ def test_nested_set_time_offset_weekday():
 @pytest.mark.parametrize(
     "expr, expected_message",
     [
+        ("TODAY(1)", r"TODAY takes no arguments"),
         ("offset(TODAY, 1, DAY)", r"DSL function names must be uppercase"),
         ("OFFSET(TODAY, 1, DUMMY)", r"Unknown unit in OFFSET: DUMMY"),
+        (
+            "OFFSET(DATE_FROM_YEAR_MONTH_DAY(2026, 1, 1), 4, WEEK, 5, DAY)",
+            r"OFFSET requires exactly 3 arguments",
+        ),
         ("DUMMY(1, 41)", r"Unknown function: DUMMY"),
 
         # DATE_FROM_MONTH_DAY
+        ("DATE_FROM_MONTH_DAY(1, 1, 1)", r"DATE_FROM_MONTH_DAY requires exactly 2 arguments"),
         ("DATE_FROM_MONTH_DAY()", r"Invalid or missing month in DATE_FROM_MONTH_DAY: got 'None'"),
         ("DATE_FROM_MONTH_DAY(error)", r"Invalid or missing month in DATE_FROM_MONTH_DAY: got 'error'"),
         ("DATE_FROM_MONTH_DAY(13)", r"Month 13 is out of range in DATE_FROM_MONTH_DAY (expected 1-12)"),
@@ -332,6 +338,7 @@ def test_nested_set_time_offset_weekday():
         ("DATE_FROM_MONTH_DAY(11, 31)", r"DATE_FROM_MONTH_DAY(11, 31) is invalid"),
 
         # DATE_FROM_YEAR_MONTH_DAY
+        ("DATE_FROM_YEAR_MONTH_DAY(2025, 1, 1, 0)", r"DATE_FROM_YEAR_MONTH_DAY requires exactly 3 arguments"),
         ("DATE_FROM_YEAR_MONTH_DAY()", r"Invalid or missing year in DATE_FROM_YEAR_MONTH_DAY: got 'None'"),
         ("DATE_FROM_YEAR_MONTH_DAY(error)", r"Invalid or missing year in DATE_FROM_YEAR_MONTH_DAY: got 'error'"),
         ("DATE_FROM_YEAR_MONTH_DAY(2025)", r"Invalid or missing month in DATE_FROM_YEAR_MONTH_DAY: got 'None'"),
@@ -342,6 +349,7 @@ def test_nested_set_time_offset_weekday():
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 11, 31)", r"DATE_FROM_YEAR_MONTH_DAY(2025, 11, 31) is invalid"),
 
         # DATE_FROM_MONTH_WEEKDAY
+        ("DATE_FROM_MONTH_WEEKDAY(11, 1, 2, 0)", r"DATE_FROM_MONTH_WEEKDAY requires exactly 3 arguments"),
         ("DATE_FROM_MONTH_WEEKDAY()", r"Invalid or missing month in DATE_FROM_MONTH_WEEKDAY: got 'None'"),
         ("DATE_FROM_MONTH_WEEKDAY(error)", r"Invalid or missing month in DATE_FROM_MONTH_WEEKDAY: got 'error'"),
         ("DATE_FROM_MONTH_WEEKDAY(14)", r"Month 14 is out of range in DATE_FROM_MONTH_WEEKDAY (expected 1-12)"),
@@ -351,6 +359,7 @@ def test_nested_set_time_offset_weekday():
         ("DATE_FROM_MONTH_WEEKDAY(11, 4, error)", r"Invalid or missing occurrence in DATE_FROM_MONTH_WEEKDAY: got 'error'"), 
 
         # DATE_FROM_YEAR_MONTH_WEEKDAY
+        ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 11, 1, 2, 0)", r"DATE_FROM_YEAR_MONTH_WEEKDAY requires exactly 4 arguments"),
         ("DATE_FROM_YEAR_MONTH_WEEKDAY()", r"Invalid or missing year in DATE_FROM_YEAR_MONTH_WEEKDAY: got 'None'"),
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(error)", r"Invalid or missing year in DATE_FROM_YEAR_MONTH_WEEKDAY: got 'error'"),
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025)", r"Invalid or missing month in DATE_FROM_YEAR_MONTH_WEEKDAY: got 'None'"),
@@ -363,6 +372,7 @@ def test_nested_set_time_offset_weekday():
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 11, 4, error)", r"Invalid or missing occurrence in DATE_FROM_YEAR_MONTH_WEEKDAY: got 'error'"),
 
         # SET_MONTH_DAY
+        ("SET_MONTH_DAY(TODAY, 1, 1)", r"SET_MONTH_DAY requires exactly 2 arguments"),
         ("SET_MONTH_DAY()", r"Invalid or missing base expression in SET_MONTH_DAY: got 'None'"),
         ("SET_MONTH_DAY(error, 1)", r"Invalid or missing base expression in SET_MONTH_DAY: got 'error'"),
         ("SET_MONTH_DAY(TODAY)", r"Invalid or missing day in SET_MONTH_DAY: got 'None'"),
@@ -372,6 +382,7 @@ def test_nested_set_time_offset_weekday():
         ("SET_MONTH_DAY(TODAY, -32)", r"SET_MONTH_DAY(-32) is invalid"),
 
         # SET_TIME
+        ("SET_TIME(TODAY, 10, 30, 1)", r"SET_TIME requires exactly 3 arguments"),
         ("SET_TIME()", r"Invalid or missing base expression in SET_TIME: got 'None'"),
         ("SET_TIME(error)", r"Invalid or missing base expression in SET_TIME: got 'error'"),
         ("SET_TIME(TODAY)", r"Invalid or missing hour in SET_TIME: got 'None'"),
@@ -382,6 +393,7 @@ def test_nested_set_time_offset_weekday():
         ("SET_TIME(TODAY, 10, 60)", r"Minute 60 is out of range in SET_TIME (expected 0-59)"),
 
         # OFFSET_TIME
+        ("OFFSET_TIME(TODAY, 1, 30, 1)", r"OFFSET_TIME requires exactly 3 arguments"),
         ("OFFSET_TIME()", r"Invalid or missing base expression in OFFSET_TIME: got 'None'"),
         ("OFFSET_TIME(error)", r"Invalid or missing base expression in OFFSET_TIME: got 'error'"),
         ("OFFSET_TIME(TODAY)", r"Invalid or missing hour in OFFSET_TIME: got 'None'"),
