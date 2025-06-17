@@ -27,7 +27,7 @@ The `mini_date_converter_dsl` system consists of three main components:
 
 2. **🧠 LoRA Adapter for Natural Language to DSL Conversion**  
    A fine-tuned language model that translates natural language date expressions into DSL expressions.  
-   👉 [View Model on Hugging Face Hub](https://huggingface.co/your-model-link)
+   👉 [View Model on Hugging Face Hub](https://huggingface.co/a6188466/mini-date-converter-dsl-adapter)
 
 3. **📊 Training & Evaluation Dataset**  
    A curated dataset of English date expressions mapped to DSL syntax for model training and testing.  
