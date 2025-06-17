@@ -18,6 +18,23 @@ into valid Python `datetime` objects using a structured and composable DSL.
 
 ---
 
+## 🧩 Components
+
+The `mini_date_converter_dsl` system consists of three main components:
+
+1. **📦 Python Module**  
+   The core DSL engine for parsing, resolving, and evaluating structured DSL trees.
+
+2. **🧠 LoRA Adapter for Natural Language to DSL Conversion**  
+   A fine-tuned language model that translates natural language date expressions into DSL expressions.  
+   👉 [View Model on Hugging Face Hub](https://huggingface.co/your-model-link)
+
+3. **📊 Training & Evaluation Dataset**  
+   A curated dataset of English date expressions mapped to DSL syntax for model training and testing.  
+   👉 [View Dataset on Hugging Face Hub](https://huggingface.co/datasets/a6188466/mini-date-converter-dsl-dataset)
+
+---
+
 ## 🚀 How to Use
 
 Evaluate a DSL string into a Python `datetime`:
