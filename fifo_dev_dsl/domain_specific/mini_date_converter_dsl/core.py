@@ -87,7 +87,8 @@ class MiniDateConverterDSL:
             OFFSET(DATE_FROM_MONTH_DAY(12, 25), 1, YEAR)
 
     - DATE_FROM_MONTH_DAY(month, day)
-        Constructs a date using this year with the given month and day.
+        Constructs a date using this year with the given month and day. If that
+        date has already passed, the same month/day of the next year is used.
 
         Example:
             DATE_FROM_MONTH_DAY(12, 25)
@@ -99,7 +100,9 @@ class MiniDateConverterDSL:
             DATE_FROM_YEAR_MONTH_DAY(2025, 5, 1)
 
     - DATE_FROM_MONTH_WEEKDAY(month, weekday_index, occurrence)
-        Finds the nth occurrence of a weekday in the given month of the current year.
+        Finds the nth occurrence of a weekday in the given month of the current
+        year. If the resulting date is in the past, the next year's occurrence
+        is returned instead.
         Weekday must be an integer from 0 (Monday) to 6 (Sunday).
         ``occurrence`` may be negative to count from the end of the month
         (``-1`` is the last weekday, ``-2`` the second to last, etc.).
@@ -272,15 +275,20 @@ class MiniDateConverterDSL:
             weekday = self.WEEKDAY_MAP[weekday_index]
             occurrence = extract_int(args, 2, "occurrence", func)
 
-            try:
-                anchor = datetime(self.input_now.year, month, 1)
-                if occurrence < 0:
-                    anchor += relativedelta(months=1)
-                return anchor + relativedelta(weekday=weekday(occurrence)), False
-            except ValueError as e:
-                raise ValueError(
-                    f"Failed to compute {func}({month}, {weekday_index}, {occurrence}): {e}"
-                ) from e
+            for offset in range(10):  # search up to 10 years ahead
+                try:
+                    anchor = datetime(self.input_now.year + offset, month, 1)
+                    if occurrence < 0:
+                        anchor += relativedelta(months=1)
+                    candidate = anchor + relativedelta(weekday=weekday(occurrence))
+                    if candidate >= self.input_now:
+                        return candidate, False
+                except ValueError:
+                    continue
+
+            raise ValueError(
+                f"Failed to compute {func}({month}, {weekday_index}, {occurrence})"
+            )
 
         if func == "DATE_FROM_YEAR_MONTH_WEEKDAY":
             if len(args) > 4:
