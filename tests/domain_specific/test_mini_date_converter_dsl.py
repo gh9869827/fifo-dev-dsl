@@ -14,6 +14,16 @@ def last_day_of_month(dt: datetime) -> int:
     next_month = dt.replace(day=28) + timedelta(days=4)
     return (next_month.replace(day=1) - timedelta(days=1)).day
 
+def next_month_weekday(month: int, weekday_func, occurrence: int) -> datetime:
+    today = datetime.now()
+    for offset in range(10):
+        anchor = datetime(today.year + offset, month, 1)
+        if occurrence < 0:
+            anchor += relativedelta(months=1)
+        candidate = anchor + relativedelta(weekday=weekday_func(occurrence))
+        if candidate >= today:
+            return candidate
+
 
 @pytest.mark.parametrize(
     "expr, expected_fn",
@@ -152,43 +162,37 @@ def last_day_of_month(dt: datetime) -> int:
         # 4th Thursday of November (US Thanksgiving)
         (
             "DATE_FROM_MONTH_WEEKDAY(11, 3, 4)",
-            lambda: datetime(datetime.now().year, 11, 1) +
-                    relativedelta(weekday=TH(4))
+            lambda: next_month_weekday(11, TH, 4)
         ),
 
         # 1st Monday of January
         (
             "DATE_FROM_MONTH_WEEKDAY(1, 0, 1)",
-            lambda: datetime(datetime.now().year, 1, 1) +
-                    relativedelta(weekday=MO(1))
+            lambda: next_month_weekday(1, MO, 1)
         ),
 
         # 3rd Friday of March
         (
             "DATE_FROM_MONTH_WEEKDAY(3, 4, 3)",
-            lambda: datetime(datetime.now().year, 3, 1) +
-                    relativedelta(weekday=FR(3))
+            lambda: next_month_weekday(3, FR, 3)
         ),
 
         # 5th Wednesday of May (may fall late in the month)
         (
             "DATE_FROM_MONTH_WEEKDAY(5, 2, 5)",
-            lambda: datetime(datetime.now().year, 5, 1) +
-                    relativedelta(weekday=WE(5))
+            lambda: next_month_weekday(5, WE, 5)
         ),
 
         # 2nd Sunday of October
         (
             "DATE_FROM_MONTH_WEEKDAY(10, 6, 2)",
-            lambda: datetime(datetime.now().year, 10, 1) +
-                    relativedelta(weekday=SU(2))
+            lambda: next_month_weekday(10, SU, 2)
         ),
 
         # Last Friday of October
         (
             "DATE_FROM_MONTH_WEEKDAY(10, 4, -1)",
-            lambda: datetime(datetime.now().year, 10, 1)
-                    + relativedelta(months=1, weekday=FR(-1))
+            lambda: next_month_weekday(10, FR, -1)
         ),
 
         # DATE_FROM_YEAR_MONTH_WEEKDAY
@@ -326,6 +330,14 @@ def test_nested_set_time_offset_weekday():
     )
     # Thanksgiving 2025 is Thursday, Nov 27 → next Monday is Dec 1
     assert result == datetime(2025, 12, 1, 9, 30)
+
+
+def test_date_from_month_weekday_future_rollover():
+    # When the target this year is in the past, DATE_FROM_MONTH_WEEKDAY should
+    # roll over to the next year.
+    dsl = MiniDateConverterDSL(datetime(2025, 5, 1))
+    result = dsl.parse("DATE_FROM_MONTH_WEEKDAY(3, 4, -1)")
+    assert result == datetime(2026, 3, 27)
 
 
 @pytest.mark.parametrize(

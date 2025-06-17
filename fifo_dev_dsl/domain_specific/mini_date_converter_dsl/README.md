@@ -144,7 +144,9 @@ DATE_FROM_YEAR_MONTH_DAY(2026, 1, 1)
 
 Returns the Nth weekday of a given month this year. `occurrence` may be
 negative to count from the end of the month (`-1` is the last weekday,
-`-2` the second to last, etc.).
+`-2` the second to last, etc.). If the resulting date has already
+passed this year, the same occurrence of that weekday in the following
+year is returned.
 
 - `month`: integer (1–12)
 - `weekday_index`: integer (0=Monday, ..., 6=Sunday)
