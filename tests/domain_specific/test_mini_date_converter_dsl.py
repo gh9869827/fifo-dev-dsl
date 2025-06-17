@@ -10,6 +10,10 @@ def next_month_day(month: int, day: int) -> datetime:
     try_this_year = datetime(today.year, month, day)
     return try_this_year if try_this_year.date() >= today else datetime(today.year + 1, month, day)
 
+def last_day_of_month(dt: datetime) -> int:
+    next_month = dt.replace(day=28) + timedelta(days=4)
+    return (next_month.replace(day=1) - timedelta(days=1)).day
+
 
 @pytest.mark.parametrize(
     "expr, expected_fn",
@@ -212,6 +216,23 @@ def next_month_day(month: int, day: int) -> datetime:
             lambda: datetime(2028, 11, 1) + relativedelta(weekday=TH(4))
         ),
 
+        # SET_MONTH_DAY
+
+        # First day of next month
+        (
+            "SET_MONTH_DAY(OFFSET(TODAY, 1, MONTH), 1)",
+            lambda: (
+                datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                + relativedelta(months=1)
+            ).replace(day=1)
+        ),
+
+        # Last day of this month
+        (
+            "SET_MONTH_DAY(TODAY, -1)",
+            lambda: datetime.now().replace(day=last_day_of_month(datetime.now()), hour=0, minute=0, second=0, microsecond=0)
+        ),
+
         # SET_TIME and Composition
 
         # Set time on today to 9:30
@@ -340,6 +361,15 @@ def test_nested_set_time_offset_weekday():
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 11, 7)", r"Invalid weekday in DATE_FROM_YEAR_MONTH_WEEKDAY: got 7"),
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 11, 4)", r"Invalid or missing occurrence in DATE_FROM_YEAR_MONTH_WEEKDAY: got 'None'"),
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 11, 4, error)", r"Invalid or missing occurrence in DATE_FROM_YEAR_MONTH_WEEKDAY: got 'error'"),
+
+        # SET_MONTH_DAY
+        ("SET_MONTH_DAY()", r"Invalid or missing base expression in SET_MONTH_DAY: got 'None'"),
+        ("SET_MONTH_DAY(error, 1)", r"Invalid or missing base expression in SET_MONTH_DAY: got 'error'"),
+        ("SET_MONTH_DAY(TODAY)", r"Invalid or missing day in SET_MONTH_DAY: got 'None'"),
+        ("SET_MONTH_DAY(TODAY, error)", r"Invalid or missing day in SET_MONTH_DAY: got 'error'"),
+        ("SET_MONTH_DAY(TODAY, 0)", r"SET_MONTH_DAY(0) is invalid"),
+        ("SET_MONTH_DAY(TODAY, 32)", r"SET_MONTH_DAY(32) is invalid"),
+        ("SET_MONTH_DAY(TODAY, -32)", r"SET_MONTH_DAY(-32) is invalid"),
 
         # SET_TIME
         ("SET_TIME()", r"Invalid or missing base expression in SET_TIME: got 'None'"),

@@ -99,6 +99,14 @@ class MiniDateConverterDSL:
         Example:
             DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 1, 0, 2)  # 2nd Monday of January 2026
 
+    - SET_MONTH_DAY(date_expr, day)
+        Sets the day-of-month on ``date_expr``. ``day`` may be negative to count
+        backwards from the end of the month (-1 is the last day).
+
+        Example:
+            SET_MONTH_DAY(OFFSET(TODAY, 1, MONTH), 1)  # first of next month
+            SET_MONTH_DAY(TODAY, -1)  # last day of this month
+
     - SET_TIME(date_expr, hour, minute)
         Sets the hour and minute for a given date expression, returning a datetime with the
         specified time. Hour uses 24-hour format (0-23). Minute is 0-59.
@@ -262,6 +270,33 @@ class MiniDateConverterDSL:
                 raise ValueError(
                     f"Failed to compute {func}({year}, {month}, {weekday_index}, {occurrence}): {e}"
                 ) from e
+
+        if func == "SET_MONTH_DAY":
+            try:
+                base, base_time_mod = self._parse(args[0])
+            except (IndexError, ValueError) as e:
+                raise ValueError(
+                    "Invalid or missing base expression in SET_MONTH_DAY: "
+                    f"got {get_arg(args, 0)!r}"
+                ) from e
+
+            day_val = extract_int(args, 1, "day", func)
+
+            last_of_month = (
+                base.replace(day=1)
+                + relativedelta(months=1)
+                - timedelta(days=1)
+            ).day
+
+            if day_val > 0:
+                new_day = day_val
+            else:
+                new_day = last_of_month + 1 + day_val
+
+            if not 1 <= new_day <= last_of_month:
+                raise ValueError(f"SET_MONTH_DAY({day_val}) is invalid")
+
+            return base.replace(day=new_day), base_time_mod
 
         if func == "SET_TIME":
             try:
