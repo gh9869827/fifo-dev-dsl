@@ -184,6 +184,13 @@ def last_day_of_month(dt: datetime) -> int:
                     relativedelta(weekday=SU(2))
         ),
 
+        # Last Friday of October
+        (
+            "DATE_FROM_MONTH_WEEKDAY(10, 4, -1)",
+            lambda: datetime(datetime.now().year, 10, 1)
+                    + relativedelta(months=1, weekday=FR(-1))
+        ),
+
         # DATE_FROM_YEAR_MONTH_WEEKDAY
 
         # 2nd Monday of February 2026
@@ -214,6 +221,13 @@ def last_day_of_month(dt: datetime) -> int:
         (
             "DATE_FROM_YEAR_MONTH_WEEKDAY(2028, 11, 3, 4)",
             lambda: datetime(2028, 11, 1) + relativedelta(weekday=TH(4))
+        ),
+
+        # Last Friday of October 2026
+        (
+            "DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 10, 4, -1)",
+            lambda: datetime(2026, 10, 1)
+                    + relativedelta(months=1, weekday=FR(-1))
         ),
 
         # SET_MONTH_DAY

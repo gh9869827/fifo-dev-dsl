@@ -101,15 +101,21 @@ class MiniDateConverterDSL:
     - DATE_FROM_MONTH_WEEKDAY(month, weekday_index, occurrence)
         Finds the nth occurrence of a weekday in the given month of the current year.
         Weekday must be an integer from 0 (Monday) to 6 (Sunday).
+        ``occurrence`` may be negative to count from the end of the month
+        (``-1`` is the last weekday, ``-2`` the second to last, etc.).
 
         Example:
-            DATE_FROM_MONTH_WEEKDAY(11, 3, 4)  # 4th Thursday of November (Thanksgiving in US)
+            DATE_FROM_MONTH_WEEKDAY(11, 3, 4)   # 4th Thursday of November (Thanksgiving in US)
+            DATE_FROM_MONTH_WEEKDAY(10, 4, -1)  # last Friday of October
 
     - DATE_FROM_YEAR_MONTH_WEEKDAY(year, month, weekday_index, occurrence)
         Same as above, but with an explicit year.
+        ``occurrence`` may be negative to count from the end of the month
+        (``-1`` is the last weekday, ``-2`` the second to last, etc.).
 
         Example:
-            DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 1, 0, 2)  # 2nd Monday of January 2026
+            DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 1, 0, 2)   # 2nd Monday of January 2026
+            DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 10, 4, -1) # last Friday of October 2026
 
     - SET_MONTH_DAY(date_expr, day)
         Sets the day-of-month on ``date_expr``. ``day`` may be negative to count
@@ -268,6 +274,8 @@ class MiniDateConverterDSL:
 
             try:
                 anchor = datetime(self.input_now.year, month, 1)
+                if occurrence < 0:
+                    anchor += relativedelta(months=1)
                 return anchor + relativedelta(weekday=weekday(occurrence)), False
             except ValueError as e:
                 raise ValueError(
@@ -289,6 +297,8 @@ class MiniDateConverterDSL:
 
             try:
                 anchor = datetime(year, month, 1)
+                if occurrence < 0:
+                    anchor += relativedelta(months=1)
                 return anchor + relativedelta(weekday=weekday(occurrence)), False
             except ValueError as e:
                 raise ValueError(

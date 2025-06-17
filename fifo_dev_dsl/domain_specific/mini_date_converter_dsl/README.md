@@ -142,16 +142,19 @@ DATE_FROM_YEAR_MONTH_DAY(2026, 1, 1)
 
 ### `DATE_FROM_MONTH_WEEKDAY(month, weekday_index, occurrence)`
 
-Returns the Nth weekday of a given month this year.
+Returns the Nth weekday of a given month this year. `occurrence` may be
+negative to count from the end of the month (`-1` is the last weekday,
+`-2` the second to last, etc.).
 
 - `month`: integer (1–12)
 - `weekday_index`: integer (0=Monday, ..., 6=Sunday)
-- `occurrence`: integer (e.g., `4` for "4th weekday")
+- `occurrence`: integer index of the weekday (positive or negative)
 
 **Example:**
 
 ```dsl
-DATE_FROM_MONTH_WEEKDAY(11, 3, 4)  # 4th Thursday of November
+DATE_FROM_MONTH_WEEKDAY(11, 3, 4)   # 4th Thursday of November
+DATE_FROM_MONTH_WEEKDAY(10, 4, -1)  # last Friday of October
 ```
 
 ---
@@ -163,12 +166,13 @@ Same as above, with an explicit year.
 - `year`: four-digit year
 - `month`: integer (1–12)
 - `weekday_index`: integer (0=Monday, ..., 6=Sunday)
-- `occurrence`: integer (e.g., `2` for "2nd weekday")
+- `occurrence`: integer index of the weekday (positive or negative)
 
 **Example:**
 
 ```dsl
-DATE_FROM_YEAR_MONTH_WEEKDAY(2027, 5, 0, 2)  # 2nd Monday of May 2027
+DATE_FROM_YEAR_MONTH_WEEKDAY(2027, 5, 0, 2)   # 2nd Monday of May 2027
+DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 10, 4, -1) # last Friday of October 2026
 ```
 
 ---
