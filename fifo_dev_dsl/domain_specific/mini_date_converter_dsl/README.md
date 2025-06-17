@@ -156,6 +156,23 @@ DATE_FROM_YEAR_MONTH_WEEKDAY(2027, 5, 0, 2)  # 2nd Monday of May 2027
 
 ---
 
+### `SET_MONTH_DAY(date_expr, day)`
+
+Sets the day of the month on a base expression. Negative values index from the
+end of the month (`-1` is the last day, `-2` two days before the last, etc.).
+
+- `date_expr`: DSL expression returning a date
+- `day`: integer (supports negative indexing)
+
+**Examples:**
+
+```dsl
+SET_MONTH_DAY(OFFSET(TODAY, 1, MONTH), 1)
+SET_MONTH_DAY(TODAY, -1)
+```
+
+---
+
 ### `SET_TIME(date_expr, hour, minute)`
 
 Sets the time on a date expression.
