@@ -25,8 +25,10 @@ SYSTEM_PROMPT = ("You are a precise parser of recurring schedule expressions. Yo
                  " calls such as WEEKLY(...) or MONTHLY_BY_WEEKDAY(...). Do not explain or"
                  " elaborate. Only return the code.")
 
-def parse_natural_recurrence_expression(question: str,
-                                        container_name: str) -> Tuple[str, RecurrenceRule]:
+def parse_natural_recurrence_expression(
+        question: str,
+        container_name: str,
+        adapter: str="mini-recurrence-converter-dsl") -> Tuple[str, RecurrenceRule]:
     """
     Given a natural language recurrence expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding RecurrenceRule object.
@@ -38,13 +40,17 @@ def parse_natural_recurrence_expression(question: str,
         container_name (str):
             Container for the model server.
 
+        adapter (str, optional):
+            Adapter name used when calling `call_airlock_model_server`. Defaults to
+            `"mini-recurrence-converter-dsl"`.
+
     Returns:
         Tuple[str, RecurrenceRule]: 
             (the DSL code, the parsed RecurrenceRule object)
     """
     answer = call_airlock_model_server(
         model=Model.Phi4MiniInstruct,
-        adapter="mini-recurrence-converter-dsl",
+        adapter=adapter,
         messages=[
             Message.system(SYSTEM_PROMPT),
             Message.user(question)
