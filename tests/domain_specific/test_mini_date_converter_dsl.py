@@ -438,6 +438,8 @@ def test_date_from_month_weekday_future_rollover():
         ("OFFSET_TIME(TODAY, error)", r"Invalid or missing hour in OFFSET_TIME: got 'error'"),
         ("OFFSET_TIME(TODAY, 1)", r"Invalid or missing minute in OFFSET_TIME: got 'None'"),
         ("OFFSET_TIME(TODAY, 1, error)", r"Invalid or missing minute in OFFSET_TIME: got 'error'"),
+        ("OFFSET(DATE_FROM_MONTH_WEEKDAY(6, 3, 2), 2, WEEK) 2 WEEKDAY",
+         r"Invalid expression"),
     ]
 )
 def test_invalid_dsl_expressions(expr: str, expected_message: str) -> None:

@@ -34,7 +34,7 @@ def parse_dsl_expression(
             return evaluator(expr, [])
         raise ValueError(f"Invalid expression (bare identifier not allowed): {expr}")
 
-    match = re.match(r'(\w+)\((.*)\)', expr)
+    match = re.fullmatch(r'(\w+)\((.*)\)', expr)
     if not match:
         raise ValueError(f"Invalid expression: {expr}")
 
