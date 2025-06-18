@@ -216,6 +216,61 @@ def resolve(
 
 
 class Resolver:
+    """
+    Orchestrates the resolution of a DSL expression tree.
+
+    A `Resolver` manages the entire lifecycle of a DSL-based interaction, from natural
+    language input to fully-resolved symbolic intent. It holds references to both:
+
+    - `LLMRuntimeContext`: the tool/query registry, prompt templates, and model configuration
+    - `ResolutionContext`: the evolving resolution state, call stack, and interaction history
+
+    It can be initialized in two modes:
+    - From a user prompt (`prompt`): invokes the intent sequencer to generate the initial DSL tree
+    - From an existing DSL tree (`dsl`): used to resume resolution (e.g., after injecting an error
+    handler)
+
+    Resolution proceeds step-by-step via the `__call__` method, which wraps the `resolve(...)`
+    function. Each step may:
+    - mutate the DSL tree (e.g., expand a placeholder)
+    - request user input (e.g., ask for a missing slot)
+    - trigger an abort (e.g., user cancels the current intent)
+
+    These outcomes are represented by the `ResolutionResult` enum and handled internally
+    by the resolver loop.
+
+    Once resolution completes, the resulting DSL tree can be evaluated using the `Evaluator`.
+    If evaluation encounters a recoverable runtime failure (e.g., an intent executes but
+    fails due to unsatisfied preconditions like insufficient inventory), the evaluator
+    injects an `IntentRuntimeErrorResolver` node into the tree. This enables the system
+    to pause, prompt the user for corrective input, and resume resolution with the updated tree.
+
+    Use `fully_resolve_in_text_mode()` to drive an interactive resolution loop via standard
+    input/output.
+
+    Example:
+    ```
+    resolver = Resolver(runtime_context, prompt="give me 3 screws")
+    while True:
+        resolver.fully_resolve_in_text_mode()
+        tree = resolver.dsl_elements
+        result = Evaluator(runtime_context, tree).evaluate()
+        if result.status != EvaluationStatus.ABORTED_RECOVERABLE:
+            break
+        resolver = Resolver(runtime_context, dsl=tree)
+    ```
+
+    Attributes:
+        _runtime_context (LLMRuntimeContext):
+            Contains tool registry, query sources, prompt templates, and model configuration.
+
+        _resolution_context (ResolutionContext):
+            Tracks resolution progress including stack, active slots, known values,
+            clarification logs, and LLM call history.
+
+        _root_dsl_elements (ListElement):
+            The root of the current symbolic DSL tree.
+    """
 
     _resolution_context: ResolutionContext
     _runtime_context: LLMRuntimeContext
@@ -225,6 +280,29 @@ class Resolver:
                  runtime_context: LLMRuntimeContext,
                  prompt: str | None = None,
                  dsl: ListElement | None = None):
+        """
+        Initialize a new resolver.
+
+        A `Resolver` can be created either from a raw user prompt or from an existing DSL tree:
+        - If `prompt` is provided, the intent sequencer model is invoked to generate the initial
+          DSL.
+        - If `dsl` is provided, it will be used directly as the root tree (commonly after a failed
+          evaluation).
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                The runtime environment containing tools, query sources, and prompt templates.
+
+            prompt (str | None):
+                Raw user input to interpret and convert into a symbolic DSL tree.
+
+            dsl (ListElement | None):
+                A pre-parsed symbolic DSL tree, typically used when resuming resolution.
+
+        Raises:
+            ValueError:
+                If neither `prompt` nor `dsl` is provided.
+        """
         self._runtime_context = runtime_context
         self._resolution_context = ResolutionContext()
 
@@ -241,15 +319,59 @@ class Resolver:
         )
 
     def __call__(self, interaction_reply: Interaction | None) -> ResolutionOutcome:
+        """
+        Advance the resolution process by one step.
+
+        This method drives the resolution loop by forwarding the current state and any user
+        response to the core `resolve(...)` function. It applies any resulting mutations
+        to the DSL tree or pauses for interaction as needed.
+
+        Args:
+            interaction_reply (Interaction | None):
+                The user's reply to the previous question (if any). Pass `None` on the first call
+                or to proceed without new input.
+
+        Returns:
+            ResolutionOutcome:
+                Result of the resolution step, including whether resolution changed the tree,
+                paused for interaction, or triggered an abort.
+        """
         return resolve(
             self._runtime_context, self._resolution_context, interaction_reply
         )
 
     @property
     def dsl_elements(self) -> ListElement:
+        """
+        Return a deep copy of the root DSL tree.
+
+        This is typically used to pass the DSL to the `Evaluator`, which may mutate
+        the tree (e.g. by injecting recovery nodes on failure). Returning a copy ensures
+        that internal state within the resolver remains isolated.
+
+        Returns:
+            ListElement:
+                A copy of the current DSL tree managed by this resolver.
+        """
         return copy.deepcopy(self._root_dsl_elements)
 
     def _process_user_prompt(self, prompt: str):
+        """
+        Translate the user's natural language input into a symbolic DSL tree.
+
+        This method calls the intent sequencer model with the provided prompt
+        and stores the generated DSL output as the root of the resolution tree.
+        It also logs the full interaction — including the system prompt, user input,
+        and model output — into the `llm_call_logs` for traceability.
+
+        Args:
+            prompt (str):
+                Raw user request to be interpreted and converted into DSL.
+
+        Side Effects:
+            - Updates `_root_dsl_elements` with the parsed DSL tree.
+            - Appends a new entry to `_resolution_context.llm_call_logs`.
+        """
 
         answer = call_airlock_model_server(
             model=self._runtime_context.base_model,
@@ -277,6 +399,27 @@ class Resolver:
         self._root_dsl_elements = parse_dsl(answer)
 
     def fully_resolve_in_text_mode(self):
+        """
+        Drive the resolution process interactively using stdin/stdout.
+
+        This utility method repeatedly advances the DSL resolution by calling the
+        resolver until no further user input is needed. If an interaction is required
+        (e.g. to fill a slot using ASK), the question is printed to the console,
+        and the user's response is read from standard input.
+
+        This is primarily intended for testing or demos, not production use.
+
+        Behavior:
+            - Calls `self(...)` with the last interaction response (or None at first).
+            - Expects resolution to either finish or request a single interaction.
+            - Repeats until no further interaction is needed (`UNCHANGED` result).
+
+        Raises:
+            AssertionError:
+                If an unexpected resolution result is returned (i.e. not INTERACTION_REQUESTED
+                or UNCHANGED), or if an interaction is missing when required.
+        """
+
         interaction_reply = None
         while True:
             outcome = self(interaction_reply)
