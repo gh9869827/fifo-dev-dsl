@@ -19,7 +19,7 @@ def next_month_weekday(month: int, weekday_func, occurrence: int) -> datetime:
     for offset in range(10):
         anchor = datetime(today.year + offset, month, 1)
         if occurrence < 0:
-            anchor += relativedelta(months=1)
+            anchor += relativedelta(months=1, days=-1)
         candidate = anchor + relativedelta(weekday=weekday_func(occurrence))
         if candidate >= today:
             return candidate
@@ -195,6 +195,12 @@ def next_month_weekday(month: int, weekday_func, occurrence: int) -> datetime:
             lambda: next_month_weekday(10, FR, -1)
         ),
 
+        # Last Friday of July (next month starts on same weekday)
+        (
+            "DATE_FROM_MONTH_WEEKDAY(7, 4, -1)",
+            lambda: next_month_weekday(7, FR, -1)
+        ),
+
         # DATE_FROM_YEAR_MONTH_WEEKDAY
 
         # 2nd Monday of February 2026
@@ -232,6 +238,12 @@ def next_month_weekday(month: int, weekday_func, occurrence: int) -> datetime:
             "DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 10, 4, -1)",
             lambda: datetime(2026, 10, 1)
                     + relativedelta(months=1, weekday=FR(-1))
+        ),
+
+        # Last Friday of July 2025 (next month starts on same weekday)
+        (
+            "DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 7, 4, -1)",
+            lambda: datetime(2025, 7, 1) + relativedelta(months=1, days=-1, weekday=FR(-1))
         ),
 
         # SET_MONTH_DAY
