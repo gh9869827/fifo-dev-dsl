@@ -33,6 +33,7 @@ def test_parse_dsl_expression_valid(expr: str, allow_bare: bool, result: list[st
         ("FUNC", False, ValueError),  # Bare identifier not allowed
         ("", False, ValueError),  # Empty string
         ("FUNC a, b", False, ValueError),  # Missing parentheses
+        ("FUNC(a) extra", False, ValueError),  # Trailing garbage
     ]
 )
 def test_parse_dsl_expression_invalid(expr: str, allow_bare: bool, exc_type: type[ValueError]):
