@@ -279,7 +279,7 @@ class MiniDateConverterDSL:
                 try:
                     anchor = datetime(self.input_now.year + offset, month, 1)
                     if occurrence < 0:
-                        anchor += relativedelta(months=1)
+                        anchor += relativedelta(months=1, days=-1)
                     candidate = anchor + relativedelta(weekday=weekday(occurrence))
                     if candidate >= self.input_now:
                         return candidate, False
@@ -306,7 +306,7 @@ class MiniDateConverterDSL:
             try:
                 anchor = datetime(year, month, 1)
                 if occurrence < 0:
-                    anchor += relativedelta(months=1)
+                    anchor += relativedelta(months=1, days=-1)
                 return anchor + relativedelta(weekday=weekday(occurrence)), False
             except ValueError as e:
                 raise ValueError(
