@@ -61,7 +61,12 @@ def parse_natural_recurrence_expression(
         ),
         container_name=container_name
     )
-    dt = MiniRecurrenceConverterDSL().parse(answer)
+
+    try:
+        dt = MiniRecurrenceConverterDSL().parse(answer)
+    except ValueError as e:
+        raise ValueError(f"{e} (dsl='{answer}')") from e
+
     return answer, dt
 
 

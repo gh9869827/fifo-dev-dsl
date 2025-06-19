@@ -63,7 +63,12 @@ def parse_natural_date_expression(
         ),
         container_name=container_name
     )
-    dt = MiniDateConverterDSL(now=now).parse(answer)
+
+    try:
+        dt = MiniDateConverterDSL(now=now).parse(answer)
+    except ValueError as e:
+        raise ValueError(f"{e} (dsl='{answer}')") from e
+
     return answer, dt
 
 
