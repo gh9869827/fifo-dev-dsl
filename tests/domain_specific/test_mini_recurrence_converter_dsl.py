@@ -189,16 +189,6 @@ from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import Mini
             )
         ),
 
-        # YEARLY with frequency and month
-        (
-            "YEARLY(2, 12)",
-            RecurrenceRule(
-                unit=RecurrenceUnit.YEARLY,
-                frequency=2,
-                month=12
-            )
-        ),
-
         # YEARLY with frequency, month, and day
         (
             "YEARLY(1, 7, 4)",
@@ -463,8 +453,9 @@ def test_invalid_dsl_syntax(expr: str):
         ("YEARLY()", "Invalid or missing frequency in YEARLY: got 'None'"),
         ("YEARLY(dummy)", "Invalid or missing frequency in YEARLY: got 'dummy'"),
         ("YEARLY(0)", "Frequency 0 is out of range in YEARLY (must be positive)"),
-        ("YEARLY(1, dummy)", "Invalid or missing month in YEARLY: got 'dummy'"),
-        ("YEARLY(1, 13)", "Month 13 is out of range in YEARLY (expected 1-12)"),
+        ("YEARLY(1, 12)", "YEARLY requires month and day as second and third arguments"),
+        ("YEARLY(1, dummy)", "YEARLY requires month and day as second and third arguments"),
+        ("YEARLY(1, 13)", "YEARLY requires month and day as second and third arguments"),
         ("YEARLY(1, 1, dummy)", "Invalid or missing day in YEARLY: got 'dummy'"),
         ("YEARLY(1, 1, 32)", "Day 32 is out of range in YEARLY (expected 1-31)"),
         ("YEARLY(1, 1, 1, 10:00)", "Invalid TIME argument: '10:00'"),
