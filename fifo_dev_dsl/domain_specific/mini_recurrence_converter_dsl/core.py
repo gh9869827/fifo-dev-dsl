@@ -357,12 +357,11 @@ class MiniRecurrenceConverterDSL:
         Examples:
             MONTHLY_BY_WEEKDAY(1, MO, 2, TIME(15, 0))   # 2nd Monday at 15:00 every month
 
-    - YEARLY(frequency, [month], [day], [TIME(hour, minute)])
-        Every `frequency` years, optionally on a specific month/day and time.
+    - YEARLY(frequency, [month, day], [TIME(hour, minute)])
+        Every `frequency` years, optionally on a specific month/day pair and time.
 
         - `frequency`: required integer.
-        - `month`: optional (1-12); defaults to current month.
-        - `day`: optional (1-31); defaults to current day.
+        - `month, day`: optional month (1-12) and day (1-31); both must be provided together.
         - `TIME(hour, minute)`: optional, defaults to 00:00.
 
         Examples:
@@ -560,15 +559,16 @@ class MiniRecurrenceConverterDSL:
             if len(args) > 4:
                 raise ValueError("Too many arguments passed to YEARLY")
 
-            if len(args) > 1:
-                month = extract_month(args, 1, "YEARLY")
+            if len(args) == 2:
+                raise ValueError("YEARLY requires month and day as second and third arguments")
 
-            if len(args) > 2:
+            if len(args) >= 3:
+                month = extract_month(args, 1, "YEARLY")
                 day = extract_int(args, 2, "day", "YEARLY")
                 if not 1 <= day <= 31:
                     raise ValueError(f"Day {day} is out of range in YEARLY (expected 1-31)")
 
-            if len(args) > 3:
+            if len(args) == 4:
                 hour, minute = self._parse_time_arg(args[3])
 
             return RecurrenceRule(

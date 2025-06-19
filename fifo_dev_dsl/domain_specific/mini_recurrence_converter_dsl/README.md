@@ -77,13 +77,12 @@ MONTHLY_BY_WEEKDAY(3, FR, 1)               # every 3 months, 1st Friday at 00:00
 
 ---
 
-### `YEARLY(frequency, [month], [day], [TIME(hour, minute)])`
+### `YEARLY(frequency, [month, day], [TIME(hour, minute)])`
 
-Every `frequency` years, optionally on a specific month/day and time.
+Every `frequency` years, optionally on a specific month/day pair and time.
 
 - `frequency`: required integer.
-- `month`: optional (1–12); defaults to current month.
-- `day`: optional (1–31); defaults to current day.
+- `month, day`: optional month (1–12) and day (1–31); both must be provided together.
 - `TIME(hour, minute)`: optional, defaults to `00:00`.
 
 **Examples:**
