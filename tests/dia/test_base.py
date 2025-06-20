@@ -25,3 +25,34 @@ def test_to_dsl_representation_runs(dsl_str: str):
     result = obj.to_dsl_representation()
 
     assert dsl_str == result
+
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase, DslContainerBase
+from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
+
+
+def test_dsl_base_leaf_mutations() -> None:
+    base = DslBase()
+    with pytest.raises(RuntimeError, match="DslBase is a leaf node"):
+        base.update_child(0, DslBase())
+    with pytest.raises(RuntimeError, match="DslBase is a leaf node"):
+        base.insert_child(0, DslBase())
+    with pytest.raises(RuntimeError, match="DslBase is a leaf node"):
+        base.remove_child(0)
+
+
+def test_dsl_base_eval_not_implemented() -> None:
+    ctx = LLMRuntimeContext([], [])
+    with pytest.raises(NotImplementedError):
+        DslBase().eval(ctx)
+
+
+def test_container_expected_type_not_implemented() -> None:
+    container = DslContainerBase([])
+    with pytest.raises(NotImplementedError):
+        container._expected_type()
+
+
+def test_container_eq_notimplemented() -> None:
+    container = DslContainerBase([])
+    result = container.__eq__(object())
+    assert result is NotImplemented
