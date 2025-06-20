@@ -1,5 +1,8 @@
+from typing import Any
 import pytest
 from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl_element
+from fifo_dev_dsl.dia.dsl.elements.base import DslBase, DslContainerBase
+from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
 @pytest.mark.parametrize("dsl_str", [
@@ -26,9 +29,6 @@ def test_to_dsl_representation_runs(dsl_str: str):
 
     assert dsl_str == result
 
-from fifo_dev_dsl.dia.dsl.elements.base import DslBase, DslContainerBase
-from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
-
 
 def test_dsl_base_leaf_mutations() -> None:
     base = DslBase()
@@ -47,12 +47,12 @@ def test_dsl_base_eval_not_implemented() -> None:
 
 
 def test_container_expected_type_not_implemented() -> None:
-    container = DslContainerBase([])
+    container: DslContainerBase[Any] = DslContainerBase([])
     with pytest.raises(NotImplementedError):
-        container._expected_type()
+        container._expected_type() # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access
 
 
 def test_container_eq_notimplemented() -> None:
-    container = DslContainerBase([])
-    result = container.__eq__(object())
+    container: DslContainerBase[Any] = DslContainerBase([])
+    result = container.__eq__(object()) # pylint: disable=unnecessary-dunder-call
     assert result is NotImplemented
