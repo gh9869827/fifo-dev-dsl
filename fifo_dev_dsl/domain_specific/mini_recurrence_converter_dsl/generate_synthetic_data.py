@@ -16,8 +16,17 @@ WEEKDAY_FULL_NAME = {
 
 def ordinal(n: int) -> str:
     """
-    Returns ordinal string for positive integers 1-5.
-    Handles -1 as 'last'. Falls back to raw number string otherwise.
+    Converts an integer to its ordinal string representation.
+
+    Args:
+        n (int):
+            The integer to convert. For values 1-5, returns '1st', '2nd', '3rd', '4th', or '5th'
+            respectively. If the input is -1, returns 'last'. For all other values, returns the
+            number followed by 'th' (e.g., '6th').
+    
+    Returns:
+        str:
+            The ordinal string representation of the input integer.
     """
     if n == -1:
         return "last"
@@ -30,45 +39,136 @@ def ordinal(n: int) -> str:
     }.get(n, f"{n}th")
 
 def month_name(m: int) -> str:
+    """
+    Return the English name for a month index.
+
+    Args:
+        m (int):
+            Month number where `1` is January and `12` is December.
+
+    Returns:
+        str:
+            The month name.
+    """
     return MONTH_NAMES[m]
 
 def gen_days() -> list[str]:
+    """
+    Randomly select one to three distinct weekdays.
+
+    Returns:
+        list[str]:
+            Sorted weekday abbreviations such as `["MO", "WE"]`.
+    """
     return sorted(random.sample(WEEKDAYS, k=random.randint(1, 3)))
 
 def gen_frequency_hour() -> int:
-    # Can be 0 (e.g., every 20 minutes) or more
+    """
+    Generate a random hour component for a frequency.
+
+    Returns:
+        int:
+            Hour increment used in HOURLY expressions. `0` represents less than one hour.
+    """
     return random.choice([0, 1, 2, 3, 6, 12])
 
 def gen_frequency_minute() -> int:
-    # Can be 0 (e.g., every 2 hours) or more — but avoid (0, 0)
+    """
+    Generate a random minute for a frequency component.
+
+    Returns:
+        int:
+            Minute increment used for HOURLY expressions.
+    """
     return random.choice([0, 5, 10, 15, 30, 45])
 
 def gen_frequency() -> int:
+    """
+    Generate a generic frequency value.
+
+    Returns:
+        int:
+            An integer between 1 and 24.
+    """
     return random.randint(1, 24)
 
 def gen_time_hh_mm() -> tuple[int, int]:
+    """
+    Generate a random time of day.
+
+    Returns:
+        tuple[int, int]:
+            `(hour, minute)` in 24-hour format.
+    """
     hour = random.choice([0, 6, 8, 9, 12, 15, 18, 21])
     minute = random.choice([0, 15, 30, 45])
     return hour, minute
 
 def gen_month() -> int:
+    """
+    Pick a random month index.
+
+    Returns:
+        int:
+            Value from `1` to `12` where `1` is January and `12` is December.
+    """
     return random.randint(1, 12)
 
 def gen_day() -> int:
-    # Allow 1–31
+    """
+    Pick a random day of the month.
+
+    Returns:
+        int:
+            Value between `1` and `31`.
+    """
     return random.randint(1, 31)
 
 def gen_day_of_month() -> int:
-    # Allow 1–31 and -1 for "last day"
+    """
+    Choose a day of month or `-1` for the last day.
+
+    Returns:
+        int:
+            Number from `1` to `31` or `-1`.
+    """
     return random.choice([*range(1, 32), -1])
 
 def gen_occurrence() -> int:
+    """
+    Generate an occurrence index for weekday-based rules.
+
+    Returns:
+        int:
+            One of `[1-5]` or `-1` for the last occurrence.
+    """
     return random.choice([1, 2, 3, 4, 5, -1])
 
 def gen_weekday() -> str:
-    return random.choice(["MO", "TU", "WE", "TH", "FR", "SA", "SU"])
+    """
+    Select a random weekday abbreviation.
+
+    Returns:
+        str:
+            One of `"MO"` through `"SU"`.
+    """
+    return random.choice(WEEKDAYS)
 
 def format_TIME(hour: int, minute: int) -> str:
+    """
+    Convert a 24-hour time to a human-friendly string.
+
+    Args:
+        hour (int):
+            Hour of day in 24-hour format.
+
+        minute (int):
+            Minute of hour.
+
+    Returns:
+        str:
+            Formatted time such as `"8:30 AM"` or `"midnight"`.
+    """
     if hour == 0 and minute == 0:
         return "midnight"
 
@@ -80,6 +180,20 @@ def format_TIME(hour: int, minute: int) -> str:
     return f"{hour_12}:{minute:02d} {suffix}"
 
 def format_HOURLY(frequency_hour: int, frequency_minute: int) -> tuple[str, str]:
+    """
+    Build natural text and DSL code for an `HOURLY` expression.
+
+    Args:
+        frequency_hour (int):
+            Hour component of the frequency.
+
+        frequency_minute (int):
+            Minute component of the frequency.
+
+    Returns:
+        tuple[str, str]:
+            `(readable text, DSL code)`.
+    """
     if frequency_hour == 0 and frequency_minute == 0:
         # Regenerate if invalid combo
         return format_HOURLY(gen_frequency_hour(), gen_frequency_minute())
@@ -100,6 +214,23 @@ def format_WEEKLY(
     days: list[str] | None = None,
     time_hh_mm: tuple[int, int] | None = None
 ) -> tuple[str, str]:
+    """
+    Generate natural language and DSL code for a `WEEKLY(...)` expression.
+
+    Args:
+        frequency (int):
+            Number of weeks between occurrences.
+
+        days (list[str] | None):
+            Weekday abbreviations (e.g. ["MO", "WE"]).
+
+        time_hh_mm (tuple[int, int] | None):
+            Time of day (hour, minute) in 24-hour format.
+
+    Returns:
+        tuple[str, str]:
+            (readable text, DSL code)
+    """
     if frequency > 1:
         base = f"every {frequency} weeks"
     else:
@@ -130,6 +261,20 @@ def format_WEEKLY(
     return base, code
 
 def format_DAILY(frequency: int, time_hh_mm: tuple[int, int] | None = None) -> tuple[str, str]:
+    """
+    Generate natural language and DSL code for a `DAILY(...)` expression.
+
+    Args:
+        frequency (int):
+            Number of days between occurrences.
+
+        time_hh_mm (tuple[int, int] | None):
+            Time of day (hour, minute) in 24-hour format.
+
+    Returns:
+        tuple[str, str]:
+            (readable text, DSL code)
+    """
     if frequency > 1:
         base = f"every {frequency} days"
     else:
@@ -151,7 +296,26 @@ def format_YEARLY(
     day: int | None = None,
     time_hh_mm: tuple[int, int] | None = None
 ) -> tuple[str, str]:
+    """
+    Generate natural language and DSL code for a `YEARLY(...)` expression.
 
+    Args:
+        frequency (int):
+            Number of years between occurrences.
+
+        month (int | None):
+            Month value (1–12).
+
+        day (int | None):
+            Day of month (1–31).
+
+        time_hh_mm (tuple[int, int] | None):
+            Time of day (hour, minute) in 24-hour format.
+
+    Returns:
+        tuple[str, str]:
+            (readable text, DSL code)
+    """
     if month and day:
         base = f"every {frequency} year{'s' if frequency > 1 else ''} on {month_name(month)} {day}"
     else:
@@ -175,6 +339,23 @@ def format_MONTHLY(
     day_of_month: int | None = None,
     time_hh_mm: tuple[int, int] | None = None
 ) -> tuple[str, str]:
+    """
+    Generate natural language and DSL code for a `MONTHLY(...)` expression.
+
+    Args:
+        frequency (int):
+            Number of months between occurrences.
+
+        day_of_month (int | None):
+            Day of month (1–31) or -1 for "last day".
+
+        time_hh_mm (tuple[int, int] | None):
+            Time of day (hour, minute) in 24-hour format.
+
+    Returns:
+        tuple[str, str]:
+            (readable text, DSL code)
+    """
     if frequency > 1:
         base = f"every {frequency} months"
     else:
@@ -204,7 +385,26 @@ def format_MONTHLY_BY_WEEKDAY(
     occurrence: int,
     time_hh_mm: tuple[int, int] | None = None
 ) -> tuple[str, str]:
+    """
+    Generate natural language and DSL code for a `MONTHLY_BY_WEEKDAY(...)` expression.
 
+    Args:
+        frequency (int):
+            Number of months between occurrences.
+
+        weekday (str):
+            Weekday abbreviation (e.g. "MO").
+
+        occurrence (int):
+            Ordinal occurrence (1–5 or -1 for "last").
+
+        time_hh_mm (tuple[int, int] | None):
+            Time of day (hour, minute) in 24-hour format.
+
+    Returns:
+        tuple[str, str]:
+            (readable text, DSL code)
+    """
     occ_desc = ordinal(occurrence)
     weekday_name = WEEKDAY_FULL_NAME[weekday]
 
@@ -238,6 +438,13 @@ existing_examples = set(
 
 # Helper to conditionally add only novel examples
 def try_add(pair: tuple[str, str]) -> None:
+    """
+    Add a generated example if it is not already present in the dataset.
+
+    Args:
+        pair (tuple[str, str]):
+            `(input text, DSL code)` pair to consider.
+    """
     if pair[0] not in existing_examples:
         examples.add(pair)
 
