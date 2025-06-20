@@ -6,6 +6,18 @@ It includes a Python parser and evaluation engine, as well as a function to tran
 
 ---
 
+## 📦 Pretrained model
+
+The `parse_natural_date_expression` function in the `core` module uses a language model to translate natural date expressions into structured DSL function calls, as defined in this module.
+
+A fine-tuned LoRA adapter is available here:  
+👉 [**mini-date-converter-dsl-adapter**](https://huggingface.co/a6188466/mini-date-converter-dsl-adapter)
+
+It was trained on this dataset of paired natural language and DSL examples:  
+📚 [**mini-date-converter-dsl-dataset**](https://huggingface.co/datasets/a6188466/mini-date-converter-dsl-dataset)
+
+---
+
 ## 🧠 Purpose
 
 Turn expressions like:

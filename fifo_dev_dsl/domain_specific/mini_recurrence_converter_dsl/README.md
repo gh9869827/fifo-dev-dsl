@@ -4,6 +4,18 @@ This module provides a symbolic DSL (domain-specific language) for representing 
 
 ---
 
+## 📦 Pretrained model
+
+The `parse_natural_recurrence_expression` function in the `core` module uses a language model to translate natural recurrence expressions into structured DSL function calls, as defined in this module.
+
+A fine-tuned LoRA adapter is available here:  
+👉 [**mini-recurrence-converter-dsl-adapter**](https://huggingface.co/a6188466/mini-recurrence-converter-dsl-adapter)
+
+It was trained on this dataset of paired natural language and DSL examples:  
+📚 [**mini-recurrence-converter-dsl-dataset**](https://huggingface.co/datasets/a6188466/mini-recurrence-converter-dsl-dataset)
+
+---
+
 ## 📘 DSL Syntax and Examples
 
 The DSL supports symbolic functions to express common recurrence patterns using positional arguments only — no keyword arguments.
