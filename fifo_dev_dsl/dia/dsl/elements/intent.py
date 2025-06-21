@@ -100,7 +100,7 @@ class Intent(make_dsl_container(Slot)):
         interaction: Interaction | None,
     ) -> None:
         super().pre_resolution(runtime_context, resolution_context, interaction)
-        resolution_context.intent = self
+        resolution_context.entering_intent(self)
 
     def post_resolution(
         self,
@@ -109,7 +109,7 @@ class Intent(make_dsl_container(Slot)):
         interaction: Interaction | None,
     ) -> None:
         super().post_resolution(runtime_context, resolution_context, interaction)
-        resolution_context.intent = None
+        resolution_context.exiting_intent()
 
     def on_reentry_resolution(
         self,

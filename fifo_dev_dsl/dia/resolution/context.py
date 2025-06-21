@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any
+from dataclasses import dataclass
 
 from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
 from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
@@ -9,6 +9,26 @@ from fifo_dev_dsl.dia.dsl.elements.ask import Ask
 from fifo_dev_dsl.dia.dsl.elements.query_gather import QueryGather
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 
+
+@dataclass
+class _ResolutionState:
+    """Snapshot of the current intent, slot and known other slots.
+
+    Attributes:
+        intent (Intent | None):
+            The current intent being resolved, or None if no intent is active.
+
+        slot (Slot | None):
+            The current slot being resolved, or None if no slot is active.
+
+        other_slots (dict[str, str] | None):
+            Known values for other slots associated with the current intent,
+            excluding the one currently being resolved.
+    """
+
+    intent: Any
+    slot: Any
+    other_slots: dict[str, str] | None
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.dsl.elements.slot import Slot
@@ -35,7 +55,6 @@ class ResolutionContextStackElement:
     obj: DslBase
     idx: int
 
-@dataclass
 class ResolutionContext:
     """
     Carries the state of the current DSL resolution process.
@@ -75,15 +94,60 @@ class ResolutionContext:
             Full record of LLM interactions during resolution, including system prompts,
             assistant outputs, and user responses. Useful for debugging, generating traces,
             or curating fine-tuning examples.
+
+        _state_stack (list[_ResolutionState]):
+            Internal stack preserving ``intent``, ``slot`` and ``other_slots`` when
+            entering nested intents or slots. The public ``intent``, ``slot`` and
+            ``other_slots`` attributes provide access to the values stored at the
+            top of this stack.
     """
 
-    intent: Intent | None = None
-    slot: Slot | None = None
-    other_slots: dict[str, str]  | None = None
-    _propagate_slots: list[PropagateSlots] = field(default_factory=list[PropagateSlots], repr=False)
-    questions_being_clarified: list[tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str, str]] = field(default_factory=list[tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str, str]])
-    call_stack: list[ResolutionContextStackElement] = field(default_factory=list[ResolutionContextStackElement])
-    llm_call_logs: list[LLMCallLog] = field(default_factory=list[LLMCallLog])
+    def __init__(
+        self,
+        intent: Intent | None = None,
+        slot: Slot | None = None,
+        other_slots: dict[str, str] | None = None,
+        _propagate_slots: list[PropagateSlots] | None = None,
+        questions_being_clarified: list[
+            tuple[IntentRuntimeErrorResolver | Ask | QueryUser | QueryGather, str, str]
+        ] | None = None,
+        call_stack: list[ResolutionContextStackElement] | None = None,
+        llm_call_logs: list[LLMCallLog] | None = None,
+    ) -> None:
+        self._state_stack: list[_ResolutionState] = [
+            _ResolutionState(intent, slot, dict(other_slots) if other_slots is not None else None)
+        ]
+        self._propagate_slots: list[PropagateSlots] = _propagate_slots or []
+        self.questions_being_clarified = questions_being_clarified or []
+        self.call_stack = call_stack or []
+        self.llm_call_logs = llm_call_logs or []
+
+    # ------------------------------------------------------------------
+    # Properties exposing the current resolution state
+    # ------------------------------------------------------------------
+    @property
+    def intent(self) -> "Intent | None":
+        return self._state_stack[-1].intent
+
+    @intent.setter
+    def intent(self, value: "Intent | None") -> None:
+        self._state_stack[-1].intent = value
+
+    @property
+    def slot(self) -> "Slot | None":
+        return self._state_stack[-1].slot
+
+    @slot.setter
+    def slot(self, value: "Slot | None") -> None:
+        self._state_stack[-1].slot = value
+
+    @property
+    def other_slots(self) -> dict[str, str] | None:
+        return self._state_stack[-1].other_slots
+
+    @other_slots.setter
+    def other_slots(self, value: dict[str, str] | None) -> None:
+        self._state_stack[-1].other_slots = value
 
     def format_previous_qna_block(self) -> str:
         """
@@ -172,6 +236,25 @@ $
         slots = self._propagate_slots
         self._propagate_slots = []
         return slots
+
+    def entering_intent(self, intent: "Intent") -> None:
+        """Begin resolving a nested intent.
+
+        The current state is preserved on the stack and the active state is
+        replaced with ``intent`` and empty slot information.
+        """
+        self._state_stack.append(_ResolutionState(intent, None, None))
+
+    def exiting_intent(self) -> None:
+        """Restore the previous resolution state when leaving an intent."""
+        if self._state_stack:
+            self._state_stack.pop()
+        if not self._state_stack:
+            self._state_stack.append(_ResolutionState(None, None, None))
+
+    def reset_state(self) -> None:
+        """Clear the entire state stack and reset intent and slot."""
+        self._state_stack = [_ResolutionState(None, None, None)]
 
     def get_intent_name(self) -> str:
         """
