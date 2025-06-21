@@ -1,4 +1,3 @@
-from fifo_dev_dsl.dia.dsl.parser import parser  # ensure circular imports resolved
 from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 from fifo_dev_dsl.dia.dsl.elements.ask import Ask
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog

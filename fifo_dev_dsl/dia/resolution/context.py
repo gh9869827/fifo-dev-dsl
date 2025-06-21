@@ -12,7 +12,8 @@ from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 
 @dataclass
 class _ResolutionState:
-    """Snapshot of the current intent, slot and known other slots.
+    """
+    Snapshot of the current intent, slot and known other slots.
 
     Attributes:
         intent (Intent | None):
@@ -126,27 +127,69 @@ class ResolutionContext:
     # Properties exposing the current resolution state
     # ------------------------------------------------------------------
     @property
-    def intent(self) -> "Intent | None":
+    def intent(self) -> Intent | None:
+        """
+        The current intent being resolved.
+
+        Returns:
+            Intent | None:
+                The active intent from the top of the internal state stack.
+        """
         return self._state_stack[-1].intent
 
     @intent.setter
-    def intent(self, value: "Intent | None") -> None:
+    def intent(self, value: Intent | None) -> None:
+        """
+        Sets the current intent on the top of the internal state stack.
+
+        Args:
+            value (Intent | None):
+                The intent to set as currently being resolved.
+        """
         self._state_stack[-1].intent = value
 
     @property
-    def slot(self) -> "Slot | None":
+    def slot(self) -> Slot | None:
+        """
+        The current slot being resolved.
+
+        Returns:
+            Slot | None:
+                The active slot from the top of the internal state stack.
+        """
         return self._state_stack[-1].slot
 
     @slot.setter
-    def slot(self, value: "Slot | None") -> None:
+    def slot(self, value: Slot | None) -> None:
+        """
+        Sets the current slot on the top of the internal state stack.
+
+        Args:
+            value (Slot | None):
+                The slot to set as currently being resolved.
+        """
         self._state_stack[-1].slot = value
 
     @property
     def other_slots(self) -> dict[str, str] | None:
+        """
+        Known values for all other slots in the current intent.
+
+        Returns:
+            dict[str, str] | None:
+                A mapping of other resolved slots (excluding the current one).
+        """
         return self._state_stack[-1].other_slots
 
     @other_slots.setter
     def other_slots(self, value: dict[str, str] | None) -> None:
+        """
+        Sets the known values for other slots in the current intent.
+
+        Args:
+            value (dict[str, str] | None):
+                A dictionary of resolved slots excluding the current one.
+        """
         self._state_stack[-1].other_slots = value
 
     def format_previous_qna_block(self) -> str:
@@ -237,23 +280,36 @@ $
         self._propagate_slots = []
         return slots
 
-    def entering_intent(self, intent: "Intent") -> None:
-        """Begin resolving a nested intent.
+    def entering_intent(self, intent: Intent) -> None:
+        """
+        Begin resolving a nested intent.
 
-        The current state is preserved on the stack and the active state is
-        replaced with ``intent`` and empty slot information.
+        Pushes the current resolution state onto the internal stack and 
+        creates a new top-level state for the nested `intent`. The new 
+        state starts with no active slot or other slot values.
+
+        This must only be called when entering a nested intent, not the initial one,
+        which is created automatically when the ResolutionContext is initialized.
+
+        Args:
+            intent (Intent):
+                The nested intent that is now being resolved.
         """
         self._state_stack.append(_ResolutionState(intent, None, None))
 
     def exiting_intent(self) -> None:
-        """Restore the previous resolution state when leaving an intent."""
+        """
+        Restore the previous resolution state when leaving an intent.
+        """
         if self._state_stack:
             self._state_stack.pop()
         if not self._state_stack:
             self._state_stack.append(_ResolutionState(None, None, None))
 
     def reset_state(self) -> None:
-        """Clear the entire state stack and reset intent and slot."""
+        """
+        Clear the entire state stack and reset intent and slot.
+        """
         self._state_stack = [_ResolutionState(None, None, None)]
 
     def get_intent_name(self) -> str:
