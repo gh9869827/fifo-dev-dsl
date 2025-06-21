@@ -48,7 +48,6 @@ class IntentEvaluatedSuccess(DslBase):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         """
         Return the stored evaluation result.
@@ -61,15 +60,10 @@ class IntentEvaluatedSuccess(DslBase):
             runtime_context (LLMRuntimeContext):
                 Execution context (not used in this node).
 
-            value_type (MiniDocStringType | None):
-                Optional expected return type used to cast the stored result.
-
         Returns:
             Any:
                 The previously computed value from `evaluation_outcome`.
         """
 
-        result = self.evaluation_outcome.value
-        return (
-            value_type.cast(result) if value_type is not None else result
-        )
+        _ = runtime_context
+        return self.evaluation_outcome.value

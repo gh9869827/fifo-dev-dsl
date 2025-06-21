@@ -269,7 +269,6 @@ class DslBase:
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         """
         Evaluate this DSL element and return its runtime value.
@@ -280,9 +279,6 @@ class DslBase:
         Args:
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources and runtime helpers.
-
-            value_type (MiniDocStringType | None):
-                Optional expected return type used to cast or interpret the result.
 
         Returns:
             Any:

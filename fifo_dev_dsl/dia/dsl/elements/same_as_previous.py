@@ -29,8 +29,7 @@ class SameAsPreviousIntent(DSLValueBase):
     """
 
     def eval(self,
-             runtime_context: LLMRuntimeContext,
-             value_type: MiniDocStringType | None = None) -> Any:
+             runtime_context: LLMRuntimeContext) -> Any:
         """
         Retrieve the value of the same-named slot from the previous intent.
 

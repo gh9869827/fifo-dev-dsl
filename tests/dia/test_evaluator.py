@@ -523,7 +523,6 @@ class _BadNode(DslBase):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         pass  # pragma: no cover
 

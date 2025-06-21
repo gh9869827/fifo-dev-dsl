@@ -30,7 +30,6 @@ class ListElement(make_dsl_container(DslBase)):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         """
         Evaluate each child and return a list of their values.
@@ -42,10 +41,6 @@ class ListElement(make_dsl_container(DslBase)):
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
 
-            value_type (MiniDocStringType | None):
-                Optional expected return type. When provided and represents
-                `list[T]`, each child is evaluated using `T` as its expected type.
-
         Returns:
             list[Any]:
                 The list of evaluated child values.
@@ -54,5 +49,5 @@ class ListElement(make_dsl_container(DslBase)):
             RuntimeError: If any child is not resolved.
         """
 
-        inner = value_type.is_list() if value_type is not None else None
-        return [child.eval(runtime_context, inner) for child in self.get_items()]
+        _ = runtime_context
+        return [child.eval(runtime_context) for child in self.get_items()]

@@ -49,7 +49,6 @@ class PropagateSlots(make_dsl_container(Slot)):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         """
         Evaluate to a dictionary of propagated slot values.
@@ -62,8 +61,6 @@ class PropagateSlots(make_dsl_container(Slot)):
             runtime_context (LLMRuntimeContext):
                 Execution context forwarded to each slot value.
 
-            value_type (MiniDocStringType | None):
-                Ignored. Propagated values may be of heterogeneous types.
 
         Returns:
             dict[str, Any]:

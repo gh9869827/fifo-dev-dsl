@@ -61,7 +61,6 @@ class AbortWithNewDsl(DslBase):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         """
         Raise a :class:`RuntimeError` for unresolved abort redirections.

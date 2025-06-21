@@ -52,7 +52,6 @@ class Abort(DslBase):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         """
         Raise a RuntimeError because Abort nodes are unresolved.

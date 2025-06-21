@@ -67,7 +67,9 @@ class Evaluator:
 
             if isinstance(current.obj, Intent):
                 try:
-                    value = current.obj.eval(self._runtime_context, expected_type)
+                    value = current.obj.eval(self._runtime_context)
+                    if expected_type is not None:
+                        value = expected_type.cast(value)
                     wrapped = IntentEvaluatedSuccess(
                         intent=current.obj,
                         evaluation_outcome=EvaluationOutcome(value)

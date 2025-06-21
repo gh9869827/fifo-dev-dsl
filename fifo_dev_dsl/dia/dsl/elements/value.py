@@ -49,30 +49,18 @@ class Value(DSLValueBase):
         return f'{self.value}'
 
     def eval(self,
-             runtime_context: LLMRuntimeContext,
-             value_type: MiniDocStringType | None = None) -> Any:
+             runtime_context: LLMRuntimeContext) -> Any:
         """
-        Return the stored constant after casting to the given value type.
-
-        The result is cast using `MiniDocStringType.cast(value_type)`.
+        Return the stored constant value without casting.
 
         Args:
             runtime_context (LLMRuntimeContext):
                 Execution context (not used in this node).
 
-            value_type (MiniDocStringType | None):
-                Expected type used to cast `self.value`.
 
         Returns:
             Any:
-                The stored value, converted to the requested type.
-
-        Raises:
-            RuntimeError: If `value_type` is not provided.
+                The stored value as-is.
         """
-        if value_type is None:
-            raise RuntimeError(
-                "Missing expected type for evaluation of Value"
-            )
-
-        return value_type.cast(self.value, allow_scalar_to_list=True)
+        _ = runtime_context
+        return self.value
