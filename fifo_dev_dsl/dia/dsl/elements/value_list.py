@@ -25,40 +25,24 @@ class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
     """
 
     def eval(self,
-             runtime_context: LLMRuntimeContext,
-             value_type: MiniDocStringType | None = None) -> Any:
+             runtime_context: LLMRuntimeContext) -> Any:
         """
         Evaluate each child value and return a list of results.
-
-        Evaluation requires that `value_type` represents a list type. Each
-        child is evaluated using the list's inner element type.
 
         Args:
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
 
-            value_type (MiniDocStringType | None):
-                Optional expected return type used to cast or interpret the result.
 
         Returns:
             list[Any]:
                 The list of evaluated child values.
 
         Raises:
-            RuntimeError: If `value_type` is not provided or is not a list type.
+            RuntimeError: If any child is not resolved.
         """
-        if value_type is None:
-            raise RuntimeError(
-                "Missing expected type for evaluation of ListValue"
-            )
-
-        if (inner_type := value_type.is_list()) is not None:
-            return [
-                e.eval(runtime_context, inner_type)
-                for e in self.get_items()
-            ]
-
-        raise ValueError(f"Invalid type for ListValue eval(): {value_type}")
+        _ = runtime_context
+        return [e.eval(runtime_context) for e in self.get_items()]
 
     def to_dsl_representation(self) -> str:
         """

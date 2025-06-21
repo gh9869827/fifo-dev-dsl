@@ -68,37 +68,27 @@ class FuzzyValue(DSLValueBase):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None
     ) -> Any:
         """
         Map the fuzzy value to a numeric value.
 
-        During evaluation, the fuzzy value must be matched against known values. 
-        If no match is found or if `value_type` is missing, a RuntimeError is raised.
+        During evaluation, the fuzzy value must be matched against known values.
+        If no match is found, a :class:`ValueError` is raised.
 
         Args:
             runtime_context (LLMRuntimeContext):
                 Execution context (not used in this node).
-
-            value_type (MiniDocStringType | None):
-                Expected numeric type used to cast the resolved fuzzy value.
 
         Returns:
             Any:
                 Numeric representation corresponding to the fuzzy value.
 
         Raises:
-            RuntimeError: If the fuzzy value is unknown or `value_type` is not provided.
+            ValueError: If the fuzzy value is unknown.
         """
-        if value_type is None:
-            raise RuntimeError(
-                "Missing expected type for evaluation of FuzzyValue"
-            )
-
+        _ = runtime_context
         normalized = self.value.lower().strip()
         if normalized in _FUZZY_TO_NUMERIC:
-            return value_type.cast(
-                _FUZZY_TO_NUMERIC[normalized], allow_scalar_to_list=True
-            )
+            return _FUZZY_TO_NUMERIC[normalized]
 
         raise ValueError(f"Unrecognized fuzzy value: {self.value!r}")

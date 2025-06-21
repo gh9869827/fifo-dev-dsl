@@ -111,7 +111,6 @@ class Slot(make_dsl_container(DslBase)):
     def eval(
         self,
         runtime_context: LLMRuntimeContext,
-        value_type: MiniDocStringType | None = None,
     ) -> Any:
         """
         Evaluate the value stored in this slot and return the result of its evaluation.
@@ -124,8 +123,6 @@ class Slot(make_dsl_container(DslBase)):
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
 
-            value_type (MiniDocStringType | None):
-                Optional expected return type used to cast or interpret the result.
 
         Returns:
             Any:
@@ -135,4 +132,4 @@ class Slot(make_dsl_container(DslBase)):
             RuntimeError: If the stored value is not resolved.
         """
 
-        return self.value.eval(runtime_context, value_type)
+        return self.value.eval(runtime_context)

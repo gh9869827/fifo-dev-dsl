@@ -123,8 +123,7 @@ class Intent(make_dsl_container(Slot)):
         self._propagate_slots(resolution_context)
 
     def eval(self,
-             runtime_context: LLMRuntimeContext,
-             value_type: MiniDocStringType | None = None) -> Any:
+             runtime_context: LLMRuntimeContext) -> Any:
         """
         Evaluate this intent by invoking the named tool with the evaluated slot values as arguments.
 
@@ -136,12 +135,10 @@ class Intent(make_dsl_container(Slot)):
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
 
-            value_type (MiniDocStringType | None):
-                Optional expected return type used to cast the tool's result.
 
         Returns:
             Any:
-                The result returned by the invoked tool, optionally cast to `value_type`.
+                The result returned by the invoked tool.
 
         Raises:
             RuntimeError: If any slot or nested value is not resolved.
@@ -150,8 +147,8 @@ class Intent(make_dsl_container(Slot)):
         tool = runtime_context.get_tool(self.name)
 
         args = {
-            slot.name: slot.value.eval(
-                runtime_context, tool.tool_docstring.get_arg_by_name(slot.name).pytype
+            slot.name: tool.tool_docstring.get_arg_by_name(slot.name).pytype.cast(
+                slot.value.eval(runtime_context), allow_scalar_to_list=True
             )
             for slot in self._items
         }
@@ -162,4 +159,4 @@ class Intent(make_dsl_container(Slot)):
 
         ret = tool.tool_docstring.return_type.cast(tool(**args))
 
-        return value_type.cast(ret) if value_type is not None else ret
+        return ret
