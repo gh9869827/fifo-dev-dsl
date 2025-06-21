@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
@@ -49,5 +48,4 @@ class ListElement(make_dsl_container(DslBase)):
             RuntimeError: If any child is not resolved.
         """
 
-        _ = runtime_context
         return [child.eval(runtime_context) for child in self.get_items()]

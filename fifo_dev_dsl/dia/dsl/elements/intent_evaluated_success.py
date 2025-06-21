@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.base import DslBase
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
     from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome
     from fifo_dev_dsl.dia.dsl.elements.intent import Intent
@@ -64,6 +63,4 @@ class IntentEvaluatedSuccess(DslBase):
             Any:
                 The previously computed value from `evaluation_outcome`.
         """
-
-        _ = runtime_context
         return self.evaluation_outcome.value

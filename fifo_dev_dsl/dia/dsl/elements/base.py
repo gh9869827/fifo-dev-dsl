@@ -6,7 +6,6 @@ from fifo_dev_common.typeutils.strict_cast import strict_cast
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext

@@ -6,7 +6,6 @@ from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 _FUZZY_TO_NUMERIC: dict[str, int] = {
@@ -86,7 +85,6 @@ class FuzzyValue(DSLValueBase):
         Raises:
             ValueError: If the fuzzy value is unknown.
         """
-        _ = runtime_context
         normalized = self.value.lower().strip()
         if normalized in _FUZZY_TO_NUMERIC:
             return _FUZZY_TO_NUMERIC[normalized]

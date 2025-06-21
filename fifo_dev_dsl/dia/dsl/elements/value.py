@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from fifo_dev_dsl.dia.dsl.elements.value_base import DSLValueBase
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 @dataclass
@@ -62,5 +61,4 @@ class Value(DSLValueBase):
             Any:
                 The stored value as-is.
         """
-        _ = runtime_context
         return self.value
