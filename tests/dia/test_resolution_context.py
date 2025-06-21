@@ -1,3 +1,4 @@
+from fifo_dev_dsl.dia.dsl.parser import parser  # ensure circular imports resolved
 from fifo_dev_dsl.dia.resolution.context import ResolutionContext
 from fifo_dev_dsl.dia.dsl.elements.ask import Ask
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
@@ -73,3 +74,25 @@ def test_format_other_slots_yaml_contents_and_padding() -> None:
     assert padded == (
         "  other_slots:\n    foo: bar\n    baz: qux"
     )
+
+
+def test_entering_and_exiting_intent() -> None:
+    from fifo_dev_dsl.dia.dsl.elements.intent import Intent
+    from fifo_dev_dsl.dia.dsl.elements.slot import Slot
+    from fifo_dev_dsl.dia.dsl.elements.value import Value
+
+    intent1 = Intent("foo", [])
+    intent2 = Intent("bar", [])
+    slot = Slot("a", Value("1"))
+
+    ctx = ResolutionContext(intent=intent1, slot=slot, other_slots={"x": "y"})
+
+    ctx.entering_intent(intent2)
+    ctx.slot = None
+    ctx.other_slots = None
+
+    ctx.exiting_intent()
+
+    assert ctx.intent is intent1
+    assert ctx.slot is slot
+    assert ctx.other_slots == {"x": "y"}
