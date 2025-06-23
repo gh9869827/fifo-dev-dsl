@@ -1,4 +1,3 @@
-from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.intent_evaluated_success import IntentEvaluatedSuccess
 from fifo_dev_dsl.dia.resolution.context import ResolutionContextStackElement
@@ -14,20 +13,20 @@ class Evaluator:
     """
     Execute a resolved DSL tree using depth-first traversal.
 
-    Each :class:`Intent` is evaluated in order. Once executed, the node is
-    replaced by an :class:`IntentEvaluatedSuccess`, preserving its outcome
+    Each `Intent` is evaluated in order. Once executed, the node is
+    replaced by an `IntentEvaluatedSuccess`, preserving its outcome
     and preventing re-execution. This ensures correct handling of non-idempotent
     or side-effecting operations — such as sending commands, moving actuators,
     or mutating external state.
 
     The tree is traversed explicitly using a stack, enabling structured error
     recovery and precise control over evaluation order. Tool calls are resolved
-    via the provided :class:`LLMRuntimeContext`.
+    via the provided `LLMRuntimeContext`.
 
     Any exception raised during evaluation is intercepted and converted into
-    an :class:`EvaluationOutcome` with a status of either
-    :attr:`EvaluationStatus.ABORTED_RECOVERABLE` or
-    :attr:`EvaluationStatus.ABORTED_UNRECOVERABLE`, depending on the nature
+    an `EvaluationOutcome` with a status of either
+    `EvaluationStatus.ABORTED_RECOVERABLE` or
+    `EvaluationStatus.ABORTED_UNRECOVERABLE`, depending on the nature
     of the error.
     """
 
@@ -37,25 +36,21 @@ class Evaluator:
             ResolutionContextStackElement(root, 0)
         ]
 
-    def evaluate(self, expected_type: MiniDocStringType | None = None) -> EvaluationOutcome:
+    def evaluate(self) -> EvaluationOutcome:
         """
         Evaluate the DSL tree and return the final result.
 
         The traversal is depth-first and performed using an explicit stack.
-        Each :class:`Intent` is evaluated within the provided
-        :class:`LLMRuntimeContext`, which supplies available tools and type
+        Each `Intent` is evaluated within the provided
+        `LLMRuntimeContext`, which supplies available tools and type
         information. The intent node is then replaced with an
-        :class:`IntentEvaluatedSuccess` to prevent re-execution and preserve
+        `IntentEvaluatedSuccess` to prevent re-execution and preserve
         the result.
 
         If an exception occurs during evaluation, it is intercepted and
-        returned as an :class:`EvaluationOutcome` with status set to either
-        :attr:`EvaluationStatus.ABORTED_RECOVERABLE` or
-        :attr:`EvaluationStatus.ABORTED_UNRECOVERABLE`.
-
-        Args:
-            expected_type (MiniDocStringType | None):
-                Optional type to cast the final return value.
+        returned as an `EvaluationOutcome` with status set to either
+        `EvaluationStatus.ABORTED_RECOVERABLE` or
+        `EvaluationStatus.ABORTED_UNRECOVERABLE`.
 
         Returns:
             EvaluationOutcome:
@@ -68,8 +63,6 @@ class Evaluator:
             if isinstance(current.obj, Intent):
                 try:
                     value = current.obj.eval(self._runtime_context)
-                    if expected_type is not None:
-                        value = expected_type.cast(value)
                     wrapped = IntentEvaluatedSuccess(
                         intent=current.obj,
                         evaluation_outcome=EvaluationOutcome(value)
