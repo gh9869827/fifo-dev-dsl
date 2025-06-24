@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
-from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_dsl.dia.dsl.elements.base import make_dsl_container
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 
