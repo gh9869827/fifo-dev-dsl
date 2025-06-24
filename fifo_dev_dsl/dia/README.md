@@ -22,6 +22,7 @@ parsed, resolved, evaluated, and integrated into interactive agents.
 ## 📚 Table of Contents
 
 - 📦 [Components](#components)
+- 🔁 [High-Level Flow Example](#high-level-flow-example)
 - 🧾 [Parsing DSL](#parsing-dsl)
 - 🧭 [Resolver](#resolver)
 - 🧮 [Evaluator](#evaluator)
@@ -52,6 +53,36 @@ The DIA system consists of three main components:
    expressions, slot resolution examples, and error recovery paths to help teach robust multi-turn
    behavior.  
    👉 [View Dataset on Hugging Face Hub](https://huggingface.co/datasets/your-dataset-link)
+
+---
+
+## 🔁 High-Level Flow Example
+ 
+In the rest of the documentation, we will use the following example to illustrate DIA's ability to parse, interact, complete, and execute high-level intents.
+ 
+Suppose a user says:  
+_“Retrieve 3 screws from the inventory”_
+ 
+DIA processes this in five stages:
+ 
+1. **Transform user's text into DIA DSL**  
+   Converts the user’s request into:  
+   `retrieve_screw(count=3, length=ASK("What screw length do you need?"))`  
+   This step relies on the description of the available intents and runtime query sources to  
+   determine missing information and how to resolve it.
+ 
+2. **Parsing**  
+   Parses the DSL string into a structured DSL tree with typed nodes and slots.
+ 
+3. **Resolution**  
+   Identifies the missing slot `length`, asks the user for it, and receives the reply "12".
+ 
+4. **Resolved DSL**  
+   Tree is now complete:  
+   `retrieve_screw(count=3, length=12)`
+ 
+5. **Evaluation**  
+   Executes the tool implementation tied to `retrieve_screw`, performing the real-world action.
 
 ---
 
