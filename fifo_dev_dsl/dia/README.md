@@ -274,56 +274,29 @@ Key features demonstrated:
 
 ### 🧩 Mini Calculator
 
-`ReturnValue` nodes allow nesting intents so that the result of one tool feeds
-another. The mini calculator below demonstrates the composition of a sum and a
-multiplication.
+This example demonstrates how `dia` supports **nested intent execution**, where the result of one tool is fed into another using `ReturnValue` nodes.
 
-```python
-class Calc:
-    @tool_handler("add")
-    def add(self, a: int, b: int) -> int:
-        """Add two numbers.
+🧪 [View and run the demo](demo/calculator.py)
 
-        Args:
-            a (int): first number to add
-            b (int): second number to add
+Key features demonstrated:
+- Nested intent evaluation  
+- Intent composition via `ReturnValue`  
+- Runtime tool execution with correct evaluation order
 
-        Returns:
-            int: the sum of ``a`` and ``b``
-        """
-        return a + b
-
-    @tool_handler("multiply")
-    def multiply(self, a: int, b: int) -> int:
-        """Multiply two numbers.
-
-        Args:
-            a (int): first factor
-            b (int): second factor
-
-        Returns:
-            int: the product of ``a`` and ``b``
-        """
-        return a * b
-
-calc = Calc()
-runtime = LLMRuntimeContext(tools=[calc.add, calc.multiply], query_sources=[])
-resolver = Resolver(runtime_context=runtime,
-                    prompt="add 2 and 3 then multiply the result by 4")
-
-# Step 1: resolve DSL (no loop is needed in this example because there is no missing information)
-resolver.fully_resolve_in_text_mode()
-dsl_elements = resolver.dsl_elements
-dsl_elements.pretty_print_dsl()
-
-# Step 2: evaluate resolved DSL (may succeed or fail)
-evaluator = Evaluator(runtime, dsl_elements)
-result = evaluator.evaluate()
-print(result.value)  # 20
+Prompt used in the example:
+```
+42 / (5 + 1 + 1)
 ```
 
-This prompt resolves to a DSL like `multiply(a=4, b=add(a=2, b=3))` where the inner
-`add` intent is wrapped in a `ReturnValue` and its result used by `multiply`.
+Expected DSL:
+```
+divide(a=42, b=add(a=5, b=add(a=1, b=1)))
+```
+
+And its result:
+```
+6
+```
 
 ---
 
