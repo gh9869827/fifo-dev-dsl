@@ -190,7 +190,9 @@ def parse_dsl_element(text: str,
 
         if name == "QUERY_GATHER":
             args = split_top_level_commas(args)
-            assert len(args) == 2
+            if len(args) != 2:
+                raise ValueError("Malformed QUERY_GATHER expression: "
+                                 f"expected 2 arguments, got {len(args)}")
             return QueryGather(strip_quotes(args[0]), strip_quotes(args[1]))
 
         if name == "SAME_AS_PREVIOUS_INTENT":
