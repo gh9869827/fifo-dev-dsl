@@ -84,7 +84,7 @@ def eval_prompt(prompt: str) -> float:
     return node.evaluation_outcome.value
 
 
-def eval_random() -> None:
+def eval_random(delta_file: str | None = None) -> None:
     """
     Evaluate randomly generated arithmetic expressions using the DIA DSL pipeline.
 
@@ -96,10 +96,16 @@ def eval_random() -> None:
 
     Outputs ✅/❌ for each prompt and prints per-length and overall accuracy.
     Skips cases with division by zero.
+
+    Args:
+        delta_file (str | None):
+            Optional path where failed prompts are logged. When ``None``,
+            no logging is performed.
     """
     total_global, error_global = 0, 0
     results_by_length: dict[int, list[int]] = {k: [0, 0] for k in range(2, 7)}
-    with open("delta.dat", "w", encoding="utf-8") as f_delta:
+    f_delta = open(delta_file, "w", encoding="utf-8") if delta_file else None
+    try:
         for length_tree in [2, 3, 4, 5, 6]:
             total, error = 0, 0
 
@@ -135,12 +141,13 @@ def eval_random() -> None:
 
                     fct_signature = random_function_signature()
 
-                    f_delta.write(
-                        f"$\n{get_system_prompt(fct_signature).rstrip()}\n"
-                        f"> {pretty_print_user(t).rstrip()}\n"
-                        f"< {pretty_print_dsl(t, fct_signature).rstrip()}\n"
-                        f"---\n"
-                    )
+                    if f_delta:
+                        f_delta.write(
+                            f"$\n{get_system_prompt(fct_signature).rstrip()}\n"
+                            f"> {pretty_print_user(t).rstrip()}\n"
+                            f"< {pretty_print_dsl(t, fct_signature).rstrip()}\n"
+                            f"---\n"
+                        )
 
                 live_stats: list[str] = []
                 for k in range(2, 7):
@@ -153,14 +160,17 @@ def eval_random() -> None:
             total_global += total
             error_global += error
 
-    print("\n=== Accuracy per tree length ===")
-    for length, (total, error) in results_by_length.items():
-        acc = (total - error) / total * 100 if total > 0 else 0.0
-        print(f"Length {length}: Total={total} | Errors={error} | Accuracy={acc:.2f}%")
+        print("\n=== Accuracy per tree length ===")
+        for length, (total, error) in results_by_length.items():
+            acc = (total - error) / total * 100 if total > 0 else 0.0
+            print(f"Length {length}: Total={total} | Errors={error} | Accuracy={acc:.2f}%")
 
-    print("\n=== Overall Accuracy ===")
-    accuracy = (total_global - error_global) / total_global * 100 if total_global > 0 else 0.0
-    print(f"Total: {total_global} | Errors: {error_global} | Accuracy: {accuracy:.2f}%")
+        print("\n=== Overall Accuracy ===")
+        accuracy = (total_global - error_global) / total_global * 100 if total_global > 0 else 0.0
+        print(f"Total: {total_global} | Errors: {error_global} | Accuracy: {accuracy:.2f}%")
+    finally:
+        if f_delta:
+            f_delta.close()
 
 
 def eval_test() -> None:
@@ -330,9 +340,17 @@ def custom_evaluate_arithmetic_dsl_tree(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluation script")
     parser.add_argument("--random", action="store_true", help="Evaluate on random examples")
+    parser.add_argument(
+        "--delta-file",
+        nargs="?",
+        const="delta.dat",
+        default=None,
+        metavar="PATH",
+        help="Log failed random examples to PATH (default: delta.dat)"
+    )
     args = parser.parse_args()
 
     if args.random:
-        eval_random()
+        eval_random(args.delta_file)
     else:
         eval_test()
