@@ -112,7 +112,10 @@ if __name__ == "__main__":
 
     print("> ready for command")
 
-    USER_PROMPT = "-9709 / -255 - 2684"
+    # USER_PROMPT = "-9709 / -255 - 2684"
+    # USER_PROMPT = "add 2 and 3 and then multiply the result by 5"
+    # USER_PROMPT = "multiply together the numbers 1, 2, 3 and 4"
+    USER_PROMPT = "what is 3 plus (2 times 4)?"
 
     print(f"> {USER_PROMPT}")
 
