@@ -21,14 +21,14 @@ parsed, resolved, evaluated, and integrated into interactive agents.
 
 ## 📚 Table of Contents
 
-- 📦 [Components](#components)
-- 🔁 [High-Level Flow Example](#high-level-flow-example)
-- 🧾 [Parsing DSL](#parsing-dsl)
-- 🧭 [Resolver](#resolver)
-- 🧮 [Evaluator](#evaluator)
-- 🧰 [Runtime Context](#runtime-context)
-- 🤖 [LLM Invocation Strategy](#llm-invocation-strategy)
-- 🚀 [End‑to‑End Execution](#end-to-end-execution)
+- 📦 [Components](#-components)
+- 🔁 [High-Level Flow Example](#-high-level-flow-example)
+- 🧾 [Parsing DSL](#-parsing-dsl)
+- 🧭 [Resolver](#-resolver)
+- 🧮 [Evaluator](#-evaluator)
+- 🧰 [Runtime Context](#-runtime-context)
+- 🤖 [LLM Invocation Strategy](#-llm-invocation-strategy)
+- 🚀 [End‑to‑End Execution](#-endtoend-execution)
 
 ---
 
