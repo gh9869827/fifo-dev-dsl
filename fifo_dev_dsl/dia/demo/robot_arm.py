@@ -94,6 +94,7 @@ robot = RobotArm()
 
 runtime_context = LLMRuntimeContext(
     container_name="phi",
+    intent_sequencer_adapter="dia-intent-sequencer-robot-arm-adapter",
     tools=[
         robot.retrieve_screw,
         robot.initialize_components,
