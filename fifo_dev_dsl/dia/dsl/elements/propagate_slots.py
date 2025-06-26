@@ -5,7 +5,6 @@ from fifo_dev_dsl.dia.dsl.elements.base import DslBase, make_dsl_container
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
 
 if TYPE_CHECKING:  # pragma: no cover
-    from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
     from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 class PropagateSlots(make_dsl_container(Slot)):
