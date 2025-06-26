@@ -1,7 +1,8 @@
 from typing import Callable
 import pytest
 from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta, MO, TH, FR, WE, SU
+from dateutil.relativedelta import relativedelta
+from dateutil.rrule import weekday, MO, TH, FR, WE, SU
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import MiniDateConverterDSL
 
 # Helper
@@ -14,7 +15,7 @@ def last_day_of_month(dt: datetime) -> int:
     next_month = dt.replace(day=28) + timedelta(days=4)
     return (next_month.replace(day=1) - timedelta(days=1)).day
 
-def next_month_weekday(month: int, weekday_func, occurrence: int) -> datetime:
+def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> datetime:
     today = datetime.now()
     for offset in range(10):
         anchor = datetime(today.year + offset, month, 1)
@@ -23,7 +24,7 @@ def next_month_weekday(month: int, weekday_func, occurrence: int) -> datetime:
         candidate = anchor + relativedelta(weekday=weekday_func(occurrence))
         if candidate >= today:
             return candidate
-
+    assert False # pragma: no cover
 
 @pytest.mark.parametrize(
     "expr, expected_fn",
