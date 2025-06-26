@@ -2,7 +2,6 @@ from typing import Any
 from unittest.mock import patch
 import pytest
 from fifo_dev_common.introspection.tool_decorator import tool_handler
-from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
