@@ -107,14 +107,45 @@ class QueryUser(DslBase):
             user_answer = interaction.answer.content
             interaction.answer.consumed = True
 
-            resolution_text = f"""resolution_context:
+            resolution_text = "resolution_context:"
+
+            if resolution_context.intent is not None and resolution_context.slot is not None:
+                # The user question is asked within the context of a specific intent and slot.
+                # This means the assistant is trying to resolve the value for that slot, so we use
+                # the `system_prompt_slot_resolver` to guide the resolution process.
+                #
+                # If the user responds with a follow-up that redirects or overrides the intent,
+                # the system may abort the current intent and create a new one.
+                #
+                # Example interaction:
+                #   >  dia(1): What length do you need?
+                #   > user(1): What length do you have in the inventory?
+                #   >  dia(2): We have screws of lengths 8, 10, 11, 12, and 16 in the inventory.
+                #   > user(2): OK, give me 8mm screws then.
+                #
+                # Here:
+                # - `QueryUser.query` contains the original question: user(1)
+                # - `answer = call_airlock_model_server(...)` returns dia's response: dia(2)
+                # - `interaction.answer.content` contains the user follow-up: user(2)
+                resolution_prompt = runtime_context.system_prompt_slot_resolver
+
+                resolution_text = f"""{resolution_text}
+  intent: {resolution_context.get_intent_name()}
+  slot: {resolution_context.get_slot_name()}"""
+
+            else:
+                # The user question is not tied to any intent or slot resolution context.
+                # We therefore call the intent sequencer directly to determine the user's intent.
+                resolution_prompt = runtime_context.system_prompt_intent_sequencer
+
+            resolution_text = f"""{resolution_text}
 {resolution_context.format_previous_qna_block()}
   current_question: {interaction.request.message}
   current_user_answer: {user_answer}"""
 
             return ask_helper_no_interaction(
                 runtime_context,
-                runtime_context.system_prompt_intent_sequencer,
+                resolution_prompt,
                 (self, interaction.request.message),
                 resolution_context,
                 resolution_text,
