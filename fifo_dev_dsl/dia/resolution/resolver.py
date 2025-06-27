@@ -13,6 +13,9 @@ from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 from fifo_dev_dsl.dia.resolution.outcome import ResolutionOutcome
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
+from fifo_dev_dsl.common.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def resolve(
@@ -91,7 +94,7 @@ def resolve(
 
         parent.obj.update_child(parent.idx - 1, new_node)
 
-        print(f"--> in {parent} replacing {current.obj} by {new_node}")
+        logger.trace(f"--> in {parent} replacing {current.obj} by {new_node}")
 
         resolution_context.call_stack[-1] = ResolutionContextStackElement(new_node, 0)
 
@@ -137,7 +140,7 @@ def resolve(
 
         parent = resolution_context.call_stack[-1]
 
-        print("--> Clearing slot, intent and clarifying question due to abort condition")
+        logger.trace("--> Clearing slot, intent and clarifying question due to abort condition")
         resolution_context.questions_being_clarified.clear()
         resolution_context.reset_state()
 

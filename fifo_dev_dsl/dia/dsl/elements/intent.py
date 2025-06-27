@@ -5,6 +5,9 @@ from dataclasses import dataclass
 
 from fifo_dev_dsl.dia.dsl.elements.base import make_dsl_container
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
+from fifo_dev_dsl.common.logger import get_logger
+
+logger = get_logger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.interaction import Interaction
@@ -82,8 +85,10 @@ class Intent(make_dsl_container(Slot)):
             for slot in self.get_items():
                 pslot_value = pslots.get(slot.name)
                 if pslot_value is not None:
-                    print(f"--> propagating slots {slot.name}, "
-                          f"{slot.value} replaced by {pslot_value} ")
+                    logger.trace(
+                        f"--> propagating slots {slot.name}, "
+                        f"{slot.value} replaced by {pslot_value} "
+                    )
                     slot.value = pslot_value
                     updated.add(slot.name)
 

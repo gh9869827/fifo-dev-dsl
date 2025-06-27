@@ -7,6 +7,9 @@ from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import IntentRuntimeErrorResolver
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome, EvaluationStatus
 from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
+from fifo_dev_dsl.common.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 class Evaluator:
@@ -122,7 +125,7 @@ class Evaluator:
         )
 
     def _handle_eval_error(self, node: DslBase, error: Exception) -> DslBase | None:
-        print(f"[eval error] {node}: {error}")
+        logger.trace(f"[eval error] {node}: {error}")
 
         if isinstance(error, ApiErrorAbortAndResolve) and isinstance(node, Intent):
             return IntentRuntimeErrorResolver(intent=node, error_message=str(error))

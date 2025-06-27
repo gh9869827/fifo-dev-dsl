@@ -56,7 +56,6 @@ def ask_helper_no_interaction(
     )
 
 
-    print(answer)
     parsed_dsl = parser.parse_dsl(answer)
 
     return ResolutionOutcome(
