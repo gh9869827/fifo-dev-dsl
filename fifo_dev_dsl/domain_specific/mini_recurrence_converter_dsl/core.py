@@ -28,7 +28,8 @@ SYSTEM_PROMPT = ("You are a precise parser of recurring schedule expressions. Yo
 def parse_natural_recurrence_expression(
         question: str,
         container_name: str,
-        adapter: str="mini-recurrence-converter-dsl") -> Tuple[str, RecurrenceRule]:
+        adapter: str="mini-recurrence-converter-dsl",
+        host: str = "http://127.0.0.1:8000") -> Tuple[str, RecurrenceRule]:
     """
     Given a natural language recurrence expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding RecurrenceRule object.
@@ -43,6 +44,9 @@ def parse_natural_recurrence_expression(
         adapter (str, optional):
             Adapter name used when calling `call_airlock_model_server`. Defaults to
             `"mini-recurrence-converter-dsl"`.
+
+        host (str, optional):
+            URL of the airlock model server.
 
     Returns:
         Tuple[str, RecurrenceRule]: 
@@ -59,7 +63,8 @@ def parse_natural_recurrence_expression(
             max_new_tokens=1024,
             do_sample=False
         ),
-        container_name=container_name
+        container_name=container_name,
+        host=host
     )
 
     try:

@@ -44,6 +44,7 @@ class LLMRuntimeContext:
     _container_name: str
     _base_model: Model
     _intent_sequencer_adapter: str
+    _host: str
 
     def __init__(
         self,
@@ -52,6 +53,7 @@ class LLMRuntimeContext:
         container_name: str = "dev-phi",
         base_model: Model = Model.Phi4MiniInstruct,
         intent_sequencer_adapter: str = "intent-sequencer",
+        host: str = "http://127.0.0.1:8000",
     ):
         """
         Initialize the runtime context with tools and query sources.
@@ -71,12 +73,16 @@ class LLMRuntimeContext:
 
             intent_sequencer_adapter (str):
                 Adapter used when generating DSL from text.
+
+            host (str):
+                URL of the airlock model server.
         """
         self._tools = ReadOnlyList(tools)
         self._query_sources = ReadOnlyList(query_sources)
         self._container_name = container_name
         self._base_model = base_model
         self._intent_sequencer_adapter = intent_sequencer_adapter
+        self._host = host
 
         yaml_tools = "\n".join(tool.to_schema_yaml() for tool in self._tools)
         yaml_sources = "\n".join(source.get_description() for source in self._query_sources)
@@ -216,6 +222,11 @@ class LLMRuntimeContext:
     def base_model(self) -> Model:
         """Default model used for LLM calls."""
         return self._base_model
+
+    @property
+    def host(self) -> str:
+        """URL of the airlock model server."""
+        return self._host
 
     @property
     def intent_sequencer_adapter(self) -> str:

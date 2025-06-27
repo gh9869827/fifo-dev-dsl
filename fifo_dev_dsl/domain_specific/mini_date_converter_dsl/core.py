@@ -26,7 +26,8 @@ def parse_natural_date_expression(
         question: str,
         container_name: str,
         adapter: str = "mini-date-converter-dsl",
-        now: datetime | None = None) -> Tuple[str, datetime]:
+        now: datetime | None = None,
+        host: str = "http://127.0.0.1:8000") -> Tuple[str, datetime]:
     """
     Given a natural language date expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding datetime.
@@ -46,6 +47,9 @@ def parse_natural_date_expression(
             Overrides the current datetime for evaluation. Passed to
             `MiniDateConverterDSL`.
 
+        host (str, optional):
+            URL of the airlock model server.
+
     Returns:
         Tuple[str, datetime]:
             (the DSL code, the parsed datetime object)
@@ -61,7 +65,8 @@ def parse_natural_date_expression(
             max_new_tokens=1024,
             do_sample=False
         ),
-        container_name=container_name
+        container_name=container_name,
+        host=host
     )
 
     try:
