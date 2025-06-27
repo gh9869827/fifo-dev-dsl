@@ -164,7 +164,8 @@ class QueryUser(DslBase):
                         max_new_tokens=1024,
                         do_sample=False
                     ),
-                    container_name=runtime_context.container_name
+                    container_name=runtime_context.container_name,
+                    host=runtime_context.host
                 )
 
         resolution_context.llm_call_logs.append(
