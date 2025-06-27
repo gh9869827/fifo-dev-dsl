@@ -10,6 +10,18 @@ At the center is **`dia`** — A DSL for interactive agents that translates user
 
 ---
 
+## 📦 Install
+
+This repo is meant for local development. Install in editable mode:
+
+```bash
+python3 -m pip install -e .
+```
+
+Python 3.10+ is required.
+
+---
+
 ## 🧩 Modules
 
 ### `fifo_dev_dsl.dia`
