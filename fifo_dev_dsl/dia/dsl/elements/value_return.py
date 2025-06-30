@@ -14,7 +14,7 @@ class ReturnValue(DSLValueBase):
     """
     Use the result of another intent as an inline value.
 
-    `ReturnValue` wraps an :class:`Intent`, allowing its result to be embedded
+    `ReturnValue` wraps an `Intent`, allowing its result to be embedded
     as a value in another intent's slot. This supports nested execution where
     the output of one tool feeds directly into another.
 

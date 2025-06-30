@@ -21,7 +21,7 @@ class IntentRuntimeErrorResolver(DslBase):
     """
     Placeholder for a failed intent awaiting user-guided recovery.
 
-    This node is injected into the DSL tree when an :class:`Intent` raises a runtime error
+    This node is injected into the DSL tree when an `Intent` raises a runtime error
     during evaluation. It captures the failing intent and the associated error message,
     pausing automatic resolution.
 
@@ -102,7 +102,7 @@ class IntentRuntimeErrorResolver(DslBase):
 
         Returns:
             bool:
-                Always ``False``.
+                Always `False`.
         """
         return False
 
@@ -132,7 +132,7 @@ class IntentRuntimeErrorResolver(DslBase):
     ) -> Any:
         """
         Asynchronously raise a RuntimeError because
-        ``IntentRuntimeErrorResolver`` nodes are unresolved.
+        `IntentRuntimeErrorResolver` nodes are unresolved.
 
         These nodes indicate that an intent failed during evaluation and
         requires user intervention. They must be replaced during resolution

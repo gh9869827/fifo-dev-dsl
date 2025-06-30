@@ -11,7 +11,7 @@ class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
     """
     A DSL node representing a list of values to be evaluated as a Python list.
 
-    Each item in this container is a :class:`DSLValueBase` element. During
+    Each item in this container is a `DSLValueBase` element. During
     evaluation, all child nodes are resolved in order, and their results are
     collected into a standard Python list.
 

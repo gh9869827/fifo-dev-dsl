@@ -1,4 +1,4 @@
-"""Unit tests for :meth:`DslBase.pretty_print_dsl`."""
+"""Unit tests for `DslBase.pretty_print_dsl`."""
 
 import io
 from contextlib import redirect_stdout
@@ -17,7 +17,7 @@ from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationOutcome
 
 
 def expected_pretty(obj: DslBase, indent: int = 0) -> str:
-    """Recursively build the expected pretty print output for ``obj``."""
+    """Recursively build the expected pretty print output for `obj`."""
     prefix = "  " * indent
     if isinstance(obj, IntentEvaluatedSuccess):
         line = f"{prefix}{obj.__class__.__name__}(status={obj.evaluation_outcome.status.name})"
@@ -66,7 +66,7 @@ def test_pretty_print_dsl(builder: Callable[[], DslBase]):
 
 
 def test_return_value_pretty_print():
-    """Verify ``pretty_print_dsl`` on ReturnValue shows the nested intent."""
+    """Verify `pretty_print_dsl` on ReturnValue shows the nested intent."""
     obj = parse_dsl_element("foo()", True)
     f = io.StringIO()
     with redirect_stdout(f):

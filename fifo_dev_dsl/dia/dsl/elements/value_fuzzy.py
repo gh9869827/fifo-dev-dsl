@@ -72,7 +72,7 @@ class FuzzyValue(DSLValueBase):
         Map the fuzzy value to a numeric value.
 
         During evaluation, the fuzzy value must be matched against known values.
-        If no match is found, a :class:`ValueError` is raised.
+        If no match is found, a `ValueError` is raised.
 
         Args:
             runtime_context (LLMRuntimeContext):

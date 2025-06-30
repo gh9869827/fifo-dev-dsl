@@ -73,7 +73,7 @@ class IntentEvaluatedSuccess(DslBase):
         Asynchronously return the stored evaluation result.
 
         This node records the output of a previous evaluation pass. It simply
-        returns the preserved value from ``evaluation_outcome`` without
+        returns the preserved value from `evaluation_outcome` without
         re-evaluating the original intent.
 
         Args:
@@ -82,7 +82,7 @@ class IntentEvaluatedSuccess(DslBase):
 
         Returns:
             Any:
-                The previously computed value from ``evaluation_outcome``.
+                The previously computed value from `evaluation_outcome`.
         """
 
         _ = runtime_context

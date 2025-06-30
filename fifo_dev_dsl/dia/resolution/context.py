@@ -97,9 +97,9 @@ class ResolutionContext:
             or curating fine-tuning examples.
 
         _state_stack (list[_ResolutionState]):
-            Internal stack preserving ``intent``, ``slot`` and ``other_slots`` when
-            entering nested intents or slots. The public ``intent``, ``slot`` and
-            ``other_slots`` attributes provide access to the values stored at the
+            Internal stack preserving `intent`, `slot` and `other_slots` when
+            entering nested intents or slots. The public `intent`, `slot` and
+            `other_slots` attributes provide access to the values stored at the
             top of this stack.
     """
 

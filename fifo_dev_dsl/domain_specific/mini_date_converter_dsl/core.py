@@ -114,8 +114,8 @@ class MiniDateConverterDSL:
         year. If the resulting date is in the past, the next year's occurrence
         is returned instead.
         Weekday must be an integer from 0 (Monday) to 6 (Sunday).
-        ``occurrence`` may be negative to count from the end of the month
-        (``-1`` is the last weekday, ``-2`` the second to last, etc.).
+        `occurrence` may be negative to count from the end of the month
+        (`-1` is the last weekday, `-2` the second to last, etc.).
 
         Example:
             DATE_FROM_MONTH_WEEKDAY(11, 3, 4)   # 4th Thursday of November (Thanksgiving in US)
@@ -123,15 +123,15 @@ class MiniDateConverterDSL:
 
     - DATE_FROM_YEAR_MONTH_WEEKDAY(year, month, weekday_index, occurrence)
         Same as above, but with an explicit year.
-        ``occurrence`` may be negative to count from the end of the month
-        (``-1`` is the last weekday, ``-2`` the second to last, etc.).
+        `occurrence` may be negative to count from the end of the month
+        (`-1` is the last weekday, `-2` the second to last, etc.).
 
         Example:
             DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 1, 0, 2)   # 2nd Monday of January 2026
             DATE_FROM_YEAR_MONTH_WEEKDAY(2026, 10, 4, -1) # last Friday of October 2026
 
     - SET_MONTH_DAY(date_expr, day)
-        Sets the day-of-month on ``date_expr``. ``day`` may be negative to count
+        Sets the day-of-month on `date_expr`. `day` may be negative to count
         backwards from the end of the month (-1 is the last day).
 
         Example:
@@ -229,11 +229,11 @@ class MiniDateConverterDSL:
                 target_day = int(unit.split("=")[-1])
                 weekday_func = self.WEEKDAY_MAP[target_day]
 
-                # ``dateutil`` returns the same day when the base already falls
+                # `dateutil` returns the same day when the base already falls
                 # on the requested weekday. The DSL expects "next" or
-                # "previous" weekday depending on the sign of ``value``.
+                # "previous" weekday depending on the sign of `value`.
                 # Adjust the search start by one day in that case so that
-                # ``OFFSET(TODAY, 1, WEEKDAY=x)`` always moves away from today
+                # `OFFSET(TODAY, 1, WEEKDAY=x)` always moves away from today
                 # when today is already the target weekday.
                 extra_day = 0
                 if base.weekday() == target_day and value != 0:

@@ -177,7 +177,7 @@ print(result.status, result.value)
 ```
 
 For asynchronous toolchains, use `AsyncEvaluator` which mirrors the same
-depth‑first traversal but awaits each node's ``eval_async`` method:
+depth‑first traversal but awaits each node's `eval_async` method:
 
 ```python
 from fifo_dev_dsl.dia.runtime.async_evaluator import AsyncEvaluator

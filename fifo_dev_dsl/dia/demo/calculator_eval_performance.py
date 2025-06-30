@@ -99,7 +99,7 @@ def eval_random(delta_file: str | None = None) -> None:
 
     Args:
         delta_file (str | None):
-            Optional path where failed prompts are logged. When ``None``,
+            Optional path where failed prompts are logged. When `None`,
             no logging is performed.
     """
     total_global, error_global = 0, 0

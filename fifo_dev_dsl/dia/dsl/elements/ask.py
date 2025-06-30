@@ -20,7 +20,7 @@ class Ask(DslBase):
     """
     Prompt the user to provide a missing slot value during resolution.
 
-    ``ASK`` nodes act as placeholders for information that cannot be resolved
+    `ASK` nodes act as placeholders for information that cannot be resolved
     automatically. They remain in the DSL tree until the user responds, at which
     point they are replaced with the returned value.
 
@@ -101,7 +101,7 @@ class Ask(DslBase):
 
         Returns:
             bool:
-                Always ``False``.
+                Always `False`.
         """
         return False
 
@@ -110,7 +110,7 @@ class Ask(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Raise a :class:`RuntimeError` because Ask nodes are unresolved.
+        Raise a `RuntimeError` because Ask nodes are unresolved.
 
         ASK elements represent pending user input and remain unresolved until
         they are replaced with a concrete value during resolution. Attempting to
@@ -127,7 +127,7 @@ class Ask(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Asynchronously raise a :class:`RuntimeError` because Ask nodes are
+        Asynchronously raise a `RuntimeError` because Ask nodes are
         unresolved.
 
         ASK elements represent pending user input and remain unresolved until

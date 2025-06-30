@@ -53,7 +53,7 @@ class SameAsPreviousIntent(DSLValueBase):
         most recently evaluated intent.
 
         This method is not yet implemented and currently raises a
-        ``NotImplementedError``.
+        `NotImplementedError`.
 
         Raises:
             NotImplementedError: Always, until evaluation logic is implemented.

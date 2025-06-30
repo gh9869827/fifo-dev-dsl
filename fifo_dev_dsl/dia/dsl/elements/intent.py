@@ -21,7 +21,7 @@ class Intent(make_dsl_container(Slot)):
     A DSL node that calls a named tool with structured parameters.
 
     An Intent represents a call to a tool, with arguments provided as an ordered
-    list of :class:`Slot` objects. Each slot maps a name to a value, which may
+    list of `Slot` objects. Each slot maps a name to a value, which may
     itself be another DSL expression. This enables nested calls and composable logic.
 
     During evaluation, the runtime context resolves the tool by name and invokes
@@ -176,7 +176,7 @@ class Intent(make_dsl_container(Slot)):
 
         During evaluation, the runtime context resolves the tool by name and
         calls it with arguments obtained by evaluating each slot. If any slot or
-        nested value is unresolved, evaluation will fail with a ``RuntimeError``.
+        nested value is unresolved, evaluation will fail with a `RuntimeError`.
 
         Args:
             runtime_context (LLMRuntimeContext):

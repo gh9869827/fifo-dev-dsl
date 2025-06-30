@@ -62,7 +62,7 @@ class AbortWithNewDsl(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Raise a :class:`RuntimeError` for unresolved abort redirections.
+        Raise a `RuntimeError` for unresolved abort redirections.
 
         AbortWithNewDsl nodes should be replaced with `new_dsl` during
         resolution. If one remains during evaluation, a `RuntimeError` is
@@ -80,11 +80,11 @@ class AbortWithNewDsl(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Asynchronously raise a :class:`RuntimeError` for unresolved abort
+        Asynchronously raise a `RuntimeError` for unresolved abort
         redirections.
 
-        AbortWithNewDsl nodes should be replaced with ``new_dsl`` during
-        resolution. If one remains during evaluation, a ``RuntimeError`` is
+        AbortWithNewDsl nodes should be replaced with `new_dsl` during
+        resolution. If one remains during evaluation, a `RuntimeError` is
         raised to signal unresolved state.
 
         Raises:

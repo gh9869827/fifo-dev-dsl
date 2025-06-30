@@ -258,7 +258,7 @@ class DslBase:
         Determine whether this DSL element is fully resolved.
 
         Nodes remain unresolved while they contain interactive placeholders such
-        as ``ASK``, ``QUERY_FILL``, ``QUERY_USER`` or ``QUERY_GATHER``. Subclasses
+        as `ASK`, `QUERY_FILL`, `QUERY_USER` or `QUERY_GATHER`. Subclasses
         may track additional state and override this method accordingly. Once no
         such placeholders remain, the element is ready for evaluation.
 
@@ -298,7 +298,7 @@ class DslBase:
         """Asynchronously evaluate this DSL element and return its value.
 
         Subclasses implement the asynchronous evaluation logic. If the element
-        is not resolved, this method must raise a ``RuntimeError``.
+        is not resolved, this method must raise a `RuntimeError`.
 
         Args:
             runtime_context (LLMRuntimeContext):
@@ -367,15 +367,15 @@ class DslContainerBase(DslBase, Generic[T], ABC):
 
     def is_resolved(self) -> bool:
         """
-        Return ``True`` only if every child item is resolved.
+        Return `True` only if every child item is resolved.
 
         Container nodes propagate their resolved state from the elements they
-        contain.  If any child reports ``False`` for :py:meth:`is_resolved`, the
+        contain.  If any child reports `False` for `is_resolved`, the
         container itself is unresolved.
 
         Returns:
             bool:
-                ``True`` when all items are resolved.
+                `True` when all items are resolved.
         """
         return all(val.is_resolved() for val in self._items)
 

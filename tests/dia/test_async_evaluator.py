@@ -25,7 +25,7 @@ class Demo:
 
         Returns:
             int:
-                the sum of ``a`` and ``b``
+                the sum of `a` and `b`
         """
         await asyncio.sleep(0)
         self.calls.append(("add", (a, b)))
@@ -45,7 +45,7 @@ class Demo:
 
         Returns:
             int:
-                the product of ``a`` and ``b``
+                the product of `a` and `b`
         """
         self.calls.append(("multiply", (a, b)))
         return a * b

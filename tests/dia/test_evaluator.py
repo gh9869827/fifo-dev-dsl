@@ -492,7 +492,7 @@ def test_unrecoverable_error_intent_execution() -> None:
 
 
 def test_evaluate_skips_already_evaluated_intent() -> None:
-    """Ensure Evaluator ignores :class:`IntentEvaluatedSuccess` nodes."""
+    """Ensure Evaluator ignores `IntentEvaluatedSuccess` nodes."""
 
     demo = Demo()
     runtime_context = LLMRuntimeContext(tools=[demo.add], query_sources=[])
@@ -505,7 +505,7 @@ def test_evaluate_skips_already_evaluated_intent() -> None:
     assert demo.call_trace == [("add", (1, 2)), ("add", (3, 4))]
     assert all(isinstance(child, IntentEvaluatedSuccess) for child in root.get_children())
 
-    # calling ``eval`` on the wrapped nodes should return the stored values
+    # calling `eval` on the wrapped nodes should return the stored values
     assert [child.eval(runtime_context) for child in root.get_children()] == [3, 7]
 
     second_outcome = Evaluator(runtime_context, root).evaluate()

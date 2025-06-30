@@ -90,10 +90,10 @@ class QueryFill(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Asynchronously raise a RuntimeError because ``QueryFill`` nodes are
+        Asynchronously raise a RuntimeError because `QueryFill` nodes are
         unresolved.
 
-        These nodes must be replaced by a concrete ``Value`` during resolution.
+        These nodes must be replaced by a concrete `Value` during resolution.
         Attempting to evaluate them directly indicates that resolution has not
         completed successfully.
 

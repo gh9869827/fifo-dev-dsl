@@ -53,13 +53,13 @@ class QueryUser(DslBase):
         """
         Report that the user's question has not yet been answered.
 
-        ``QUERY_USER`` nodes capture a direct question from the user. The system
+        `QUERY_USER` nodes capture a direct question from the user. The system
         must gather information and replace this placeholder with the answer
         before the intent can proceed.
 
         Returns:
             bool:
-                Always ``False``.
+                Always `False`.
         """
         return False
 
@@ -97,7 +97,7 @@ class QueryUser(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Asynchronously raise a RuntimeError because ``QueryUser`` nodes are
+        Asynchronously raise a RuntimeError because `QueryUser` nodes are
         unresolved.
 
         These nodes encapsulate a user question awaiting a response. They must

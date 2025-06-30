@@ -57,13 +57,13 @@ class QueryGather(DslBase):
         """
         Indicate that this placeholder has not yet been expanded.
 
-        ``QUERY_GATHER`` nodes collect additional information used to refine the
+        `QUERY_GATHER` nodes collect additional information used to refine the
         user's intent. They stay unresolved until their query is executed and
         the resulting data is inserted.
 
         Returns:
             bool:
-                Always ``False``.
+                Always `False`.
         """
         return False
 
@@ -102,7 +102,7 @@ class QueryGather(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Asynchronously raise a RuntimeError because ``QueryGather`` nodes are
+        Asynchronously raise a RuntimeError because `QueryGather` nodes are
         unresolved.
 
         These placeholders must be replaced with fully specified intents during
