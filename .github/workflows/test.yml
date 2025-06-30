@@ -39,8 +39,7 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install -e external/fifo-tool-airlock-model-env
           python -m pip install -e external/fifo-dev-common
-          python -m pip install -e fifo-dev-dsl
-          python -m pip install pytest
+          python -m pip install -e fifo-dev-dsl[dev]
 
       - name: Run pytest from main repo
         run: |
