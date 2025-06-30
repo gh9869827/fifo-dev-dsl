@@ -20,6 +20,7 @@ from fifo_dev_dsl.dia.dsl.elements.value_return import ReturnValue
 from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.same_as_previous import SameAsPreviousIntent
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
+from fifo_dev_dsl.dia.dsl.elements.propagate_slots import PropagateSlots
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
 
@@ -132,6 +133,19 @@ async def test_list_element_eval_3_async() -> None:
     ty = MiniDocStringType("list[int]")
     lst = ListElement([Value(1), Value(2)])
     assert ty.cast(await lst.eval_async(ctx)) == [1, 2]
+
+
+def test_propagate_slots_eval() -> None:
+    ctx = runtime_context()
+    ps = PropagateSlots([Slot("x", Value(1)), Slot("y", Value(2))])
+    assert ps.eval(ctx) == {"x": 1, "y": 2}
+
+
+@pytest.mark.asyncio
+async def test_propagate_slots_eval_async() -> None:
+    ctx = runtime_context()
+    ps = PropagateSlots([Slot("x", Value(1)), Slot("y", Value(2))])
+    assert await ps.eval_async(ctx) == {"x": 1, "y": 2}
 
 
 def test_intent_and_return_value_eval() -> None:
