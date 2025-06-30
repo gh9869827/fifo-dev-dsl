@@ -525,6 +525,12 @@ class _BadNode(DslBase):
     ) -> Any:
         pass  # pragma: no cover
 
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        pass  # pragma: no cover
+
 def test_evaluate_unexpected_node_type() -> None:
     """Ensure Evaluator aborts on unknown DSL node types."""
 
