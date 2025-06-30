@@ -1,6 +1,9 @@
 import pytest
 from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 from fifo_dev_common.introspection.tool_decorator import ToolHandler, tool_handler
+# Importing the parser first avoids circular import issues when loading query
+# elements. This is needed when running this file on its own.
+from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl   # noqa, pylint: disable=unused-import, # pyright: ignore[reportUnusedImport]
 from fifo_dev_dsl.dia.dsl.elements.abort import Abort
 from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
 from fifo_dev_dsl.dia.dsl.elements.ask import Ask
@@ -113,3 +116,27 @@ def test_same_as_previous_intent_eval() -> None:
 def test_eval_unresolved(obj: DslBase) -> None:
     with pytest.raises(RuntimeError):
         obj.eval(LLMRuntimeContext([], []))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "obj",
+    [
+        Abort(),
+        Ask("question"),
+        QueryFill("value"),
+        QueryGather("orig", "info"),
+        QueryUser("query"),
+        AbortWithNewDsl(ListElement([])),
+        IntentRuntimeErrorResolver(Intent("foo", []), "error"),
+    ],
+)
+async def test_eval_async_unresolved(obj: DslBase) -> None:
+    with pytest.raises(RuntimeError):
+        await obj.eval_async(LLMRuntimeContext([], []))
+
+
+@pytest.mark.asyncio
+async def test_same_as_previous_intent_eval_async() -> None:
+    with pytest.raises(NotImplementedError):
+        await SameAsPreviousIntent().eval_async(runtime_context())
