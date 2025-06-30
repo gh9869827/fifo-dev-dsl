@@ -50,12 +50,28 @@ def test_value_eval() -> None:
     assert ty.cast(Value("3").eval(ctx)) == 3
 
 
+@pytest.mark.asyncio
+async def test_value_eval_async() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("int")
+    assert ty.cast(await Value("3").eval_async(ctx)) == 3
+
+
 def test_fuzzy_value_eval() -> None:
     ctx = runtime_context()
     ty = MiniDocStringType("int")
     assert ty.cast(FuzzyValue("a few").eval(ctx)) == 3
     with pytest.raises(ValueError):
         FuzzyValue("lots").eval(ctx)
+
+
+@pytest.mark.asyncio
+async def test_fuzzy_value_eval_async() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("int")
+    assert ty.cast(await FuzzyValue("a few").eval_async(ctx)) == 3
+    with pytest.raises(ValueError):
+        await FuzzyValue("lots").eval_async(ctx)
 
 
 def test_list_value_eval() -> None:
@@ -65,11 +81,27 @@ def test_list_value_eval() -> None:
     assert ty.cast(lst.eval(ctx)) == [1, 2]
 
 
+@pytest.mark.asyncio
+async def test_list_value_eval_async() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("list[int]")
+    lst = ListValue([Value("1"), Value("2")])
+    assert ty.cast(await lst.eval_async(ctx)) == [1, 2]
+
+
 def test_list_element_eval_1() -> None:
     ctx = runtime_context()
     ty = MiniDocStringType("list[int]")
     lst = ListElement([Value("1"), Value("2")])
     assert ty.cast(lst.eval(ctx)) == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_list_element_eval_1_async() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("list[int]")
+    lst = ListElement([Value("1"), Value("2")])
+    assert ty.cast(await lst.eval_async(ctx)) == [1, 2]
 
 
 def test_list_element_eval_2() -> None:
@@ -79,11 +111,27 @@ def test_list_element_eval_2() -> None:
     assert ty.cast(lst.eval(ctx)) == ["1", "2"]
 
 
+@pytest.mark.asyncio
+async def test_list_element_eval_2_async() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("list[str]")
+    lst = ListElement([Value("1"), Value("2")])
+    assert ty.cast(await lst.eval_async(ctx)) == ["1", "2"]
+
+
 def test_list_element_eval_3() -> None:
     ctx = runtime_context()
     ty = MiniDocStringType("list[int]")
     lst = ListElement([Value(1), Value(2)])
     assert ty.cast(lst.eval(ctx)) == [1, 2]
+
+
+@pytest.mark.asyncio
+async def test_list_element_eval_3_async() -> None:
+    ctx = runtime_context()
+    ty = MiniDocStringType("list[int]")
+    lst = ListElement([Value(1), Value(2)])
+    assert ty.cast(await lst.eval_async(ctx)) == [1, 2]
 
 
 def test_intent_and_return_value_eval() -> None:
@@ -94,6 +142,17 @@ def test_intent_and_return_value_eval() -> None:
     assert MiniDocStringType("float").cast(intent.eval(ctx)) == 5.0
     rv = ReturnValue(intent)
     assert MiniDocStringType("int").cast(rv.eval(ctx)) == 5
+
+
+@pytest.mark.asyncio
+async def test_intent_and_return_value_eval_async() -> None:
+    demo = Demo()
+    ctx = runtime_context([demo.add])
+    intent = Intent("add", [Slot("a", Value("2")), Slot("b", Value("3"))])
+    assert await intent.eval_async(ctx) == 5
+    assert MiniDocStringType("float").cast(await intent.eval_async(ctx)) == 5.0
+    rv = ReturnValue(intent)
+    assert MiniDocStringType("int").cast(await rv.eval_async(ctx)) == 5
 
 
 def test_same_as_previous_intent_eval() -> None:
