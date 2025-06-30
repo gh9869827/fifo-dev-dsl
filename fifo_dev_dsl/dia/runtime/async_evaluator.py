@@ -14,8 +14,25 @@ logger = get_logger(__name__)
 
 
 class AsyncEvaluator:
-    """Asynchronously execute a resolved DSL tree using depth-first traversal."""
+    """
+    Asynchronously execute a resolved DSL tree using depth-first traversal.
 
+    Each `Intent` is evaluated in order. Once executed, the node is
+    replaced by an `IntentEvaluatedSuccess`, preserving its outcome
+    and preventing re-execution. This ensures correct handling of non-idempotent
+    or side-effecting operations — such as sending commands, moving actuators,
+    or mutating external state.
+
+    The tree is traversed explicitly using a stack, enabling structured error
+    recovery and precise control over evaluation order. Tool calls are resolved
+    via the provided `LLMRuntimeContext`.
+
+    Any exception raised during evaluation is intercepted and converted into
+    an `EvaluationOutcome` with a status of either
+    `EvaluationStatus.ABORTED_RECOVERABLE` or
+    `EvaluationStatus.ABORTED_UNRECOVERABLE`, depending on the nature
+    of the error.
+    """
     def __init__(self, runtime_context: LLMRuntimeContext, root: DslBase) -> None:
         self._runtime_context = runtime_context
         self._call_stack: list[ResolutionContextStackElement] = [
@@ -23,7 +40,25 @@ class AsyncEvaluator:
         ]
 
     async def evaluate(self) -> EvaluationOutcome:
-        """Asynchronously evaluate the DSL tree and return the final result."""
+        """
+        Asynchronously evaluate the DSL tree and return the final result.
+
+        The traversal is depth-first and performed using an explicit stack.
+        Each `Intent` is evaluated within the provided
+        `LLMRuntimeContext`, which supplies available tools and type
+        information. The intent node is then replaced with an
+        `IntentEvaluatedSuccess` to prevent re-execution and preserve
+        the result.
+
+        If an exception occurs during evaluation, it is intercepted and
+        returned as an `EvaluationOutcome` with status set to either
+        `EvaluationStatus.ABORTED_RECOVERABLE` or
+        `EvaluationStatus.ABORTED_UNRECOVERABLE`.
+
+        Returns:
+            EvaluationOutcome:
+                Outcome of the evaluation, including value, status, and any error.
+        """
 
         while self._call_stack:
             current = self._call_stack[-1]
