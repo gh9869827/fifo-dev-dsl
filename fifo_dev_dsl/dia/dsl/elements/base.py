@@ -291,6 +291,32 @@ class DslBase:
         """
         raise NotImplementedError("DslBase.eval must be implemented by subclasses")
 
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """Asynchronously evaluate this DSL element and return its value.
+
+        Subclasses implement the asynchronous evaluation logic. If the element
+        is not resolved, this method must raise a ``RuntimeError``.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources and
+                runtime helpers.
+
+        Returns:
+            Any:
+                The value produced by evaluating this DSL node.
+
+        Raises:
+            RuntimeError: If the node is not resolved.
+        """
+
+        raise NotImplementedError(
+            "DslBase.eval_async must be implemented by subclasses"
+        )
+
 
 T = TypeVar("T", bound=DslBase)
 

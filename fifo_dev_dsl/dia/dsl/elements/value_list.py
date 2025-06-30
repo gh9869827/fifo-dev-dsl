@@ -42,6 +42,30 @@ class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
         """
         return [e.eval(runtime_context) for e in self.get_items()]
 
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously evaluate each child value and return a list.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+        Returns:
+            list[Any]:
+                The list of evaluated child values.
+
+        Raises:
+            RuntimeError: If any child is not resolved.
+        """
+
+        return [
+            await e.eval_async(runtime_context)
+            for e in self.get_items()
+        ]
+
     def to_dsl_representation(self) -> str:
         """
         Return the DSL-style representation of this list node.

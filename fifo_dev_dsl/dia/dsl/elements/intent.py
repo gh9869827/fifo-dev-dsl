@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Any
+import inspect
 
 from dataclasses import dataclass
 
@@ -164,3 +165,46 @@ class Intent(make_dsl_container(Slot)):
         ret = tool.tool_docstring.return_type.cast(tool(**args))
 
         return ret
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously evaluate this intent by invoking the named tool with the
+        evaluated slot values as arguments.
+
+        During evaluation, the runtime context resolves the tool by name and
+        calls it with arguments obtained by evaluating each slot. If any slot or
+        nested value is unresolved, evaluation will fail with a ``RuntimeError``.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+
+        Returns:
+            Any:
+                The result returned by the invoked tool.
+
+        Raises:
+            RuntimeError: If any slot or nested value is not resolved.
+        """
+
+        tool = runtime_context.get_tool(self.name)
+
+        args = {
+            slot.name: tool.tool_docstring.get_arg_by_name(slot.name).pytype.cast(
+                await slot.value.eval_async(runtime_context), allow_scalar_to_list=True
+            )
+            for slot in self._items
+        }
+
+        result = tool(**args)
+        if inspect.isawaitable(result):
+            result = await result
+
+        if tool.tool_docstring.return_type is None:
+            return None
+
+        return tool.tool_docstring.return_type.cast(result)

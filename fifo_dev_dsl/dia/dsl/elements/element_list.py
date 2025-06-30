@@ -49,3 +49,27 @@ class ListElement(make_dsl_container(DslBase)):
         """
 
         return [child.eval(runtime_context) for child in self.get_items()]
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously evaluate each child and return their values.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+        Returns:
+            list[Any]:
+                The list of evaluated child values.
+
+        Raises:
+            RuntimeError: If any child is not resolved.
+        """
+
+        return [
+            await child.eval_async(runtime_context)
+            for child in self.get_items()
+        ]

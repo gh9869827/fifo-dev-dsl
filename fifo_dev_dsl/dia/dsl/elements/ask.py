@@ -121,3 +121,22 @@ class Ask(DslBase):
                 Unresolved DSL node: Ask
         """
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously raise a :class:`RuntimeError` because Ask nodes are
+        unresolved.
+
+        ASK elements represent pending user input and remain unresolved until
+        they are replaced with a concrete value during resolution. Attempting to
+        evaluate such a node directly is invalid and results in an error.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                Unresolved DSL node: Ask
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

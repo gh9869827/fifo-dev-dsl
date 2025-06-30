@@ -53,6 +53,27 @@ class ReturnValue(DSLValueBase):
 
         return self.intent.eval(runtime_context)
 
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously evaluate the wrapped intent and return its value.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context providing tool access, query sources, and runtime helpers.
+
+        Returns:
+            Any:
+                The value produced by the nested intent evaluation.
+
+        Raises:
+            RuntimeError: If the nested intent is not resolved.
+        """
+
+        return await self.intent.eval_async(runtime_context)
+
     def to_dsl_representation(self) -> str:
         """
         Return the DSL-style representation of a return value.

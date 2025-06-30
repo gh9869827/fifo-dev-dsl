@@ -92,6 +92,26 @@ class QueryUser(DslBase):
         """
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously raise a RuntimeError because ``QueryUser`` nodes are
+        unresolved.
+
+        These nodes encapsulate a user question awaiting a response. They must
+        be resolved to a concrete value during resolution before evaluation can
+        proceed. Encountering one during evaluation indicates that resolution
+        has not completed successfully.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                Unresolved DSL node: QueryUser
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
+
     def do_resolution(
         self,
         runtime_context: LLMRuntimeContext,

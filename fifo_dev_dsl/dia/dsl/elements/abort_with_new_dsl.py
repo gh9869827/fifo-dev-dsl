@@ -74,3 +74,22 @@ class AbortWithNewDsl(DslBase):
         """
 
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously raise a :class:`RuntimeError` for unresolved abort
+        redirections.
+
+        AbortWithNewDsl nodes should be replaced with ``new_dsl`` during
+        resolution. If one remains during evaluation, a ``RuntimeError`` is
+        raised to signal unresolved state.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                Unresolved DSL node: AbortWithNewDsl.
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

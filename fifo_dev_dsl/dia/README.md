@@ -176,6 +176,16 @@ result = evaluator.evaluate()
 print(result.status, result.value)
 ```
 
+For asynchronous toolchains, use `AsyncEvaluator` which mirrors the same
+depth‑first traversal but awaits each node's ``eval_async`` method:
+
+```python
+from fifo_dev_dsl.dia.runtime.async_evaluator import AsyncEvaluator
+
+async_evaluator = AsyncEvaluator(runtime, resolver.dsl_elements)
+result = await async_evaluator.evaluate()
+```
+
 Evaluation proceeds until:
 
 - all intents are successfully executed, returning `EvaluationStatus.SUCCESS`, or

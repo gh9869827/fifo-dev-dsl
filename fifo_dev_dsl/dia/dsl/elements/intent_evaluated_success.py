@@ -64,3 +64,26 @@ class IntentEvaluatedSuccess(DslBase):
                 The previously computed value from `evaluation_outcome`.
         """
         return self.evaluation_outcome.value
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously return the stored evaluation result.
+
+        This node records the output of a previous evaluation pass. It simply
+        returns the preserved value from ``evaluation_outcome`` without
+        re-evaluating the original intent.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context (not used in this node).
+
+        Returns:
+            Any:
+                The previously computed value from ``evaluation_outcome``.
+        """
+
+        _ = runtime_context
+        return self.evaluation_outcome.value

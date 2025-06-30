@@ -90,3 +90,28 @@ class FuzzyValue(DSLValueBase):
             return _FUZZY_TO_NUMERIC[normalized]
 
         raise ValueError(f"Unrecognized fuzzy value: {self.value!r}")
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously map the fuzzy value to a numeric value.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context (not used in this node).
+
+        Returns:
+            Any:
+                Numeric representation corresponding to the fuzzy value.
+
+        Raises:
+            ValueError: If the fuzzy value is unknown.
+        """
+
+        _ = runtime_context
+        normalized = self.value.lower().strip()
+        if normalized in _FUZZY_TO_NUMERIC:
+            return _FUZZY_TO_NUMERIC[normalized]
+        raise ValueError(f"Unrecognized fuzzy value: {self.value!r}")
