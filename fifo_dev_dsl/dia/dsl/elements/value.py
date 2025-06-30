@@ -56,7 +56,6 @@ class Value(DSLValueBase):
             runtime_context (LLMRuntimeContext):
                 Execution context (not used in this node).
 
-
         Returns:
             Any:
                 The stored value as-is.
@@ -78,4 +77,4 @@ class Value(DSLValueBase):
             Any:
                 The stored value as-is.
         """
-        return self.value
+        return self.eval(runtime_context)

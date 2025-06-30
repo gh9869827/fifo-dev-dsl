@@ -112,8 +112,4 @@ class FuzzyValue(DSLValueBase):
         Raises:
             ValueError: If the fuzzy value is unknown.
         """
-        normalized = self.value.lower().strip()
-        if normalized in _FUZZY_TO_NUMERIC:
-            return _FUZZY_TO_NUMERIC[normalized]
-
-        raise ValueError(f"Unrecognized fuzzy value: {self.value!r}")
+        return self.eval(runtime_context)

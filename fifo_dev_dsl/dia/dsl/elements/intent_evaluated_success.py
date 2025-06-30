@@ -84,4 +84,4 @@ class IntentEvaluatedSuccess(DslBase):
             Any:
                 The previously computed value from `evaluation_outcome`.
         """
-        return self.evaluation_outcome.value
+        return self.eval(runtime_context)
