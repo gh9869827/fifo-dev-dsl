@@ -41,6 +41,16 @@ class PropagateSlots(make_dsl_container(Slot)):
         return f"PROPAGATE_SLOT({slots})"
 
     def to_dict(self) -> dict[str, DslBase]:
+        """
+        Return a dictionary mapping slot names to their values.
+
+        Each slot in this node is converted into a key-value pair where the key
+        is the slot name and the value is the corresponding DSL value.
+
+        Returns:
+            dict[str, DslBase]:
+                Dictionary mapping slot names to their associated values.
+        """
         return {
             propagated_slot.name : propagated_slot.value for propagated_slot in self.get_items()
         }
