@@ -65,3 +65,22 @@ class Abort(DslBase):
                 Unresolved DSL node: Abort
         """
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously raise a RuntimeError because Abort nodes are unresolved.
+
+        Abort elements signal that an intent sequence should be terminated.
+        They are removed by the resolver before a fully resolved DSL tree is
+        produced. Encountering one during evaluation therefore indicates
+        unresolved state.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                Unresolved DSL node: Abort
+        """
+
+        raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

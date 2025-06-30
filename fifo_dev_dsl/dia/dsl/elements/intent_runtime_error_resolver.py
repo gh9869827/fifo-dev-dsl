@@ -125,3 +125,24 @@ class IntentRuntimeErrorResolver(DslBase):
         raise RuntimeError(
             f"Unresolved DSL node: {self.__class__.__name__}"
         )
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously raise a RuntimeError because
+        ``IntentRuntimeErrorResolver`` nodes are unresolved.
+
+        These nodes indicate that an intent failed during evaluation and
+        requires user intervention. They must be replaced during resolution
+        before evaluation can proceed.
+
+        Raises:
+            RuntimeError: Always raised with the message
+                Unresolved DSL node: IntentRuntimeErrorResolver
+        """
+
+        raise RuntimeError(
+            f"Unresolved DSL node: {self.__class__.__name__}"
+        )

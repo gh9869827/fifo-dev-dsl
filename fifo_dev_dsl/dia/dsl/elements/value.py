@@ -62,3 +62,22 @@ class Value(DSLValueBase):
                 The stored value as-is.
         """
         return self.value
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously return the stored constant value without casting.
+
+        Args:
+            runtime_context (LLMRuntimeContext):
+                Execution context (not used in this node).
+
+        Returns:
+            Any:
+                The stored value as-is.
+        """
+
+        _ = runtime_context
+        return self.value

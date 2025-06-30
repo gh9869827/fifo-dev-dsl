@@ -72,3 +72,23 @@ class PropagateSlots(make_dsl_container(Slot)):
             slot.name: slot.value.eval(runtime_context)
             for slot in self.get_items()
         }
+
+    async def eval_async(
+        self,
+        runtime_context: LLMRuntimeContext,
+    ) -> Any:
+        """
+        Asynchronously evaluate to a dictionary of propagated slot values.
+
+        Returns:
+            dict[str, Any]:
+                Mapping of slot names to their evaluated Python values.
+
+        Raises:
+            RuntimeError: If any slot or nested value is not resolved.
+        """
+
+        return {
+            slot.name: await slot.value.eval_async(runtime_context)
+            for slot in self.get_items()
+        }
