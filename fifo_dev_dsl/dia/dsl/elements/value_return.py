@@ -50,7 +50,6 @@ class ReturnValue(DSLValueBase):
         Raises:
             RuntimeError: If the nested intent is not resolved.
         """
-
         return self.intent.eval(runtime_context)
 
     async def eval_async(
@@ -59,6 +58,9 @@ class ReturnValue(DSLValueBase):
     ) -> Any:
         """
         Asynchronously evaluate the wrapped intent and return its value.
+
+        This node asynchronously delegates to the embedded intent. If the nested intent
+        contains unresolved placeholders, evaluation fails with a RuntimeError.
 
         Args:
             runtime_context (LLMRuntimeContext):
@@ -71,7 +73,6 @@ class ReturnValue(DSLValueBase):
         Raises:
             RuntimeError: If the nested intent is not resolved.
         """
-
         return await self.intent.eval_async(runtime_context)
 
     def to_dsl_representation(self) -> str:

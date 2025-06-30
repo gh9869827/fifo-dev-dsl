@@ -78,6 +78,4 @@ class Value(DSLValueBase):
             Any:
                 The stored value as-is.
         """
-
-        _ = runtime_context
         return self.value

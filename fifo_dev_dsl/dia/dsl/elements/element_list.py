@@ -47,7 +47,6 @@ class ListElement(make_dsl_container(DslBase)):
         Raises:
             RuntimeError: If any child is not resolved.
         """
-
         return [child.eval(runtime_context) for child in self.get_items()]
 
     async def eval_async(
@@ -56,6 +55,9 @@ class ListElement(make_dsl_container(DslBase)):
     ) -> Any:
         """
         Asynchronously evaluate each child and return their values.
+
+        This node asynchronously delegates evaluation to each of its children. If any child is
+        unresolved, a RuntimeError will be raised during that child's evaluation.
 
         Args:
             runtime_context (LLMRuntimeContext):
@@ -68,7 +70,6 @@ class ListElement(make_dsl_container(DslBase)):
         Raises:
             RuntimeError: If any child is not resolved.
         """
-
         return [
             await child.eval_async(runtime_context)
             for child in self.get_items()

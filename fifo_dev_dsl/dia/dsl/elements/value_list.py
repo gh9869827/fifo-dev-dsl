@@ -32,7 +32,6 @@ class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
 
-
         Returns:
             list[Any]:
                 The list of evaluated child values.
@@ -47,7 +46,7 @@ class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Asynchronously evaluate each child value and return a list.
+        Asynchronously evaluate each child value and return a list of results.
 
         Args:
             runtime_context (LLMRuntimeContext):
@@ -60,7 +59,6 @@ class ListValue(make_dsl_container(DSLValueBase), DSLValueBase):
         Raises:
             RuntimeError: If any child is not resolved.
         """
-
         return [
             await e.eval_async(runtime_context)
             for e in self.get_items()

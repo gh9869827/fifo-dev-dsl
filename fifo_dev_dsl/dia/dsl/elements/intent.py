@@ -140,7 +140,6 @@ class Intent(make_dsl_container(Slot)):
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
 
-
         Returns:
             Any:
                 The result returned by the invoked tool.
@@ -178,10 +177,12 @@ class Intent(make_dsl_container(Slot)):
         calls it with arguments obtained by evaluating each slot. If any slot or
         nested value is unresolved, evaluation will fail with a `RuntimeError`.
 
+        If the resolved tool is not asynchronous, it will be called directly
+        without awaiting.
+
         Args:
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
-
 
         Returns:
             Any:

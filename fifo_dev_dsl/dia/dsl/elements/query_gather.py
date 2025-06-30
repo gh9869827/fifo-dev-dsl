@@ -85,7 +85,7 @@ class QueryGather(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Raise a RuntimeError because QueryGather nodes are unresolved.
+        Raise a RuntimeError because `QueryGather` nodes are unresolved.
 
         These placeholders must be replaced with fully specified intents during
         resolution. Encountering one during evaluation indicates that resolution
@@ -113,7 +113,6 @@ class QueryGather(DslBase):
             RuntimeError: Always raised with the message
                 Unresolved DSL node: QueryGather
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     def do_resolution(

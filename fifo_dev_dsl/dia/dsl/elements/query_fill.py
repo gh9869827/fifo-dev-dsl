@@ -75,7 +75,7 @@ class QueryFill(DslBase):
         """
         Raise a RuntimeError because QueryFill nodes are unresolved.
 
-        These nodes must be replaced by a concrete Value during resolution.
+        These nodes must be replaced by a concrete `Value` during resolution.
         Attempting to evaluate them directly indicates that resolution has
         not completed successfully.
 
@@ -101,7 +101,6 @@ class QueryFill(DslBase):
             RuntimeError: Always raised with the message
                 Unresolved DSL node: QueryFill
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     def do_resolution(

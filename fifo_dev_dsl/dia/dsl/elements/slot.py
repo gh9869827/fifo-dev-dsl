@@ -122,7 +122,6 @@ class Slot(make_dsl_container(DslBase)):
             runtime_context (LLMRuntimeContext):
                 Execution context providing tool access, query sources, and runtime helpers.
 
-
         Returns:
             Any:
                 The result from evaluating the stored value.
@@ -130,7 +129,6 @@ class Slot(make_dsl_container(DslBase)):
         Raises:
             RuntimeError: If the stored value is not resolved.
         """
-
         return self.value.eval(runtime_context)
 
     async def eval_async(
@@ -139,6 +137,10 @@ class Slot(make_dsl_container(DslBase)):
     ) -> Any:
         """
         Asynchronously evaluate the value stored in this slot.
+
+        The slot asynchronously delegates evaluation to its stored value. If the
+        stored value is unresolved, it will raise a RuntimeError during its
+        own evaluation.
 
         Args:
             runtime_context (LLMRuntimeContext):
@@ -151,5 +153,4 @@ class Slot(make_dsl_container(DslBase)):
         Raises:
             RuntimeError: If the stored value is not resolved.
         """
-
         return await self.value.eval_async(runtime_context)

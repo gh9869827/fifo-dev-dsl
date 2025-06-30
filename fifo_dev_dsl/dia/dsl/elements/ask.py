@@ -138,5 +138,4 @@ class Ask(DslBase):
             RuntimeError: Always raised with the message
                 Unresolved DSL node: Ask
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

@@ -111,7 +111,7 @@ class IntentRuntimeErrorResolver(DslBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Raise a RuntimeError because IntentRuntimeErrorResolver nodes are unresolved.
+        Raise a RuntimeError because `IntentRuntimeErrorResolver` nodes are unresolved.
 
         These nodes indicate that an intent failed during evaluation and requires
         user intervention. They must be replaced during resolution before evaluation
@@ -121,7 +121,6 @@ class IntentRuntimeErrorResolver(DslBase):
             RuntimeError: Always raised with the message
                 Unresolved DSL node: IntentRuntimeErrorResolver
         """
-
         raise RuntimeError(
             f"Unresolved DSL node: {self.__class__.__name__}"
         )
@@ -142,7 +141,6 @@ class IntentRuntimeErrorResolver(DslBase):
             RuntimeError: Always raised with the message
                 Unresolved DSL node: IntentRuntimeErrorResolver
         """
-
         raise RuntimeError(
             f"Unresolved DSL node: {self.__class__.__name__}"
         )

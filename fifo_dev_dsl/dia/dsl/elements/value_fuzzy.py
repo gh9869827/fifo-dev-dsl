@@ -98,6 +98,9 @@ class FuzzyValue(DSLValueBase):
         """
         Asynchronously map the fuzzy value to a numeric value.
 
+        During evaluation, the fuzzy value must be matched against known values.
+        If no match is found, a `ValueError` is raised.
+
         Args:
             runtime_context (LLMRuntimeContext):
                 Execution context (not used in this node).
@@ -109,9 +112,8 @@ class FuzzyValue(DSLValueBase):
         Raises:
             ValueError: If the fuzzy value is unknown.
         """
-
-        _ = runtime_context
         normalized = self.value.lower().strip()
         if normalized in _FUZZY_TO_NUMERIC:
             return _FUZZY_TO_NUMERIC[normalized]
+
         raise ValueError(f"Unrecognized fuzzy value: {self.value!r}")

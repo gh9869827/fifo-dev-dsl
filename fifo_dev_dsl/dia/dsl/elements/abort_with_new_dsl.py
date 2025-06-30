@@ -72,7 +72,6 @@ class AbortWithNewDsl(DslBase):
             RuntimeError: Always raised with the message
                 Unresolved DSL node: AbortWithNewDsl.
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")
 
     async def eval_async(
@@ -91,5 +90,4 @@ class AbortWithNewDsl(DslBase):
             RuntimeError: Always raised with the message
                 Unresolved DSL node: AbortWithNewDsl.
         """
-
         raise RuntimeError(f"Unresolved DSL node: {self.__class__.__name__}")

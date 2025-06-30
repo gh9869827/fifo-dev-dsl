@@ -80,6 +80,10 @@ class PropagateSlots(make_dsl_container(Slot)):
         """
         Asynchronously evaluate to a dictionary of propagated slot values.
 
+        Each slot's value is asynchronously evaluated and returned in a mapping from
+        slot name to Python value. If any slot or nested value is unresolved, a
+        RuntimeError is raised by the corresponding node during evaluation.
+
         Returns:
             dict[str, Any]:
                 Mapping of slot names to their evaluated Python values.
@@ -87,7 +91,6 @@ class PropagateSlots(make_dsl_container(Slot)):
         Raises:
             RuntimeError: If any slot or nested value is not resolved.
         """
-
         return {
             slot.name: await slot.value.eval_async(runtime_context)
             for slot in self.get_items()

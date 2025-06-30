@@ -47,18 +47,16 @@ class SameAsPreviousIntent(DSLValueBase):
         runtime_context: LLMRuntimeContext,
     ) -> Any:
         """
-        Asynchronously retrieve the value from the previous intent (NYI).
+        Asynchronously retrieve the value of the same-named slot from the previous intent.
 
-        This node will eventually fetch the value of a referenced slot from the
-        most recently evaluated intent.
+        During evaluation, this node will return the value of the corresponding
+        slot from the most recently evaluated intent.
 
-        This method is not yet implemented and currently raises a
-        `NotImplementedError`.
+        This method is not yet implemented and currently raises a `NotImplementedError`.
 
         Raises:
             NotImplementedError: Always, until evaluation logic is implemented.
         """
-
         raise NotImplementedError()
 
     def to_dsl_representation(self) -> str:

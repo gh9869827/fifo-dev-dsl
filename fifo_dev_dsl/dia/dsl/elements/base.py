@@ -312,7 +312,6 @@ class DslBase:
         Raises:
             RuntimeError: If the node is not resolved.
         """
-
         raise NotImplementedError(
             "DslBase.eval_async must be implemented by subclasses"
         )
