@@ -90,40 +90,42 @@ class RobotArm:
             lines.append(f"    count: {screw['count']}")
         return "\n".join(lines)
 
-robot = RobotArm()
+if __name__ == "__main__":
 
-runtime_context = LLMRuntimeContext(
-    container_name="phi",
-    intent_sequencer_adapter="dia-intent-sequencer-robot-arm-adapter",
-    tools=[
-        robot.retrieve_screw,
-        robot.initialize_components,
-        robot.organize,
-        robot.shutdown
-    ],
-    query_sources=[
-        robot.get_inventory
-    ]
-)
+    robot = RobotArm()
 
-print("> ready for command")
+    runtime_context = LLMRuntimeContext(
+        container_name="phi",
+        intent_sequencer_adapter="dia-intent-sequencer-robot-arm-adapter",
+        tools=[
+            robot.retrieve_screw,
+            robot.initialize_components,
+            robot.organize,
+            robot.shutdown
+        ],
+        query_sources=[
+            robot.get_inventory
+        ]
+    )
 
-USER_PROMPT = "give me 2 screws"
+    print("> ready for command")
 
-resolver = Resolver(runtime_context, prompt=USER_PROMPT)
+    USER_PROMPT = "give me one of the longest screws you have."
 
-while True:
-    # Step 1: resolve DSL (slot filling or follow-up questions)
-    resolver.fully_resolve_in_text_mode()
-    dsl_elements = resolver.dsl_elements
-    dsl_elements.pretty_print_dsl()
+    resolver = Resolver(runtime_context, prompt=USER_PROMPT)
 
-    # Step 2: evaluate resolved DSL (may succeed or fail)
-    evaluator = Evaluator(runtime_context, dsl_elements)
-    outcome = evaluator.evaluate()
+    while True:
+        # Step 1: resolve DSL (slot filling or follow-up questions)
+        resolver.fully_resolve_in_text_mode()
+        dsl_elements = resolver.dsl_elements
+        dsl_elements.pretty_print_dsl()
 
-    # Step 3: recovery loop if needed
-    if outcome.status != EvaluationStatus.ABORTED_RECOVERABLE:
-        break  # success or unrecoverable failure
+        # Step 2: evaluate resolved DSL (may succeed or fail)
+        evaluator = Evaluator(runtime_context, dsl_elements)
+        outcome = evaluator.evaluate()
 
-    resolver = Resolver(runtime_context, dsl=dsl_elements)
+        # Step 3: recovery loop if needed
+        if outcome.status != EvaluationStatus.ABORTED_RECOVERABLE:
+            break  # success or unrecoverable failure
+
+        resolver = Resolver(runtime_context, dsl=dsl_elements)
