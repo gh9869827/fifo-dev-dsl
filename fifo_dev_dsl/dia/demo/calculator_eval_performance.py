@@ -197,8 +197,6 @@ def eval_test() -> None:
     i = 0
     for entry in dataset_test:
         i += 1
-        if i > 100:
-            break
         system_prompt = entry["system"]
         input_text = entry["in"]
         expected_dsl_text = entry["out"]
