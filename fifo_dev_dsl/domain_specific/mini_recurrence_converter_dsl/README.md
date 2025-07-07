@@ -208,7 +208,10 @@ rule.next(datetime(2025, 5, 1))  # Computes the next valid datetime
 ```
 mini_recurrence_converter_dsl/
 ├── __init__.py
-├── mini_recurrence_converter_dsl.py
+├── core.py
+├── evaluate_mini_recurrence_converter_dsl_model.py
+├── generate_synthetic_data.py
+├── README.md
 tests/
 ├── test_mini_recurrence_converter_dsl.py
 ```
