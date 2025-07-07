@@ -260,3 +260,21 @@ To run tests:
 ```bash
 pytest --cov
 ```
+
+## 🧱 Directory Structure
+
+```
+mini_date_converter_dsl/
+├── __init__.py
+├── core.py
+├── evaluate_mini_date_converter_dsl_model.py
+├── README.md
+tests/
+├── test_mini_date_converter_dsl.py
+```
+
+---
+
+## 📜 License
+
+MIT — See [LICENSE](../../../LICENSE)
