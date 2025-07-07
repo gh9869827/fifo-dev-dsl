@@ -74,7 +74,7 @@ def main() -> None:
 
         --adapter:
             Adapter identifier used by the model to interpret DSL input.
-            (default: "mini-recurrence-converter-dsl")
+            (default: "mini-recurrence-converter-dsl-adapter")
     """
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -82,7 +82,7 @@ def main() -> None:
         help="Model container name to route to"
     )
     parser.add_argument(
-        "--adapter", default="mini-recurrence-converter-dsl",
+        "--adapter", default="mini-recurrence-converter-dsl-adapter",
         help="Adapter name to use for generation"
     )
     args = parser.parse_args()

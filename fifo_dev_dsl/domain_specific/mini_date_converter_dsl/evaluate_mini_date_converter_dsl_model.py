@@ -132,7 +132,7 @@ def main() -> None:
 
         --adapter:
             Adapter identifier used by the model to interpret DSL input.
-            (default: "mini-date-converter-dsl")
+            (default: "mini-date-converter-dsl-adapter")
 
         --exhaustive:
             If set, evaluates an exhaustive set of DATE_FROM_MONTH_WEEKDAY expressions instead of
@@ -144,7 +144,7 @@ def main() -> None:
         help="Model container name to route to"
     )
     parser.add_argument(
-        "--adapter", default="mini-date-converter-dsl",
+        "--adapter", default="mini-date-converter-dsl-adapter",
         help="Adapter name to use for generation"
     )
     parser.add_argument(
