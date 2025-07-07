@@ -1,24 +1,16 @@
 # `mini_date_converter_dsl`
 
-This module defines a minimal domain-specific language (DSL) for expressing natural language **date and time references** as symbolic function calls, which are then interpreted into `datetime` objects.
+This module defines a compact domain-specific language (DSL) for representing natural language **date and time references** as symbolic function calls, which are evaluated into Python `datetime` objects.
 
-It includes a Python parser and evaluation engine, as well as a function to translate free-form expressions into DSL via an LLM adapter (`mini-date-converter-dsl`).
+It includes:
+- Functionality to call a fine-tuned LLM adapter that translates free-form natural language into DSL syntax (as text)
+- A Python parser and evaluation engine that parses DSL text into symbolic function trees and evaluates them into Python `datetime` objects
 
----
-
-## 📦 Pretrained model
-
-The `parse_natural_date_expression` function in the `core` module uses a language model to translate natural date expressions into structured DSL function calls, as defined in this module.
-
-A fine-tuned LoRA adapter is available here:  
-👉 [**mini-date-converter-dsl-adapter**](https://huggingface.co/a6188466/mini-date-converter-dsl-adapter)
-
-It was trained on this dataset of paired natural language and DSL examples:  
-📚 [**mini-date-converter-dsl-dataset**](https://huggingface.co/datasets/a6188466/mini-date-converter-dsl-dataset)
+Together, these components support both human-readable input and structured execution.
 
 ---
 
-## 🧠 Purpose
+## 🎯 Purpose
 
 Turn expressions like:
 
@@ -26,46 +18,53 @@ Turn expressions like:
 > "one day and two hours from now"  
 > "the 4th Thursday of November"
 
-into valid Python `datetime` objects using a structured and composable DSL.
+into valid Python `datetime` objects using a structured, composable DSL.
 
 ---
 
-## 🧩 Components
+## 🧠 Natural Language to DSL Conversion
 
-The `mini_date_converter_dsl` system consists of three main components:
+The `mini_date_converter_dsl` system supports translation of free-form date expressions into symbolic DSL syntax through a fine-tuned language model.
 
-1. **📦 Python Module**  
-   The core DSL engine for parsing, resolving, and evaluating structured DSL trees.
+The `parse_natural_date_expression` function (in the `core` module) provides functionality to call a LoRA adapter that performs this conversion. The resulting DSL string is then parsed and evaluated into a Python `datetime` object by this module.
 
-2. **🧠 LoRA Adapter for Natural Language to DSL Conversion**  
-   A fine-tuned language model that translates natural language date expressions into DSL expressions.  
-   👉 [View Model on Hugging Face Hub](https://huggingface.co/a6188466/mini-date-converter-dsl-adapter)
+The following pretrained adapter can be used with the `parse_natural_date_expression` function:
 
-3. **📊 Training & Evaluation Dataset**  
-   A curated dataset of English date expressions mapped to DSL syntax for model training and testing.  
-   👉 [View Dataset on Hugging Face Hub](https://huggingface.co/datasets/a6188466/mini-date-converter-dsl-dataset)
+### 📦 Pretrained Model  
+[**mini-date-converter-dsl-adapter**](https://huggingface.co/a6188466/mini-date-converter-dsl-adapter)  
+A fine-tuned LoRA adapter trained to convert English date expressions into DSL syntax.
+
+### 📚 Training Dataset  
+[**mini-date-converter-dsl-dataset**](https://huggingface.co/datasets/a6188466/mini-date-converter-dsl-dataset)  
+A paired dataset of natural language date expressions and DSL targets used for training and evaluation.
 
 ---
 
 ## 🚀 How to Use
 
-Evaluate a DSL string into a Python `datetime`:
+### Evaluate a DSL string into a Python `datetime`:
 
 ```python
-from fifo_dev_dsl.domain_specific.mini_date_converter_dsl import MiniDateConverterDSL
+from datetime import datetime
+from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import MiniDateConverterDSL
 
-result = MiniDateConverterDSL().parse("SET_TIME(TODAY, 9, 30)")
-print(result)  # e.g., 2025-06-02 09:30:00
+result = MiniDateConverterDSL(datetime(2025, 6, 2)).parse("SET_TIME(TODAY, 9, 30)")
+print(result)
+# Output: 2025-06-02 09:30:00
 ```
 
-Translate natural language into DSL using an LLM adapter:
+### Translate natural language into DSL using an LLM adapter:
 
 ```python
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natural_date_expression
 
 dsl_code, date_time_object = parse_natural_date_expression("next Tuesday at 5pm", model="phi")
-print(dsl_code)  # e.g., SET_TIME(OFFSET(TODAY, 1, WEEKDAY=1), 17, 0)
-print(date_time_object)  # e.g., 2025-06-03 17:00:00
+
+print(dsl_code)
+# Output: SET_TIME(OFFSET(TODAY, 1, WEEKDAY=1), 17, 0)
+
+print(date_time_object)
+# Output: 2025-06-03 17:00:00
 ```
 
 ---
@@ -109,7 +108,7 @@ Adds or subtracts a time offset from a base expression.
 - `value`: Required integer offset (can be negative).
 - `unit`: One of:
   - `DAY`, `WEEK`, `MONTH`, `YEAR`
-  - or `WEEKDAY=<0-6>` (where `0 = Monday`, `6 = Sunday`)
+  - or `WEEKDAY=<0-6>` (where `0 = Monday`, ..., `6 = Sunday`)
 
 **Examples:**
 
@@ -154,8 +153,8 @@ DATE_FROM_YEAR_MONTH_DAY(2026, 1, 1)
 
 ### `DATE_FROM_MONTH_WEEKDAY(month, weekday_index, occurrence)`
 
-Returns the Nth weekday of a given month this year. `occurrence` may be
-negative to count from the end of the month (`-1` is the last weekday,
+Returns the Nth weekday of a given month this year. `occurrence` can be
+negative to count backward from the end of the month (`-1` is the last weekday,
 `-2` the second to last, etc.). If the resulting date has already
 passed this year, the same occurrence of that weekday in the following
 year is returned.
@@ -245,9 +244,9 @@ OFFSET_TIME(SET_TIME(TODAY, 12, 0), 0, 30)
 
 - Function names must be **uppercase** (e.g., `OFFSET`, not `offset`)
 - All arguments are **positional** and must follow the documented order
-- Invalid argument values (e.g., `month=13`, `weekday_index=7`, `minute=75`) raise `ValueError`
+- Argument values must be valid (e.g., `month=13`, `weekday_index=7`, `minute=75` will raise `ValueError`)
 - Invalid or non-existent dates (e.g., `February 30`, `April 31`) raise `ValueError`
-- Missing arguments or malformed expressions also raise `ValueError` with a detailed message
+- Missing arguments or malformed expressions raise `ValueError` with a detailed message
 - Nested expressions are fully supported and evaluated recursively
 - Function names and units (e.g., `DAY`, `WEEKDAY=1`) are **case-sensitive**
 
