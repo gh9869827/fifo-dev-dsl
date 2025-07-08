@@ -1,63 +1,67 @@
 # DSL Elements
 
-This module defines the building blocks of the DSL used in the `dia` engine. Each class in this directory represents a specific type of node in the DSL tree. Nodes are composed, resolved, and evaluated to drive the decision-making flow and execution logic of a goal-directed agent.
+This module defines the core building blocks of the DSL used by the `dia` engine.  
+Each class in this directory represents a specific type of node in the DSL tree.
+
+These nodes are combined to form interpretable trees that describe how the agent should make decisions, ask questions, handle runtime errors, or perform actions.  
+The `dia` runtime resolves and evaluates these trees step by step to drive goal-directed behavior.
 
 ## Overview
 
 The DSL supports:
 
-- **Intent execution** with named parameters
-- **Slot resolution**, including interactive queries and LLM inference
-- **Control flow** such as aborts and redirection
-- **Value representation**, including concrete and fuzzy quantities
-- **Containers** for grouping and propagating values across nodes
+- **Intent execution** with named parameters  
+- **Slot resolution** via user interaction or interactive queries powered by LLM-based inference
+- **Control flow** with support for aborts and redirection  
+- **Value representation** for both concrete and fuzzy quantities  
+- **Containers** for grouping values and propagating information across nodes
 
-Each node is a Python class with a method for rendering DSL syntax, hooks for evaluation or resolution, and support for visualization or inspection.
+Each node is implemented as a Python class, with methods for rendering DSL syntax, resolving or evaluating behavior, and supporting visualization or inspection.
 
 ## Node Types
 
 ### Intent Nodes
 
 - **`Intent`**  
-  Represents a tool invocation with structured arguments. Arguments are defined as `Slot` instances. Example:  
-  `retrieve_screw(count=2, length=12)`
+  Represents a tool invocation with structured arguments. Arguments are defined as `Slot` instances.  
+  Example: `retrieve_screw(count=2, length=12)`
 
 - **`IntentEvaluatedSuccess`**  
-  Marks that an `Intent` has been executed successfully. Stores the result to prevent re-execution in recovery scenarios.
+  Wraps a successfully executed `Intent` along with its return value. Used to prevent re-execution during recovery or downstream evaluation.
 
 - **`IntentRuntimeErrorResolver`**  
-  Wraps a failing `Intent` with its error message. Used to initiate user-guided recovery or replan logic.
+  Wraps a failed `Intent` along with its error message. Used to trigger user-guided recovery or replan logic.
 
 ### Value Nodes
 
 - **`Value`**  
-  A literal constant (string, number, etc.) already known and resolved. Always returns a fixed Python value.
+  A literal constant (string, number, etc.) that is already known and resolved. Always returns a fixed Python value.
 
 - **`FuzzyValue`**  
-  A vague quantity descriptor (e.g., `"a few"`) that gets mapped to a number via internal normalization.
+  A fuzzy quantity descriptor (e.g., `"a few"`) that gets mapped to a number via internal normalization.
 
 - **`SameAsPreviousIntent`**  
   Refers to the value of the same slot in the previously executed `Intent`.
 
 - **`ReturnValue`**  
-  Wraps another `Intent` whose result will be used as a slot argument. Enables nested calls.
+  Wraps another `Intent`, using its result as the value for a slot. Enables nested tool calls.
 
 - **`ListValue`**  
-  Represents a list of DSL values. Evaluated into a standard Python list.
+  Represents a list of DSL values. Evaluates to a standard Python list.
 
 ### Interactive Resolution
 
 - **`ASK`**  
-  Prompts the user for a missing slot value. Remains unresolved until answered.
+  Prompts the user for a missing slot value. Remains unresolved until a response is provided.
 
 - **`QueryFill`**  
-  Uses LLM-based reasoning to infer a missing slot value from a structured query. Enables context-aware inference.
+  Uses LLM-based reasoning to infer a missing slot value from a structured query against runtime information. Enables context-aware inference.
 
 - **`QueryGather`**  
-  Collects multiple interdependent values by issuing a single LLM-powered query. Typically used to prepare full intent generation.
+  Resolves multiple interdependent slots in a single LLM-powered query over the runtime context. Used when values cannot be inferred independently, requiring atomic reasoning before re-evaluating the intent.
 
 - **`QueryUser`**  
-  Captures a question *from* the user (e.g., "How many screws are in inventory?"). Treated as a top-level information query, not a tool invocation.
+  Captures a question *from* the user (e.g., "How many screws are in inventory?"). Treated as a top-level information query, not a tool invocation. Carries over context from the previous exchange while building the query.
 
 ### Control Flow
 
@@ -65,22 +69,24 @@ Each node is a Python class with a method for rendering DSL syntax, hooks for ev
   Immediately halts the current resolution path. Used to cancel or block further processing.
 
 - **`AbortWithNewDsl`**  
-  Stops the current path and replaces it with a new DSL subtree. Useful for graceful fallback or rerouting.
+  Halts the current path and replaces it with a new DSL subtree. Useful for graceful fallback, redirection, or replanning.
 
 ### Containers
 
 - **`Slot`**  
-  Maps a parameter name to a DSL value. Always contains a single child node.
+  Maps a parameter name to a DSL value. Always wraps a single child node.
 
 - **`PropagateSlots`**  
-  Carries slot values forward from a previous `Intent` when the user provides more information than was requested.
+  Forwards slot values from a previous `Intent` when the user provides more information than expected.
 
 - **`ListElement`**  
-  A container for a heterogeneous list of DSL nodes. Used to group and sequence expressions or tool calls.
+  A container for a heterogeneous list of DSL nodes. Used to group or sequence expressions and tool calls.
 
 ---
 
 ## Example: DSL Flow
+
+The following DSL tree represents a tool call to `retrieve_screw`, where the `count` is inferred from a fuzzy descriptor and the `length` is resolved using an LLM query over runtime information.
 
 ```python
 Intent(

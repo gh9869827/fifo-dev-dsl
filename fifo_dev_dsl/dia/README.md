@@ -1,23 +1,23 @@
 # DIA Module
 
-**DIA** (DSL for Interactive Agents) is a domain-specific language and runtime designed to translate
-user intents and questions into tool invocations and context-aware queries. It powers goal-driven
-agents that resolve missing information, recover from runtime errors, and complete complex tasks
+**DIA** (DSL for Interactive Agents) is a domain-specific language and runtime for translating
+user intents and queries into tool invocations and context-aware logic. It powers goal-driven
+agents that can resolve missing information, recover from runtime errors, and complete complex tasks
 through interactive dialogue.
 
 The DSL is composed of five categories of nodes:
 
-- **Intent execution** — structured tool calls with named parameters.
-- **Slot resolution** — interactive prompts and LLM-based inference for missing values.
-- **Control flow** — constructs for aborting, retrying, or redirecting execution paths.
-- **Value representation** — concrete values, fuzzy descriptors, and references to previous slots.
-- **Containers** — groupings of DSL elements used to sequence logic.
+- **Intent execution**: represents structured tool calls with named parameters. Includes success and error wrappers to support recovery.
+- **Slot resolution**: handles missing values through user interaction or LLM-powered queries (`ASK`, `QueryFill`, `QueryGather`, `QueryUser`).
+- **Control flow**: enables aborting, redirecting, or replacing execution paths (`Abort`, `AbortWithNewDsl`).
+- **Value representation**: supports concrete values (`Value`), fuzzy values (`FuzzyValue`), return values from nested intents (`ReturnValue`), and references to previous slot values (`SameAsPreviousIntent`).
+- **Containers**: used to group and propagate DSL elements, including `Slot`, `ListElement`, and `PropagateSlots`.
 
-Each node is implemented as a Python class under [`dsl/elements`](dsl/elements), with detailed
+Each node is implemented as a Python class under [`dsl/elements`](dsl/elements), with detailed 
 documentation available in [`dsl/elements/README.md`](dsl/elements/README.md).
 
-This document provides a high-level overview of the `dia` package: how DSL trees are generated,
-parsed, resolved, evaluated, and integrated into interactive agents.
+This document provides a high-level overview of the `dia` package, including how DSL trees are generated,
+parsed, resolved, evaluated, and integrated into interactive agent workflows.
 
 ## 📚 Table of Contents
 
@@ -37,147 +37,128 @@ parsed, resolved, evaluated, and integrated into interactive agents.
 The DIA system consists of three main components:
 
 1. **Python DIA Module**  
-   The core DSL engine for parsing, resolving, and evaluating structured intent trees. Handles tool
-   invocation, dialog flow, slot resolution, and control-flow logic like abort and reroute.
+   The core DSL engine for parsing, resolving, and evaluating structured intent trees.  
+   Handles tool invocation, dialog flow, slot resolution, and control flow logic such as aborts and rerouting.
 
 2. **LoRA Adapter for Intent Sequencing**  
-   A fine-tuned language model that translates natural language user input into DIA-compatible DSL
-   expressions. This adapter serves as a foundation model and can be further fine-tuned on
-   task-specific tool APIs, slot patterns, and dialog behaviors.  
-   Its goal is to take a user's English request and generate a structured DSL expression ready to
-   be parsed by the DIA engine.  
+   A fine-tuned language model that converts English user requests into DIA-compatible DSL expressions,
+   ready for parsing and evaluation by the DIA engine.  
+   It can be further fine-tuned on task-specific tool APIs, slot patterns, and dialog behaviors.  
    👉 [View Model on Hugging Face Hub](https://huggingface.co/your-model-link)
 
 3. **Training, Testing & Evaluation Datasets**  
-   A curated dataset used to train and evaluate the LoRA adapter. It includes prompts, target DSL
-   expressions, slot resolution examples, and error recovery paths to help teach robust multi-turn
-   behavior.  
+   A curated dataset used to train and evaluate the LoRA adapter.  
+   Includes prompts, target DSL expressions, slot resolution cases, and error recovery flows to support robust multi-turn behavior.  
    👉 [View Dataset on Hugging Face Hub](https://huggingface.co/datasets/your-dataset-link)
 
 ---
 
 ## 🔁 High-Level Flow Example
- 
-In the rest of the documentation, we will use the following example to illustrate DIA's ability to parse, interact, complete, and execute high-level intents.
- 
+
+In the rest of the documentation, we will use the following example to illustrate DIA's ability to parse, resolve, and execute high-level intents.
+
 Suppose a user says:  
-_“Retrieve 3 screws from the inventory”_
- 
-DIA processes this in five stages:
- 
-1. **Transform user's text into DIA DSL**  
-   Converts the user’s request into:  
+_"Retrieve 3 screws from the inventory"_
+
+DIA processes this in four stages:
+
+1. **Transform user input into DIA DSL**  
+   Converts the user's request into:  
    `retrieve_screw(count=3, length=ASK("What screw length do you need?"))`  
-   This step relies on the description of the available intents and runtime query sources to  
-   determine missing information and how to resolve it.
- 
-2. **Parsing**  
-   Parses the DSL string into a structured DSL tree with typed nodes and slots.
- 
-3. **Resolution**  
-   Identifies the missing slot `length`, asks the user for it, and receives the reply "12".
- 
-4. **Resolved DSL**  
-   Tree is now complete:  
-   `retrieve_screw(count=3, length=12)`
- 
-5. **Evaluation**  
-   Executes the tool implementation tied to `retrieve_screw`, performing the real-world action.
+   This step uses the definitions of callable tools and the declared presence of runtime sources (such as a screw inventory) to generate the DSL expression and determine how to resolve missing information. At this stage, the model is only aware of the existence and purpose of each source, not their contents.
+
+2. **Parse DSL syntax into DSL tree**  
+   Parses the DSL string into a structured tree of DSL nodes.
+
+3. **Resolve missing information**  
+   Detects the unresolved `length` slot, prompts the user for clarification, and receives the reply `"12"`.
+
+4. **Evaluate resolved DSL tree**  
+   The tree is now complete:  
+   `retrieve_screw(count=3, length=12)`  
+   The system then executes the tool implementation for `retrieve_screw`, performing the real-world action.
 
 ---
 
 ## 🧾 Parsing DSL
 
-The DIA parser converts a DSL expression—either handcrafted or generated by an LLM—into a tree of
-`DslBase` nodes. This structure is then used by the resolver and evaluator to process the user's
-intent.
+The DIA parser converts a DSL expression, either handcrafted or generated by an LLM, into a tree of
+`DslBase` nodes. This tree serves as the structured representation of the user's intent and is
+processed by the resolver and evaluator in later stages.
 
-You can parse a DSL string using:
+The tree can be parsed using:
 
 ```python
 from fifo_dev_dsl.dia.dsl.parser import parse_dsl
 
-root = parse_dsl("retrieve_screw(count=2, length=12)")
+root = parse_dsl('retrieve_screw(count=3, length=ASK("What screw length do you need?"))')
+
+root.pretty_print_dsl()
 ```
 
-In LLM-driven workflows, the DSL string is typically generated by an intent sequencer model (such
-as a fine-tuned LoRA adapter), translating user prompts into structured expressions ready for
-parsing.
+In LLM-driven workflows, the DSL string is typically produced by an intent sequencer model (such as a fine-tuned LoRA adapter), which translates natural language prompts into structured expressions ready for parsing.
 
 ---
 
 ## 🧭 Resolver
 
-The resolver performs **stack-based traversal** of the DSL tree. It pauses for missing values and 
-resumes after each interaction, enabling stepwise multi-turn reasoning. It walks the
-structure and resolves missing values using several mechanisms:
+The resolver performs a **stack-based traversal** of the DSL tree. It pauses when required values are missing and resumes after each interaction, enabling stepwise, multi-turn reasoning.
+
+It walks the structure and resolves missing values using several mechanisms:
 
 - `ASK` prompts the user for clarification.
-- `QUERY_FILL`, `QUERY_USER`, and `QUERY_GATHER` query external sources via the
-  `LLMRuntimeContext`.
+- `QUERY_FILL`, `QUERY_USER`, and `QUERY_GATHER` query external sources via the `LLMRuntimeContext`.
 - `PROPAGATE_SLOT` forwards values provided in the last interaction.
 - `ABORT` and `ABORT_WITH_NEW_INTENTS` can replace parts of the tree.
 
-Resolution is resumable. After each interaction request, the call stack is stored
-in the `ResolutionContext` so the process can continue once the user answers.
+Resolution is resumable. After each interaction request, the call stack is stored in the `ResolutionContext`, allowing resolution to continue once the user has responded.
 
-This design is **asynchronous-friendly**: the resolver does not block or wait
-for input inside its internal loop. Instead, it cleanly exits after emitting an
-interaction request, allowing external systems (e.g., UI, message handlers) to
-collect user input and resume resolution at a later time.
+This design is **asynchronous-friendly**: the resolver does not block or wait for input inside its internal loop. Instead, it exits cleanly after emitting an interaction request, allowing external systems (e.g., UI or message handlers) to collect input and resume resolution later.
 
 ```python
-from fifo_dev_dsl.dia.resolution import Resolver, ResolutionResult, Interaction, InteractionAnswer
-from fifo_dev_dsl.dia.runtime import LLMRuntimeContext
+from fifo_dev_dsl.dia.resolution.resolver import Resolver
+from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
+from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
+from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 
-runtime = LLMRuntimeContext(tools=[...], query_sources=[])
-resolver = Resolver(runtime_context=runtime, prompt="retrieve some screws")
+runtime = LLMRuntimeContext(tools=[...], query_sources=[...])
+resolver = Resolver(runtime_context=runtime, prompt="retrieve 3 screws from the inventory")
 
 outcome = resolver(interaction_reply=None)
 if outcome.result is ResolutionResult.INTERACTION_REQUESTED:
-    print(outcome.interaction.message)  # e.g. "What length do you need?"
+    print(outcome.interaction.message)  
+    # Output: "What length do you need?"
+    
     # Pass the user answer back into the resolver
     interaction = Interaction(outcome.interaction, InteractionAnswer("12"))
     outcome = resolver(interaction)
 ```
 
-Once `ResolutionResult.UNCHANGED` is returned, the DSL tree is considered **fully resolved** and can
-be passed to the evaluator for execution.
+Once `ResolutionResult.UNCHANGED` is returned, the DSL tree is considered **fully resolved** and can be passed to the evaluator for execution.
 
-> ⚠️ **Note:** Even a fully resolved DSL tree can still trigger runtime errors—
-> e.g., out-of-range tool arguments, type mismatches, or exceptions during tool
-> execution. These are handled at evaluation time by the `Evaluator`, which
-> wraps failures into recovery nodes (`IntentRuntimeErrorResolver`) to allow
-> retry or replanning.
+> ⚠️ **Note:** Even a fully resolved DSL tree may still raise exceptions during tool execution.
+> These are handled by the `Evaluator`, which wraps failed intents in recovery nodes (`IntentRuntimeErrorResolver`) to enable retry or replanning.
 
 ---
 
 ## 🧮 Evaluator
 
-The **evaluator** executes a fully resolved DSL tree using **depth-first traversal**. Its purpose is
-to invoke real Python tools, nest return values in composed expressions, and update the tree with
-evaluation outcomes.
+The **evaluator** executes a fully resolved DSL tree using **depth-first traversal**. Its purpose is to invoke real Python tools, nest return values in composed expressions, and update the tree with evaluation outcomes.
 
-Each `Intent` node is replaced with an `IntentEvaluatedSuccess` node that captures the
-**return value** of the tool call. This makes the evaluation **idempotent**—subsequent evaluations
-of the same DSL skip already-executed branches.
+Each successfully evaluated `Intent` node is replaced with an `IntentEvaluatedSuccess` node that captures the **return value** of the tool call. This makes the evaluation **idempotent**: subsequent evaluations of the same DSL skip already-executed branches.
 
-If a tool raises an exception that is recoverable, the evaluator replaces the failed intent with an
-`IntentRuntimeErrorResolver` node. This enables interactive **runtime error recovery**: the
-resolver resumes resolution, explains the issue to the user, and prompts them to adapt their intent.
-If the user can revise their request (e.g., choose a different screw size), the system will retry
-with an updated DSL. Otherwise—if no viable alternative exists—the user can choose to abort.
+If a tool raises an exception that is recoverable, the evaluator replaces the failed intent with an `IntentRuntimeErrorResolver` node. This enables interactive **runtime error recovery**: the resolver resumes resolution, explains the issue to the user, and prompts them to adapt their intent.  
+If the user can revise their request (e.g., choose a different screw size), the system will retry with an updated DSL. Otherwise, if no viable alternative exists, the user can choose to abort.
 
 ```python
-from fifo_dev_dsl.dia.runtime import Evaluator
+from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
 
 evaluator = Evaluator(runtime, resolver.dsl_elements)
 result = evaluator.evaluate()
 print(result.status, result.value)
 ```
 
-For asynchronous toolchains, use `AsyncEvaluator` which mirrors the same
-depth‑first traversal but awaits each node's `eval_async` method:
+For asynchronous toolchains, use `AsyncEvaluator` which mirrors the same depth-first traversal but awaits each node's `eval_async` method:
 
 ```python
 from fifo_dev_dsl.dia.runtime.async_evaluator import AsyncEvaluator
@@ -192,40 +173,66 @@ Evaluation proceeds until:
 - an unrecoverable error halts execution, returning `EvaluationStatus.ABORTED_UNRECOVERABLE`, or
 - a recoverable error is wrapped for retry, returning `EvaluationStatus.ABORTED_RECOVERABLE`.
 
-See [`runtime/evaluator.py`](fifo_dev_dsl/dia/runtime/evaluator.py) for implementation details.
-
 ## 🧰 Runtime Context
 
-`LLMRuntimeContext` groups all external resources available to the DSL engine during
+`LLMRuntimeContext` defines the external resources available to the DSL engine during
 resolution and evaluation:
 
-- **Tool Handlers** are Python functions decorated with `@tool_handler`, exposed as
-  callable intents in the DSL. These functions are matched by name and invoked with
-  resolved slot arguments during evaluation.
+- **Tool handlers** are Python functions decorated with `@tool_handler`. These functions serve 
+  as callable tools in Python and are invoked as intents within the DSL.
 
-- **Query Sources** are optional functions or services used during resolution to infer
-  slot values via `QUERY_FILL`, `QUERY_GATHER`, or `QUERY_USER`. These can include
-  LLM completions, search systems, or domain-specific sources like a structured
-  inventory of screws available to a robotic arm, a list of tasks, or any runtime-accessible
-  knowledge base. The query source is expected to return a structured YAML response
-  that the resolver can use to fill in missing values.
+- **Query sources** are optional Python functions decorated with `@tool_query_source`. They are 
+  used by `QUERY_FILL`, `QUERY_GATHER`, and `QUERY_USER` to infer slot values from structured
+  runtime data. These can include LLM completions, search tools, or structured data sources, 
+  such as a screw inventory for a robot arm. Each query source must return structured YAML, 
+  which is injected into system prompts and used by the resolver to fill in missing values.
 
-This context also holds intermediate state (e.g., call stack, prior interactions), allowing
-resolution to pause and resume across asynchronous user interactions.
+The context also maintains intermediate state (e.g., call stack, prior interactions),
+allowing resolution to pause and resume across asynchronous user interactions.
 
 ```python
+from fifo_dev_common.introspection.tool_decorator import tool_handler, tool_query_source
 from fifo_dev_dsl.dia.runtime import LLMRuntimeContext
-from fifo_dev_dsl.dia.tool_handler import tool_handler
 
 class Robot:
     @tool_handler("retrieve_screw")
-    def retrieve_screw(self, count: int, length: int) -> str:
-        return f"retrieved {count} screws of {length}mm"
+    def retrieve_screw(self, count: int, length: int):
+        """
+        Retrieve screws of a specific length from the inventory.
+
+        Args:
+            count (int):
+                Number of screws to retrieve.
+
+            length (int):
+                Length of the screws to retrieve.
+        """
+        ...
+
+    @tool_query_source("inventory")
+    def get_inventory(self) -> str:
+        """
+        Returns the inventory of screws, including their length and count.
+
+        Useful to answer user queries about screw specifications or quantities,
+        such as to resolve 'all' when the user asks for 'give me all screws'.
+
+        Returns:
+            str:
+                The serialized inventory.
+        """
+        return ...
 
 robot = Robot()
 runtime = LLMRuntimeContext(
-    tools=[robot.retrieve_screw],   # tool handlers exposed to the DSL
-    query_sources=[]                # LLM-backed or domain-specific slot resolvers
+    # Tool handlers
+    tools=[
+        robot.retrieve_screw
+    ],
+    # Query sources
+    query_sources=[
+        robot.get_inventory
+    ]
 )
 ```
 
@@ -233,54 +240,51 @@ runtime = LLMRuntimeContext(
 
 ### LLM Invocation Pathways
 
-`dia` uses **two types of model calls** depending on the resolution phase:
+`dia` uses **two types of model calls**, depending on the resolution phase:
 
-- 🧠 **Base model (no adapter)** — used for open-ended reasoning over structured runtime context
+- 🧠 **Base model (no adapter)**: used for open-ended reasoning over structured runtime context 
   (via `query_sources`).
-- 🧩 **LoRA adapter** — used to convert user input or reasoning output into structured DSL nodes.
+- 🧩 **LoRA adapter**: used to convert user input or reasoning outputs into structured DSL nodes.
 
-When resolving `QUERY_FILL`, `QUERY_USER`, or `QUERY_GATHER`, the content of the query sources—when
-available—is passed to the **base model** (not the fine-tuned LoRA adapter). This is intentional:
-the goal is not to generate DSL code, but to produce a **natural-language answer** based purely on
-reasoning over structured runtime data.
+When resolving `QUERY_FILL`, `QUERY_USER`, or `QUERY_GATHER`, the **content** of query sources (when available) is passed to the **base model**, not the fine-tuned LoRA adapter. This design allows the base model to reason over dynamic runtime information, such as a screw inventory, task list, or sensor feed. The objective is to produce a **natural-language answer**, not a DSL expression.
 
-These queries rely purely on the base model's reasoning ability and are DSL-agnostic by design.
-The model is prompted to generate an explanation first, then produce a user-facing answer based
-on that reasoning. This ordering helps enforce grounded, verifiable logic before finalizing the
-response.
+LoRA adapters are fine-tuned for converting natural-language text into **structured DSL syntax**, not for reasoning over external sources. They do not extend the base model's ability to interpret structured data or perform inference.
 
-The resulting answer is then transformed into DSL using a LoRA adapter, which specializes in
-converting natural text into structured, executable form.
+This separation ensures that dynamic context is handled by the model best suited for understanding it, while DSL construction remains the responsibility of the adapter, which is fine-tuned specifically for generating DSL syntax.
 
-By cleanly separating data-based reasoning (base model) from DSL generation (adapter), the system
-remains modular and more robust across domains.
+While generating its answer, the base model is prompted to generate an **explanation** based on the available sources, followed by a **user-facing answer** grounded in that explanation. This ordering improves transparency and ensures the result is anchored in the actual data.
+
+Once the answer is available, it is passed to a LoRA adapter, which converts it into a structured DSL expression.
+
+This separation between **reasoning (base model)** and **DSL generation (adapter)** helps keep the system modular, transparent, and easier to apply across domains.
 
 ### Resolution Phases and LLM Responsibilities
 
 | Phase                          | Interactive? | Model Used        | Purpose                                                                                  | System Prompt(s)                                 |
 |-------------------------------|--------------|-------------------|------------------------------------------------------------------------------------------|--------------------------------------------------|
-| `QueryFill`                   | No           | Base              | Compute a value directly from structured sources                                         | `system_prompt_query_fill`                       |
-| `QueryUser`                   | Yes          | Base → Adapter    | **Base**: generate an answer from sources<br>**Interaction**: user reviews and responds<br>**Adapter**: convert user response into DSL | `system_prompt_query_user` → `system_prompt_intent_sequencer` or `system_prompt_slot_resolver` |
-| `QueryGather`                 | No           | Base → Adapter    | **Base**: gather auxiliary info<br>**Adapter**: generate DSL using original prompt + gathered info | `system_prompt_query_gather` → `system_prompt_intent_sequencer` |
+| `QueryFill`                   | No           | Base              | Compute a value directly from query sources                                         | `system_prompt_query_fill`                       |
+| `QueryUser`                   | Yes          | Base → Adapter    | **Base**: generate an answer from query sources<br>**Interaction**: user reviews the answer and responds<br>**Adapter**: convert user response into DSL | `system_prompt_query_user` → `system_prompt_intent_sequencer` or `system_prompt_slot_resolver` |
+| `QueryGather`                 | No           | Base → Adapter    | **Base**: gather information from query sources<br>**Adapter**: generate DSL using original prompt + gathered info | `system_prompt_query_gather` → `system_prompt_intent_sequencer` |
 | `Ask`                         | Yes          | Adapter           | **Interaction**: prompt the user for a missing slot<br>**Adapter**: turn reply into DSL  | `system_prompt_slot_resolver`                    |
 | `IntentRuntimeErrorResolver` | Yes          | Adapter           | **Interaction**: display runtime error and ask how to proceed<br>**Adapter**: generate updated DSL from user input | `system_prompt_error_resolver`                   |
 | `resolver._process_user_prompt()` | No       | Adapter           | Convert the initial user prompt into DSL                                                 | `system_prompt_intent_sequencer`                |
 
-> ⚙️ **Design rationale:** The **base model** is used exclusively for structured reasoning tasks that don't involve DSL. The **LoRA adapter** is reserved for converting natural language into structured program logic. This split avoids unnecessary fine-tuning and keeps reasoning pathways cleanly separated.
+## 🚀 End‑to‑End Execution
 
-## 🚀 End‑to‑End Execution 
+### 🦾 Robotic Arm Framework
 
-### 🦾 Robotic Arm framework
-
-This example shows how `dia` integrates with a robotic arm framework to interpret natural language
-commands, resolve missing information, and handle runtime errors through interactive user dialogue.
+This example demonstrates how `dia` integrates with a robotic arm framework to interpret natural language
+commands, resolve missing information, and handle runtime errors through user interaction.
 
 🧪 [View and run the demo](demo/robot_arm.py)
 
-Key features demonstrated:
-- Slot resolution with `ASK(...)` and query sources
-- Runtime tool execution
-- Recovery from errors using `IntentRuntimeErrorResolver`
+**Key features demonstrated**:
+- Slot resolution using `ASK(...)` and runtime query sources
+- Runtime tool execution through intent evaluation
+- Error recovery using `IntentRuntimeErrorResolver`
+
+📺 Watch the video below for a live example:  
+[![Demo Video](https://img.youtube.com/vi/wbdLcn9Wizc/hqdefault.jpg)](https://www.youtube.com/watch?v=wbdLcn9Wizc)
 
 ### 🧩 Mini Calculator
 
@@ -292,23 +296,3 @@ Key features demonstrated:
 - Nested intent evaluation  
 - Intent composition via `ReturnValue`  
 - Runtime tool execution with correct evaluation order
-
-Prompt used in the example:
-```
-42 / (5 + 1 + 1)
-```
-
-Expected DSL:
-```
-divide(a=42, b=add(a=5, b=add(a=1, b=1)))
-```
-
-And its result:
-```
-6
-```
-
----
-
-DIA provides the foundation for building dialog‑driven agents. Refer to the
-[DSL Elements](dsl/elements/README.md) for a full list of node types.
