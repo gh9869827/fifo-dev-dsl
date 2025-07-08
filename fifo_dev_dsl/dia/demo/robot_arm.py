@@ -110,7 +110,7 @@ if __name__ == "__main__":
 
     print("> ready for command")
 
-    USER_PROMPT = "give me one of the longest screws you have."
+    USER_PROMPT = "retrieve 3 screws from the inventory"
 
     resolver = Resolver(runtime_context, prompt=USER_PROMPT)
 
