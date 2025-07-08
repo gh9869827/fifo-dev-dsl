@@ -110,6 +110,9 @@ while True:
 
 This demonstrates how `dia` handles interactive slots (such as `ASK(...)`) and re-evaluates the DSL tree until resolution completes or fails with an unrecoverable error.
 
+📺 Watch the demo video below:  
+[![Demo Video](https://img.youtube.com/vi/wbdLcn9Wizc/hqdefault.jpg)](https://www.youtube.com/watch?v=wbdLcn9Wizc)
+
 See [`dia/README.md`](fifo_dev_dsl/dia/README.md) for syntax, resolution phases, and evaluator logic.
 
 ---
