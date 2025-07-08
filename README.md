@@ -19,10 +19,12 @@ Some functionality requires a working [airlock model environment](https://github
 Install the DSL module in editable mode in a separate virtual environment:
 
 ```bash
-# Create a clean working directory
-mkdir fifo_root && cd fifo_root
+# Create and activate a new virtual environment
+python3 -m venv fifo_env_root
+cd fifo_env_root
+source bin/activate
 
-# Clone the DSL module
+# Clone the DSL module into the virtual environment directory
 git clone https://github.com/gh9869827/fifo-dev-dsl.git
 cd fifo-dev-dsl
 
