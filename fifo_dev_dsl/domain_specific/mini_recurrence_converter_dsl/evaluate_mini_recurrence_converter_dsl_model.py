@@ -7,7 +7,7 @@ to parse each recurrence expression and return the correct DSL output.
 Usage:
     python evaluate_mini_recurrence_converter_dsl_model.py \
         --container phi                                    \
-        --adapter mini-recurrence-converter-dsl
+        --adapter mini-recurrence-converter-dsl-adapter
 """
 
 from typing import Iterator, cast

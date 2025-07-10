@@ -11,12 +11,12 @@ This script supports two evaluation modes:
 Usage:
     python evaluate_mini_date_converter_dsl_model.py \
         --container phi                              \
-        --adapter mini-date-converter-dsl
+        --adapter mini-date-converter-dsl-adapter
 
     # For exhaustive test mode:
     python evaluate_mini_date_converter_dsl_model.py \
         --container phi                              \
-        --adapter mini-date-converter-dsl            \
+        --adapter mini-date-converter-dsl-adapter    \
         --exhaustive
 """
 

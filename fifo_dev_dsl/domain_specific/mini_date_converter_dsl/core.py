@@ -25,7 +25,7 @@ SYSTEM_PROMPT = ("You are a precise temporal parser. Your only job is to transla
 def parse_natural_date_expression(
         question: str,
         container_name: str,
-        adapter: str = "mini-date-converter-dsl",
+        adapter: str = "mini-date-converter-dsl-adapter",
         now: datetime | None = None,
         host: str = "http://127.0.0.1:8000") -> Tuple[str, datetime]:
     """
@@ -41,7 +41,7 @@ def parse_natural_date_expression(
 
         adapter (str, optional):
             Adapter name used when calling `call_airlock_model_server`. Defaults to
-            `"mini-date-converter-dsl"`.
+            `"mini-date-converter-dsl-adapter"`.
 
         now (datetime | None, optional):
             Overrides the current datetime for evaluation. Passed to
