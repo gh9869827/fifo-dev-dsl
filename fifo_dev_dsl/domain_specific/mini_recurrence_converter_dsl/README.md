@@ -32,11 +32,11 @@ The following pretrained adapter can be used with the `parse_natural_recurrence_
 
 ### 📦 Pretrained Model  
 [**mini-recurrence-converter-dsl-adapter**](https://huggingface.co/a6188466/mini-recurrence-converter-dsl-adapter)  
-A fine-tuned LoRA adapter trained to convert English recurrence expressions into DSL syntax.
+A **demonstration** fine-tuned LoRA adapter trained to convert English recurrence expressions into DSL syntax.
 
 ### 📚 Training Dataset  
 [**mini-recurrence-converter-dsl-dataset**](https://huggingface.co/datasets/a6188466/mini-recurrence-converter-dsl-dataset)  
-A paired dataset of natural language recurrence expressions and DSL targets used for training and evaluation.
+A **demonstration** dataset containing English recurrence expressions paired with DSL targets used for training and evaluation.
 
 ---
 

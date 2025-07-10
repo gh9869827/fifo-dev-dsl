@@ -21,7 +21,6 @@ parsed, resolved, evaluated, and integrated into interactive agent workflows.
 
 ## 📚 Table of Contents
 
-- 📦 [Components](#-components)
 - 🔁 [High-Level Flow Example](#-high-level-flow-example)
 - 🧾 [Parsing DSL](#-parsing-dsl)
 - 🧭 [Resolver](#-resolver)
@@ -29,27 +28,6 @@ parsed, resolved, evaluated, and integrated into interactive agent workflows.
 - 🧰 [Runtime Context](#-runtime-context)
 - 🤖 [LLM Invocation Strategy](#-llm-invocation-strategy)
 - 🚀 [End‑to‑End Execution](#-endtoend-execution)
-
----
-
-## 📦 Components
-
-The DIA system consists of three main components:
-
-1. **Python DIA Module**  
-   The core DSL engine for parsing, resolving, and evaluating structured intent trees.  
-   Handles tool invocation, dialog flow, slot resolution, and control flow logic such as aborts and rerouting.
-
-2. **LoRA Adapter for Intent Sequencing**  
-   A fine-tuned language model that converts English user requests into DIA-compatible DSL expressions,
-   ready for parsing and evaluation by the DIA engine.  
-   It can be further fine-tuned on task-specific tool APIs, slot patterns, and dialog behaviors.  
-   👉 [View Model on Hugging Face Hub](https://huggingface.co/your-model-link)
-
-3. **Training, Testing & Evaluation Datasets**  
-   A curated dataset used to train and evaluate the LoRA adapter.  
-   Includes prompts, target DSL expressions, slot resolution cases, and error recovery flows to support robust multi-turn behavior.  
-   👉 [View Dataset on Hugging Face Hub](https://huggingface.co/datasets/your-dataset-link)
 
 ---
 
