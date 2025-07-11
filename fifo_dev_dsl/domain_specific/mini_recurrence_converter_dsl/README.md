@@ -16,7 +16,7 @@ Turn expressions like:
 
 > "every Monday at 9am"  
 > "every last day of the month"  
-> "every second Friday in October"
+> "every second Friday of the month at 8:45am"
 
 into structured recurrence rules that compute the next matching datetime using a symbolic, composable DSL.
 
