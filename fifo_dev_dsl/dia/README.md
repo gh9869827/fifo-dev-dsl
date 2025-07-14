@@ -28,6 +28,7 @@ parsed, resolved, evaluated, and integrated into interactive agent workflows.
 - 🧰 [Runtime Context](#-runtime-context)
 - 🤖 [LLM Invocation Strategy](#-llm-invocation-strategy)
 - 🚀 [End‑to‑End Execution](#-endtoend-execution)
+- ✅ [License](#-license)
 
 ---
 
@@ -274,3 +275,9 @@ Key features demonstrated:
 - Nested intent evaluation  
 - Intent composition via `ReturnValue`  
 - Runtime tool execution with correct evaluation order
+
+---
+
+## ✅ License
+
+MIT — see [LICENSE](../../LICENSE).

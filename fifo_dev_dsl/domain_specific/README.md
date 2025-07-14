@@ -17,3 +17,9 @@ Each subdirectory targets a specific domain:
 Each DSL is self-contained and comes with its own parser, test suite, and documentation.
 
 > Shared utilities used by both DSLs can be found in [`common/`](common/).
+
+---
+
+## ✅ License
+
+MIT — see [LICENSE](../../LICENSE).

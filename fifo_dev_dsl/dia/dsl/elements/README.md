@@ -97,3 +97,9 @@ Intent(
     ]
 )
 ```
+
+---
+
+## License
+
+MIT — see [LICENSE](../../../../LICENSE).

@@ -238,6 +238,6 @@ tests/
 
 ---
 
-## 📜 License
+## ✅ License
 
 MIT — See [LICENSE](../../../LICENSE)
