@@ -2,7 +2,6 @@ import argparse
 from collections import defaultdict
 from typing import Iterator, cast, Callable
 import re
-import os
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
@@ -105,7 +104,7 @@ def eval_random(delta_file: str | None = None) -> None:
 
     Raises:
         RuntimeError:
-            `delta_file` must be a filename only (no directories).
+            `delta_file` must match the pattern `[A-Za-z0-9_]+\\.dat`.
     """
     total_global, error_global = 0, 0
     results_by_length: dict[int, list[int]] = {k: [0, 0] for k in range(2, 7)}
@@ -113,8 +112,8 @@ def eval_random(delta_file: str | None = None) -> None:
     if delta_file is None:
         f_delta = None
     else:
-        if os.path.basename(delta_file) != delta_file:
-            raise RuntimeError("`delta_file` must be a filename only (no directories).")
+        if not re.fullmatch(r"[A-Za-z0-9_]+\.dat", delta_file):
+            raise RuntimeError("`delta_file` must match the pattern `[A-Za-z0-9_]+\\.dat`.")
 
         f_delta = open(delta_file, "w", encoding="utf-8")
 
