@@ -203,8 +203,13 @@ class DslBase:
         state that was set in `pre_resolution`, such as clearing the active slot
         or temporary variables in the resolution context.
 
-        This method is guaranteed to be called unless resolution is paused by an
-        interaction request (e.g., when `do_resolution` returns INTERACTION_REQUESTED).
+        By design, this method is called for any node that entered `pre_resolution()`,
+        unless an `ResolutionResult.ABORT` condition is triggered. In the `ResolutionResult.ABORT`
+        case, `_handle_abort_if_needed()` in `resolve()` manually clears the resolution context
+        instead of invoking this method.
+        Also, when resolution is paused by an interaction request (e.g., when `do_resolution`
+        returns `INTERACTION_REQUESTED`), this method is called once the resolution process
+        resumes.
 
         Args:
             runtime_context (LLMRuntimeContext):
