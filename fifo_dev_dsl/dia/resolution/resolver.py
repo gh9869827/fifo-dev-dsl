@@ -143,6 +143,8 @@ def resolve(
         logger.trace("--> Clearing slot, intent and clarifying question due to abort condition")
         resolution_context.questions_being_clarified.clear()
         resolution_context.reset_state()
+        resolution_context.slot = None
+        resolution_context.other_slots = None
 
         if sub_outcome.node is not None:
             parent.obj.update_child(parent.idx - 1, sub_outcome.node)
