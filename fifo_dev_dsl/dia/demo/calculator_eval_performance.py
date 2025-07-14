@@ -2,6 +2,7 @@ import argparse
 from collections import defaultdict
 from typing import Iterator, cast, Callable
 import re
+import os
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
@@ -101,10 +102,22 @@ def eval_random(delta_file: str | None = None) -> None:
         delta_file (str | None):
             Optional path where failed prompts are logged. When `None`,
             no logging is performed.
+
+    Raises:
+        RuntimeError:
+            `delta_file` must be a filename only (no directories).
     """
     total_global, error_global = 0, 0
     results_by_length: dict[int, list[int]] = {k: [0, 0] for k in range(2, 7)}
-    f_delta = open(delta_file, "w", encoding="utf-8") if delta_file else None
+
+    if delta_file is None:
+        f_delta = None
+    else:
+        if os.path.basename(delta_file) != delta_file:
+            raise RuntimeError("`delta_file` must be a filename only (no directories).")
+
+        f_delta = open(delta_file, "w", encoding="utf-8")
+
     try:
         for length_tree in [2, 3, 4, 5, 6]:
             total, error = 0, 0
