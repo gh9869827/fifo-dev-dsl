@@ -39,8 +39,8 @@ class Abort(DslBase):
         It is typically injected during user cancellation or early termination and
         signals that no further evaluation should occur.
 
-        The Resolver in the resolution module guarantees that this node is removed
-        before the final DSL tree is considered resolved.
+        By design, the Resolver in the resolution module ensures that this node is 
+        removed before the final DSL tree is considered resolved.
         
         Returns:
             bool:

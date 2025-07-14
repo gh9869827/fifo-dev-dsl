@@ -48,8 +48,8 @@ class AbortWithNewDsl(DslBase):
         that resolution is incomplete and should not remain in a fully resolved
         DSL tree.
 
-        The Resolver in the resolution module guarantees that this node is removed
-        before the final DSL tree is considered resolved.
+        By design, the Resolver in the resolution module ensures that this node is 
+        removed before the final DSL tree is considered resolved.
 
         Returns:
             bool:

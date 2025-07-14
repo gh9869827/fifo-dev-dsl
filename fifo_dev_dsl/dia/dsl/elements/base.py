@@ -472,8 +472,9 @@ def make_dsl_container(expected_type: Type[T]) -> type[DslContainerBase[T]]:
     `_expected_type()` method required by the base class, ensuring strict runtime
     validation via `strict_cast`.
 
-    This approach eliminates type duplication in subclasses and guarantees both
-    runtime safety and static typing support without requiring decorators or manual overrides.
+    This approach eliminates type duplication in subclasses and, by design,
+    provides both runtime type safety and static typing support without requiring
+    decorators or manual overrides.
 
     Args:
         expected_type (Type[T]):
