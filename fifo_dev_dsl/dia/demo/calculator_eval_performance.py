@@ -84,7 +84,7 @@ def eval_prompt(prompt: str) -> float:
     return node.evaluation_outcome.value
 
 
-def eval_random(delta_file: str | None = None) -> None:
+def eval_random(delta_flag: bool) -> None:
     """
     Evaluate randomly generated arithmetic expressions using the DIA DSL pipeline.
 
@@ -98,24 +98,14 @@ def eval_random(delta_file: str | None = None) -> None:
     Skips cases with division by zero.
 
     Args:
-        delta_file (str | None):
-            Optional path where failed prompts are logged. When `None`,
-            no logging is performed.
-
-    Raises:
-        RuntimeError:
-            `delta_file` must match the pattern `[A-Za-z0-9_]+\\.dat`.
+        delta_flag (bool):
+            If True, failed prompts are logged to `delta.dat`.
+            If False, no logging is performed.
     """
     total_global, error_global = 0, 0
     results_by_length: dict[int, list[int]] = {k: [0, 0] for k in range(2, 7)}
 
-    if delta_file is None:
-        f_delta = None
-    else:
-        if not re.fullmatch(r"[A-Za-z0-9_]+\.dat", delta_file):
-            raise RuntimeError("`delta_file` must match the pattern `[A-Za-z0-9_]+\\.dat`.")
-
-        f_delta = open(delta_file, "w", encoding="utf-8")
+    f_delta = open("delta.dat", "w", encoding="utf-8") if delta_flag else None
 
     try:
         for length_tree in [2, 3, 4, 5, 6]:
@@ -351,16 +341,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluation script")
     parser.add_argument("--random", action="store_true", help="Evaluate on random examples")
     parser.add_argument(
-        "--delta-file",
-        nargs="?",
-        const="delta.dat",
-        default=None,
-        metavar="PATH",
-        help="Log failed random examples to PATH (default: delta.dat)"
+        "--delta-flag",
+        action="store_true",
+        help="Log failed random examples to 'delta.dat'. If not set, no file is created."
     )
     args = parser.parse_args()
 
     if args.random:
-        eval_random(args.delta_file)
+        eval_random(args.delta_flag)
     else:
         eval_test()
