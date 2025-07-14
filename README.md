@@ -47,7 +47,7 @@ A lightweight, composable DSL engine that turns natural language into **goal-dri
 - 🧠 **Intent invocation** using symbolic and composable function calls like `retrieve_screws(count=2, length=ASK(...))`
   - ⚙️ **Tool integration** via function-to-intent mapping that invokes Python functions defined by the user  
   - 📡 **Query sources** provide runtime context the model uses to answer questions or fill missing slots  
-  - 🔒 Tool-calling with a **security focus**, using only explicitly registered functions with type-checked arguments, securely parsed and cast. There is no dynamic evaluation or arbitrary code execution.
+  - 🔒 Tool-calling with a **security focus**, using only explicitly registered functions with type-checked arguments, securely parsed and cast. There is no dynamic evaluation or arbitrary code execution (i.e., no use of Python's built-in `eval()` or `exec()`).
 - 💬 **Dialog-based resolution** using `ASK(...)` and `QUERY_USER(...)` for interactive prompts. Errors are handled with an `IntentRuntimeErrorResolver` node, automatically injected when recoverable runtime errors are detected.
 - 🔁 **Slot propagation and reuse** with `PROPAGATE_SLOT(...)` and `SAME_AS_PREVIOUS_INTENT()`  
 - 🧪 **Deterministic evaluation** with traceable logic  
