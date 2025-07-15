@@ -1,4 +1,4 @@
-# DIA Module
+# `fifo_dev_dsl.dia` Module
 
 **DIA** (DSL for Interactive Agents) is a domain-specific language and runtime for translating
 user intents and queries into tool invocations and context-aware logic. It powers goal-driven
@@ -21,6 +21,7 @@ parsed, resolved, evaluated, and integrated into interactive agent workflows.
 
 ## 📚 Table of Contents
 
+- 🎯 [Project Status & Audience](#-project-status--audience)
 - 🔁 [High-Level Flow Example](#-high-level-flow-example)
 - 🧾 [Parsing DSL](#-parsing-dsl)
 - 🧭 [Resolver](#-resolver)
@@ -29,6 +30,21 @@ parsed, resolved, evaluated, and integrated into interactive agent workflows.
 - 🤖 [LLM Invocation Strategy](#-llm-invocation-strategy)
 - 🚀 [End‑to‑End Execution](#-endtoend-execution)
 - ✅ [License](#-license)
+
+---
+
+## 🎯 Project Status & Audience
+
+🚧 **Work in Progress** — Part of the **`fifo-dev-dsl`** project, currently in **early development**. 🚧
+
+This is a personal project developed and maintained by a solo developer.  
+Contributions, ideas, and feedback are welcome, but development is driven by personal time and priorities.
+
+`fifo-dev-dsl` is designed to support other `fifo-*` projects developed by the author.  
+It is provided for **individual developers** interested in experimenting with DSL-driven natural language interpretation.
+
+No official release or pre-release has been published yet. The code is provided for **preview and experimentation**.  
+**Use at your own risk.**
 
 ---
 

@@ -12,6 +12,21 @@ The repository also includes additional DSL modules under the `domain_specific` 
 
 ---
 
+## 🎯 Project Status & Audience
+
+🚧 **Work in Progress** — This project is in **early development**. 🚧
+
+This is a personal project developed and maintained by a solo developer.  
+Contributions, ideas, and feedback are welcome, but development is driven by personal time and priorities.
+
+`fifo-dev-dsl` is designed to support other `fifo-*` projects developed by the author.  
+It is provided for **individual developers** interested in experimenting with DSL-driven natural language interpretation.
+
+No official release or pre-release has been published yet. The code is provided for **preview and experimentation**.  
+**Use at your own risk.**
+
+---
+
 ## 📦 Install
 
 Some functionality requires a working [airlock model environment](https://github.com/gh9869827/fifo-tool-airlock-model-env). See its [README](https://github.com/gh9869827/fifo-tool-airlock-model-env/blob/main/README.md) for setup instructions.

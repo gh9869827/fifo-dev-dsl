@@ -1,4 +1,4 @@
-# `mini_date_converter_dsl`
+# `fifo_dev_dsl.domain_specific.mini_date_converter_dsl`
 
 This module defines a compact domain-specific language (DSL) for representing natural language **date and time references** as symbolic function calls, which are evaluated into Python `datetime` objects.
 
@@ -7,6 +7,21 @@ It includes:
 - A Python parser and evaluation engine that parses DSL text into symbolic function trees and evaluates them into Python `datetime` objects
 
 Together, these components support both human-readable input and structured execution.
+
+---
+
+## 🎯 Project Status & Audience
+
+🚧 **Work in Progress** — Part of the **`fifo-dev-dsl`** project, currently in **early development**. 🚧
+
+This is a personal project developed and maintained by a solo developer.  
+Contributions, ideas, and feedback are welcome, but development is driven by personal time and priorities.
+
+`fifo-dev-dsl` is designed to support other `fifo-*` projects developed by the author.  
+It is provided for **individual developers** interested in experimenting with DSL-driven natural language interpretation.
+
+No official release or pre-release has been published yet. The code is provided for **preview and experimentation**.  
+**Use at your own risk.**
 
 ---
 
