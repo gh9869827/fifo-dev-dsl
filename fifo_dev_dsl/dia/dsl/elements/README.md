@@ -1,10 +1,27 @@
-# DSL Elements
+# `fifo_dev_dsl.dia.dsl.elements`: DSL Elements
 
 This module defines the core building blocks of the DSL used by the `dia` engine.  
 Each class in this directory represents a specific type of node in the DSL tree.
 
 These nodes are combined to form interpretable trees that describe how the agent should make decisions, ask questions, handle runtime errors, or perform actions.  
 The `dia` runtime resolves and evaluates these trees step by step to drive goal-directed behavior.
+
+---
+
+## 🎯 Project Status & Audience
+
+🚧 **Work in Progress** — Part of the **`fifo-dev-dsl`** project, currently in **early development**. 🚧
+
+This is a personal project developed and maintained by a solo developer.  
+Contributions, ideas, and feedback are welcome, but development is driven by personal time and priorities.
+
+`fifo-dev-dsl` is designed to support other `fifo-*` projects developed by the author.  
+It is provided for **individual developers** interested in experimenting with DSL-driven natural language interpretation.
+
+No official release or pre-release has been published yet. The code is provided for **preview and experimentation**.  
+**Use at your own risk.**
+
+---
 
 ## Overview
 
@@ -17,6 +34,8 @@ The DSL supports:
 - **Containers** for grouping values and propagating information across nodes
 
 Each node is implemented as a Python class, with methods for rendering DSL syntax, resolving or evaluating behavior, and supporting visualization or inspection.
+
+---
 
 ## Node Types
 
