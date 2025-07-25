@@ -1,6 +1,6 @@
 [project]
 name = "fifo-dev-dsl"
-version = "0.1.0"
+version = "0.1.0a0"
 description = "DSLs for intent parsing, planning, and reasoning in `fifo-dev` and `fifo-bot` agents"
 authors = [
   { name = "Florent Gastoud" }
