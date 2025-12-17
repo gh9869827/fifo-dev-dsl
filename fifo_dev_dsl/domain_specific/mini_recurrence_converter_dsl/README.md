@@ -235,6 +235,39 @@ HOURLY(0, 20)   # every 20 minutes
 
 ---
 
+## 📊 Model Evaluation
+
+The `evaluate_mini_recurrence_converter_dsl_model.py` script evaluates the accuracy of fine-tuned models on recurrence expression parsing tasks using a published test set from Hugging Face Hub.
+
+### Usage Examples
+
+**Using Airlock backend (default):**
+
+```bash
+python evaluate_mini_recurrence_converter_dsl_model.py \
+    --backend-type airlock \
+    --container phi \
+    --adapter mini-recurrence-converter-dsl-adapter
+```
+
+**Using OpenAI-compatible backend:**
+
+```bash
+python evaluate_mini_recurrence_converter_dsl_model.py \
+    --backend-type openai-compatible \
+    --base-url http://127.0.0.1:8001/v1 \
+    --model your-model-name
+```
+
+**Additional options:**
+
+- `--max-new-tokens`: Maximum tokens to generate (default: 1024)
+- `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
+- `--host`: Airlock server URL (default: http://127.0.0.1:8000)
+- `--api-key`: API key for OpenAI-compatible servers (default: "EMPTY")
+
+---
+
 ## 🧪 Testing & Coverage
 
 To run tests:

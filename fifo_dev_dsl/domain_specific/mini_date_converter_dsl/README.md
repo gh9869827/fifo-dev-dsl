@@ -299,6 +299,52 @@ OFFSET_TIME(SET_TIME(TODAY, 12, 0), 0, 30)
 
 ---
 
+## 📊 Model Evaluation
+
+The `evaluate_mini_date_converter_dsl_model.py` script evaluates the accuracy of fine-tuned models on date expression parsing tasks. It supports two evaluation modes:
+
+1. **Test Dataset Mode**: Evaluates against a published test set from Hugging Face Hub
+2. **Exhaustive Mode**: Tests `DATE_FROM_MONTH_WEEKDAY(...)` expressions with all combinations of ordinals, weekdays, and months
+
+### Usage Examples
+
+**Using Airlock backend (default):**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    --backend-type airlock \
+    --container phi \
+    --adapter mini-date-converter-dsl-adapter
+```
+
+**Using OpenAI-compatible backend:**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    --backend-type openai-compatible \
+    --base-url http://127.0.0.1:8001/v1 \
+    --model your-model-name
+```
+
+**Exhaustive test mode:**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    --backend-type airlock \
+    --container phi \
+    --adapter mini-date-converter-dsl-adapter \
+    --exhaustive
+```
+
+**Additional options:**
+
+- `--max-new-tokens`: Maximum tokens to generate (default: 1024)
+- `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
+- `--host`: Airlock server URL (default: http://127.0.0.1:8000)
+- `--api-key`: API key for OpenAI-compatible servers (default: "EMPTY")
+
+---
+
 ## 🧪 Testing & Coverage
 
 To run tests:
