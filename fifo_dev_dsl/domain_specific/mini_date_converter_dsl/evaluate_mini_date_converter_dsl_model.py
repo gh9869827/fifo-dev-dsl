@@ -9,14 +9,23 @@ This script supports two evaluation modes:
    ordinal, weekday, and month values to verify the model generalizes correctly.
 
 Usage:
+    # Using Airlock backend (default):
     python evaluate_mini_date_converter_dsl_model.py \
-        --container phi                              \
+        --backend-type airlock \
+        --container phi \
         --adapter mini-date-converter-dsl-adapter
+
+    # Using OpenAI-compatible backend:
+    python evaluate_mini_date_converter_dsl_model.py \
+        --backend-type openai-compatible \
+        --base-url http://127.0.0.1:8001/v1 \
+        --model your-model-name
 
     # For exhaustive test mode:
     python evaluate_mini_date_converter_dsl_model.py \
-        --container phi                              \
-        --adapter mini-date-converter-dsl-adapter    \
+        --backend-type airlock \
+        --container phi \
+        --adapter mini-date-converter-dsl-adapter \
         --exhaustive
 """
 
@@ -25,14 +34,20 @@ from typing import Iterator, cast
 import argparse
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import (
     MiniDateConverterDSL,
-    parse_natural_date_expression
+    parse_natural_date_expression_with_backend
 )
 
-def run_test_dataset(container_name: str, adapter: str) -> None:
+def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float) -> None:
     """
     Run the evaluation on the model test set from the Hugging Face dataset.
+    
+    Args:
+        backend: LLM backend instance to use for parsing.
+        max_new_tokens: Maximum tokens to generate.
+        temperature: Sampling temperature.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -56,8 +71,12 @@ def run_test_dataset(container_name: str, adapter: str) -> None:
         padded_out = expected_dsl_text.ljust(max_out_len)
 
         try:
-            actual_dsl, actual_output = parse_natural_date_expression(
-                input_text, container_name=container_name, adapter=adapter, now=now
+            actual_dsl, actual_output = parse_natural_date_expression_with_backend(
+                input_text,
+                now=now,
+                backend=backend,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature
             )
             expected_output = MiniDateConverterDSL(now=now).parse(expected_dsl_text)
 
@@ -73,11 +92,17 @@ def run_test_dataset(container_name: str, adapter: str) -> None:
     print(f"\nSummary: {total - failures}/{total} passed, {failures} failed. "
           f"({((total - failures) / total) * 100:.2f}% success)")
 
-def run_exhaustive_DATE_FROM_MONTH_WEEKDAY(container_name: str, adapter: str) -> None:
+def run_exhaustive_DATE_FROM_MONTH_WEEKDAY(
+        backend: LlmBackend, max_new_tokens: int, temperature: float) -> None:
     """
     Exhaustively tests DATE_FROM_MONTH_WEEKDAY generation from natural phrases like
     "the third Monday of July". This helps verify the model generalizes ordinal +
     weekday + month constructions.
+    
+    Args:
+        backend: LLM backend instance to use for parsing.
+        max_new_tokens: Maximum tokens to generate.
+        temperature: Sampling temperature.
     """
     ordinals = [(1, "first"), (2, "second"), (3, "third"), (4, "fourth")]
     days = [(0, "Monday"), (1, "Tuesday"), (2, "Wednesday"), (3, "Thursday"),
@@ -102,8 +127,11 @@ def run_exhaustive_DATE_FROM_MONTH_WEEKDAY(container_name: str, adapter: str) ->
                 # expected_dsl = f"OFFSET(DATE_FROM_MONTH_WEEKDAY({month_idx}, {day_idx}, {ordinal_idx}), 2, WEEK)"
 
                 try:
-                    actual_dsl, _ = parse_natural_date_expression(
-                        text, container_name=container_name, adapter=adapter
+                    actual_dsl, _ = parse_natural_date_expression_with_backend(
+                        text,
+                        backend=backend,
+                        max_new_tokens=max_new_tokens,
+                        temperature=temperature
                     )
                 except (RuntimeError, ValueError, TypeError) as e:
                     failures += 1
@@ -126,37 +154,140 @@ def main() -> None:
     summary.
 
     Arguments:
-        --container:
-            Name of the Docker container running the Airlock Model Environment where the model is
-            loaded. This is used to route DSL parsing queries. (default: "phi")
+        --backend-type:
+            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
+            (default: "airlock")
 
-        --adapter:
-            Adapter identifier used by the model to interpret DSL input.
-            (default: "mini-date-converter-dsl-adapter")
+        Airlock backend parameters (used when --backend-type=airlock):
+            --container:
+                Name of the Docker container running the Airlock Model Environment.
+                (default: "phi")
 
-        --exhaustive:
-            If set, evaluates an exhaustive set of DATE_FROM_MONTH_WEEKDAY expressions instead of
-            the published test set.
+            --adapter:
+                Adapter identifier used by the model to interpret DSL input.
+                (default: "mini-date-converter-dsl-adapter")
+
+            --host:
+                Base URL of the Airlock model server.
+                (default: "http://127.0.0.1:8000")
+
+        OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
+            --base-url:
+                Base URL for the OpenAI-compatible server, including "/v1".
+                (required for openai-compatible backend)
+
+            --model:
+                Model name exposed by the server.
+                (required for openai-compatible backend)
+
+            --api-key:
+                API key for the OpenAI-compatible server.
+                (default: "EMPTY")
+
+        LLM generation parameters:
+            --max-new-tokens:
+                Maximum number of tokens to generate. (default: 1024)
+
+            --temperature:
+                Sampling temperature (0.0 = greedy). (default: 0.0)
+
+        Evaluation options:
+            --exhaustive:
+                If set, evaluates an exhaustive set of DATE_FROM_MONTH_WEEKDAY expressions
+                instead of the published test set.
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Evaluate mini date converter DSL model accuracy"
+    )
+    
+    # Backend type selection
     parser.add_argument(
-        "--container", default="phi",
-        help="Model container name to route to"
+        "--backend-type",
+        default="airlock",
+        choices=["airlock", "openai-compatible"],
+        help="Type of LLM backend to use"
+    )
+    
+    # Airlock backend parameters
+    parser.add_argument(
+        "--container",
+        default="phi",
+        help="Airlock container name (for airlock backend)"
     )
     parser.add_argument(
-        "--adapter", default="mini-date-converter-dsl-adapter",
-        help="Adapter name to use for generation"
+        "--adapter",
+        default="mini-date-converter-dsl-adapter",
+        help="Adapter name (for airlock backend)"
     )
     parser.add_argument(
-        "--exhaustive", action="store_true",
+        "--host",
+        default="http://127.0.0.1:8000",
+        help="Airlock server URL (for airlock backend)"
+    )
+    
+    # OpenAI-compatible backend parameters
+    parser.add_argument(
+        "--base-url",
+        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--model",
+        help="Model name (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--api-key",
+        default="EMPTY",
+        help="API key (for openai-compatible backend)"
+    )
+    
+    # LLM generation parameters
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=1024,
+        help="Maximum tokens to generate"
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="Sampling temperature (0.0 = greedy)"
+    )
+    
+    # Evaluation options
+    parser.add_argument(
+        "--exhaustive",
+        action="store_true",
         help="Run exhaustive DATE_FROM_MONTH_WEEKDAY test suite"
     )
+    
     args = parser.parse_args()
-
-    if args.exhaustive:
-        run_exhaustive_DATE_FROM_MONTH_WEEKDAY(args.container, args.adapter)
+    
+    # Create backend based on type
+    if args.backend_type == "airlock":
+        backend = AirlockBackend(
+            container_name=args.container,
+            adapter=args.adapter,
+            host=args.host
+        )
+    elif args.backend_type == "openai-compatible":
+        if not args.base_url or not args.model:
+            parser.error(
+                "--base-url and --model are required when using openai-compatible backend"
+            )
+        backend = OpenAICompatibleBackend(
+            base_url=args.base_url,
+            model=args.model,
+            api_key=args.api_key
+        )
     else:
-        run_test_dataset(args.container, args.adapter)
+        parser.error(f"Unknown backend type: {args.backend_type}")
+    
+    # Run evaluation
+    if args.exhaustive:
+        run_exhaustive_DATE_FROM_MONTH_WEEKDAY(backend, args.max_new_tokens, args.temperature)
+    else:
+        run_test_dataset(backend, args.max_new_tokens, args.temperature)
 
 if __name__ == "__main__":
     main()
