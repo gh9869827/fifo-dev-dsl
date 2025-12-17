@@ -1,17 +1,11 @@
 from __future__ import annotations
+import warnings
 from datetime import datetime, timedelta
 from calendar import monthrange
 from dataclasses import asdict, dataclass
 from typing import Any, ClassVar, Tuple
 from enum import Enum, auto
-from fifo_tool_airlock_model_env.common.models import (
-    GenerationParameters,
-    Message
-)
-from fifo_tool_airlock_model_env.sdk.client_sdk import (
-    call_airlock_model_server,
-    Model
-)
+from fifo_dev_dsl.common.llm_abstraction import LlmBackend, LlmRequest
 from fifo_dev_dsl.domain_specific.common.dsl_utils import (
     extract_int,
     extract_month,
@@ -34,6 +28,10 @@ def parse_natural_recurrence_expression(
     Given a natural language recurrence expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding RecurrenceRule object.
 
+    Deprecated:
+        Use `parse_natural_recurrence_expression_with_backend` instead, which supports
+        pluggable LLM backends through the LlmBackend protocol.
+
     Args:
         question (str):
             The natural language question, e.g., "in one day and two hours"
@@ -52,27 +50,91 @@ def parse_natural_recurrence_expression(
         Tuple[str, RecurrenceRule]: 
             (the DSL code, the parsed RecurrenceRule object)
     """
-    answer = call_airlock_model_server(
-        model=Model.Phi4MiniInstruct,
-        adapter=adapter,
-        messages=[
-            Message.system(SYSTEM_PROMPT),
-            Message.user(question)
-        ],
-        parameters=GenerationParameters(
-            max_new_tokens=1024,
-            do_sample=False
-        ),
+    warnings.warn(
+        "parse_natural_recurrence_expression is deprecated. "
+        "Use parse_natural_recurrence_expression_with_backend instead, "
+        "which supports pluggable LLM backends through the LlmBackend protocol.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    
+    # Import AirlockBackend only when needed (for backward compatibility)
+    # pylint: disable=import-outside-toplevel
+    from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+    
+    backend = AirlockBackend(
         container_name=container_name,
+        adapter=adapter,
         host=host
     )
+    
+    return parse_natural_recurrence_expression_with_backend(
+        question,
+        backend=backend,
+        max_new_tokens=1024,
+        temperature=0.0
+    )
+
+
+def parse_natural_recurrence_expression_with_backend(
+        question: str,
+        *,
+        backend: LlmBackend,
+        max_new_tokens: int = 1024,
+        temperature: float = 0.0) -> Tuple[str, RecurrenceRule]:
+    """
+    Given a natural language recurrence expression, this function uses an LLM backend to translate
+    it to the DSL, then parses and returns the corresponding RecurrenceRule object.
+
+    This function uses the LlmBackend protocol, allowing you to use any compatible backend
+    implementation (e.g., AirlockBackend, OpenAICompatibleBackend).
+
+    Args:
+        question (str):
+            The natural language question, e.g., "every Monday at 9am"
+
+        backend (LlmBackend):
+            LLM backend implementing the LlmBackend protocol. This can be an AirlockBackend,
+            OpenAICompatibleBackend, or any other compatible backend.
+
+        max_new_tokens (int, optional):
+            Maximum number of tokens to generate. Defaults to 1024.
+
+        temperature (float, optional):
+            Sampling temperature (higher = more random). When 0.0, use greedy decoding.
+            Defaults to 0.0.
+
+    Returns:
+        Tuple[str, RecurrenceRule]:
+            (the DSL code, the parsed RecurrenceRule object)
+
+    Examples:
+        >>> from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+        >>> backend = AirlockBackend(
+        ...     container_name="my-container",
+        ...     adapter="mini-recurrence-converter-dsl-adapter",
+        ...     host="http://127.0.0.1:8000"
+        ... )
+        >>> dsl_code, rule = parse_natural_recurrence_expression_with_backend(
+        ...     "every other Tuesday at 5pm",
+        ...     backend=backend
+        ... )
+    """
+    request = LlmRequest(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=question,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature
+    )
+    
+    answer = backend.complete(request)
 
     try:
-        dt = MiniRecurrenceConverterDSL().parse(answer)
+        rule = MiniRecurrenceConverterDSL().parse(answer)
     except ValueError as e:
         raise ValueError(f"{e} (dsl='{answer}')") from e
 
-    return answer, dt
+    return answer, rule
 
 
 class RecurrenceUnit(Enum):
