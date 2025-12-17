@@ -159,5 +159,5 @@ MIT — see [LICENSE](LICENSE).
 
 ## 📄 Disclaimer
 
-This project is not affiliated with or endorsed by Hugging Face or the Python Software Foundation.  
-It builds on their open-source technologies under their respective licenses.
+This project is not affiliated with or endorsed by Hugging Face, OpenAI, or the Python Software Foundation.  
+It builds on their open-source technologies and libraries under their respective licenses.
