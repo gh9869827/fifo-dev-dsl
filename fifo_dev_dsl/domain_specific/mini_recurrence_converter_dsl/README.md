@@ -67,13 +67,24 @@ rule = MiniRecurrenceConverterDSL().parse("WEEKLY(1, [MO, WE], TIME(9, 0))")
 print(rule.next(datetime(2025, 6, 2)))  # e.g., 2025-06-04 09:00:00 (next Monday or Wednesday)
 ```
 
-### Translate natural language into DSL using an LLM adapter:
+### Translate natural language into DSL using an LLM backend:
 
 ```python
 from datetime import datetime
-from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import parse_natural_recurrence_expression
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import parse_natural_recurrence_expression_with_backend
 
-dsl_code, rule = parse_natural_recurrence_expression("every other Tuesday at 5pm", model="phi")
+# Initialize backend (e.g., Airlock)
+backend = AirlockBackend(
+    container_name="my-container",
+    adapter="mini-recurrence-converter-dsl-adapter",
+    host="http://127.0.0.1:8000"
+)
+
+dsl_code, rule = parse_natural_recurrence_expression_with_backend(
+    "every other Tuesday at 5pm",
+    backend
+)
 
 print(dsl_code)
 # Output: WEEKLY(2, [TU], TIME(17, 0))
@@ -86,6 +97,27 @@ print(rule.next(datetime(2025, 6, 2)))
 print(rule.next(datetime(2025, 6, 3)))
 # Output: 2025-06-17 17:00:00
 ```
+
+**Alternative: Using OpenAI-compatible backends**
+
+```python
+from fifo_dev_dsl.common.llm_abstraction import OpenAICompatibleBackend
+from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import parse_natural_recurrence_expression_with_backend
+
+# Initialize OpenAI-compatible backend (e.g., vLLM, LM Studio, Ollama)
+backend = OpenAICompatibleBackend(
+    base_url="http://127.0.0.1:8001/v1",
+    model="your-model-name",
+    api_key="EMPTY"
+)
+
+dsl_code, rule = parse_natural_recurrence_expression_with_backend(
+    "every other Tuesday at 5pm",
+    backend
+)
+```
+
+**Note:** The `parse_natural_recurrence_expression` function (without `_with_backend`) is deprecated. Use `parse_natural_recurrence_expression_with_backend` instead for new code.
 
 ---
 

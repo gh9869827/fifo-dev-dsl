@@ -68,12 +68,23 @@ print(result)
 # Output: 2025-06-02 09:30:00
 ```
 
-### Translate natural language into DSL using an LLM adapter:
+### Translate natural language into DSL using an LLM backend:
 
 ```python
-from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natural_date_expression
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natural_date_expression_with_backend
 
-dsl_code, date_time_object = parse_natural_date_expression("next Tuesday at 5pm", model="phi")
+# Initialize backend (e.g., Airlock)
+backend = AirlockBackend(
+    container_name="my-container",
+    adapter="mini-date-converter-dsl-adapter",
+    host="http://127.0.0.1:8000"
+)
+
+dsl_code, date_time_object = parse_natural_date_expression_with_backend(
+    "next Tuesday at 5pm",
+    backend
+)
 
 print(dsl_code)
 # Output: SET_TIME(OFFSET(TODAY, 1, WEEKDAY=1), 17, 0)
@@ -81,6 +92,27 @@ print(dsl_code)
 print(date_time_object)
 # Output: 2025-06-03 17:00:00
 ```
+
+**Alternative: Using OpenAI-compatible backends**
+
+```python
+from fifo_dev_dsl.common.llm_abstraction import OpenAICompatibleBackend
+from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natural_date_expression_with_backend
+
+# Initialize OpenAI-compatible backend (e.g., vLLM, LM Studio, Ollama)
+backend = OpenAICompatibleBackend(
+    base_url="http://127.0.0.1:8001/v1",
+    model="your-model-name",
+    api_key="EMPTY"
+)
+
+dsl_code, date_time_object = parse_natural_date_expression_with_backend(
+    "next Tuesday at 5pm",
+    backend
+)
+```
+
+**Note:** The `parse_natural_date_expression` function (without `_with_backend`) is deprecated. Use `parse_natural_date_expression_with_backend` instead for new code.
 
 ---
 
