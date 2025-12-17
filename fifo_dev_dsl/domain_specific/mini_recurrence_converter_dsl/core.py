@@ -28,8 +28,8 @@ def parse_natural_recurrence_expression(
     Given a natural language recurrence expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding RecurrenceRule object.
 
-    .. deprecated::
-        Use :func:`parse_natural_recurrence_expression_with_backend` instead, which supports
+    Deprecated:
+        Use `parse_natural_recurrence_expression_with_backend` instead, which supports
         pluggable LLM backends through the LlmBackend protocol.
 
     Args:

@@ -26,8 +26,8 @@ def parse_natural_date_expression(
     Given a natural language date expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding datetime.
 
-    .. deprecated::
-        Use :func:`parse_natural_date_expression_with_backend` instead, which supports
+    Deprecated:
+        Use `parse_natural_date_expression_with_backend` instead, which supports
         pluggable LLM backends through the LlmBackend protocol.
 
     Args:
