@@ -28,7 +28,7 @@ def test_parse_natural_date_expression_with_backend_basic():
     
     dsl_code, dt = parse_natural_date_expression_with_backend(
         "today",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "TODAY"
@@ -43,7 +43,7 @@ def test_parse_natural_date_expression_with_backend_offset():
     
     dsl_code, dt = parse_natural_date_expression_with_backend(
         "tomorrow",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "OFFSET(TODAY, 1, DAY)"
@@ -60,7 +60,7 @@ def test_parse_natural_date_expression_with_backend_set_time():
     
     dsl_code, dt = parse_natural_date_expression_with_backend(
         "today at 5:30pm",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "SET_TIME(TODAY, 17, 30)"
@@ -75,8 +75,8 @@ def test_parse_natural_date_expression_with_backend_custom_now():
     
     dsl_code, dt = parse_natural_date_expression_with_backend(
         "today",
-        backend,
-        now=custom_now
+        custom_now,
+        backend=backend
     )
     
     assert dsl_code == "TODAY"
@@ -89,7 +89,7 @@ def test_parse_natural_date_expression_with_backend_max_new_tokens():
     
     parse_natural_date_expression_with_backend(
         "today",
-        backend,
+        backend=backend,
         max_new_tokens=512
     )
     
@@ -102,7 +102,7 @@ def test_parse_natural_date_expression_with_backend_temperature():
     
     parse_natural_date_expression_with_backend(
         "today",
-        backend,
+        backend=backend,
         temperature=0.5
     )
     
@@ -116,7 +116,7 @@ def test_parse_natural_date_expression_with_backend_invalid_dsl():
     with pytest.raises(ValueError) as exc_info:
         parse_natural_date_expression_with_backend(
             "some invalid input",
-            backend
+            backend=backend
         )
     
     assert "INVALID_FUNCTION" in str(exc_info.value)
@@ -128,7 +128,7 @@ def test_parse_natural_date_expression_with_backend_system_prompt():
     
     parse_natural_date_expression_with_backend(
         "today",
-        backend
+        backend=backend
     )
     
     # System prompt should mention temporal parser and DSL functions
@@ -144,7 +144,7 @@ def test_parse_natural_date_expression_with_backend_user_prompt():
     
     parse_natural_date_expression_with_backend(
         question,
-        backend
+        backend=backend
     )
     
     assert backend.last_request.user_prompt == question

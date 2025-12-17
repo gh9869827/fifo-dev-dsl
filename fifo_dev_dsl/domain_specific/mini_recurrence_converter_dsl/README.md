@@ -83,7 +83,7 @@ backend = AirlockBackend(
 
 dsl_code, rule = parse_natural_recurrence_expression_with_backend(
     "every other Tuesday at 5pm",
-    backend
+    backend=backend
 )
 
 print(dsl_code)
@@ -113,7 +113,7 @@ backend = OpenAICompatibleBackend(
 
 dsl_code, rule = parse_natural_recurrence_expression_with_backend(
     "every other Tuesday at 5pm",
-    backend
+    backend=backend
 )
 ```
 

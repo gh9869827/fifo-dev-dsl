@@ -58,42 +58,27 @@ def parse_natural_recurrence_expression(
         stacklevel=2
     )
     
-    # Import Airlock dependencies only when needed (for backward compatibility)
+    # Import AirlockBackend only when needed (for backward compatibility)
     # pylint: disable=import-outside-toplevel
-    from fifo_tool_airlock_model_env.common.models import (
-        GenerationParameters,
-        Message
-    )
-    from fifo_tool_airlock_model_env.sdk.client_sdk import (
-        call_airlock_model_server,
-        Model
-    )
+    from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
     
-    answer = call_airlock_model_server(
-        model=Model.Phi4MiniInstruct,
-        adapter=adapter,
-        messages=[
-            Message.system(SYSTEM_PROMPT),
-            Message.user(question)
-        ],
-        parameters=GenerationParameters(
-            max_new_tokens=1024,
-            do_sample=False
-        ),
+    backend = AirlockBackend(
         container_name=container_name,
+        adapter=adapter,
         host=host
     )
-
-    try:
-        dt = MiniRecurrenceConverterDSL().parse(answer)
-    except ValueError as e:
-        raise ValueError(f"{e} (dsl='{answer}')") from e
-
-    return answer, dt
+    
+    return parse_natural_recurrence_expression_with_backend(
+        question,
+        backend=backend,
+        max_new_tokens=1024,
+        temperature=0.0
+    )
 
 
 def parse_natural_recurrence_expression_with_backend(
         question: str,
+        *,
         backend: LlmBackend,
         max_new_tokens: int = 1024,
         temperature: float = 0.0) -> Tuple[str, RecurrenceRule]:
@@ -132,7 +117,7 @@ def parse_natural_recurrence_expression_with_backend(
         ... )
         >>> dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         ...     "every other Tuesday at 5pm",
-        ...     backend
+        ...     backend=backend
         ... )
     """
     request = LlmRequest(

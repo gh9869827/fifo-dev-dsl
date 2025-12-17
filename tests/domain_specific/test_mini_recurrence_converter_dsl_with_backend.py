@@ -27,7 +27,7 @@ def test_parse_natural_recurrence_expression_with_backend_daily():
     
     dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         "every day",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "DAILY(1)"
@@ -41,7 +41,7 @@ def test_parse_natural_recurrence_expression_with_backend_daily_with_time():
     
     dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         "every 2 days at 9:30am",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "DAILY(2, TIME(9, 30))"
@@ -57,7 +57,7 @@ def test_parse_natural_recurrence_expression_with_backend_weekly():
     
     dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         "every Monday and Wednesday at 10am",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "WEEKLY(1, [MO, WE], TIME(10, 0))"
@@ -74,7 +74,7 @@ def test_parse_natural_recurrence_expression_with_backend_monthly():
     
     dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         "every month on the 15th at 8:30am",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "MONTHLY(1, 15, TIME(8, 30))"
@@ -91,7 +91,7 @@ def test_parse_natural_recurrence_expression_with_backend_monthly_by_weekday():
     
     dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         "every first Friday at 5pm",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "MONTHLY_BY_WEEKDAY(1, FR, 1, TIME(17, 0))"
@@ -109,7 +109,7 @@ def test_parse_natural_recurrence_expression_with_backend_yearly():
     
     dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         "every Christmas at 6pm",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "YEARLY(1, 12, 25, TIME(18, 0))"
@@ -127,7 +127,7 @@ def test_parse_natural_recurrence_expression_with_backend_hourly():
     
     dsl_code, rule = parse_natural_recurrence_expression_with_backend(
         "every 1 hour and 30 minutes",
-        backend
+        backend=backend
     )
     
     assert dsl_code == "HOURLY(1, 30)"
@@ -142,7 +142,7 @@ def test_parse_natural_recurrence_expression_with_backend_max_new_tokens():
     
     parse_natural_recurrence_expression_with_backend(
         "every day",
-        backend,
+        backend=backend,
         max_new_tokens=512
     )
     
@@ -155,7 +155,7 @@ def test_parse_natural_recurrence_expression_with_backend_temperature():
     
     parse_natural_recurrence_expression_with_backend(
         "every day",
-        backend,
+        backend=backend,
         temperature=0.5
     )
     
@@ -168,9 +168,9 @@ def test_parse_natural_recurrence_expression_with_backend_invalid_dsl():
     
     with pytest.raises(ValueError) as exc_info:
         parse_natural_recurrence_expression_with_backend(
-            "some invalid input",
-            backend
-        )
+        "some invalid input",
+        backend=backend
+    )
     
     assert "INVALID_FUNCTION" in str(exc_info.value)
 
@@ -181,7 +181,7 @@ def test_parse_natural_recurrence_expression_with_backend_system_prompt():
     
     parse_natural_recurrence_expression_with_backend(
         "every day",
-        backend
+        backend=backend
     )
     
     # System prompt should mention parser and DSL functions
@@ -197,7 +197,7 @@ def test_parse_natural_recurrence_expression_with_backend_user_prompt():
     
     parse_natural_recurrence_expression_with_backend(
         question,
-        backend
+        backend=backend
     )
     
     assert backend.last_request.user_prompt == question

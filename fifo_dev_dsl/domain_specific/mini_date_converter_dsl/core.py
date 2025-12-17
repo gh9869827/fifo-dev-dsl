@@ -60,44 +60,30 @@ def parse_natural_date_expression(
         stacklevel=2
     )
     
-    # Import Airlock dependencies only when needed (for backward compatibility)
+    # Import AirlockBackend only when needed (for backward compatibility)
     # pylint: disable=import-outside-toplevel
-    from fifo_tool_airlock_model_env.common.models import (
-        GenerationParameters,
-        Message
-    )
-    from fifo_tool_airlock_model_env.sdk.client_sdk import (
-        call_airlock_model_server,
-        Model
-    )
+    from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
     
-    answer = call_airlock_model_server(
-        model=Model.Phi4MiniInstruct,
-        adapter=adapter,
-        messages=[
-            Message.system(SYSTEM_PROMPT),
-            Message.user(question)
-        ],
-        parameters=GenerationParameters(
-            max_new_tokens=1024,
-            do_sample=False
-        ),
+    backend = AirlockBackend(
         container_name=container_name,
+        adapter=adapter,
         host=host
     )
-
-    try:
-        dt = MiniDateConverterDSL(now=now).parse(answer)
-    except ValueError as e:
-        raise ValueError(f"{e} (dsl='{answer}')") from e
-
-    return answer, dt
+    
+    return parse_natural_date_expression_with_backend(
+        question,
+        now,
+        backend=backend,
+        max_new_tokens=1024,
+        temperature=0.0
+    )
 
 
 def parse_natural_date_expression_with_backend(
         question: str,
-        backend: LlmBackend,
         now: datetime | None = None,
+        *,
+        backend: LlmBackend,
         max_new_tokens: int = 1024,
         temperature: float = 0.0) -> Tuple[str, datetime]:
     """
@@ -111,13 +97,13 @@ def parse_natural_date_expression_with_backend(
         question (str):
             The natural language question, e.g., "in one day and two hours"
 
-        backend (LlmBackend):
-            LLM backend implementing the LlmBackend protocol. This can be an AirlockBackend,
-            OpenAICompatibleBackend, or any other compatible backend.
-
         now (datetime | None, optional):
             Overrides the current datetime for evaluation. Passed to
             `MiniDateConverterDSL`. Defaults to None (uses current time).
+
+        backend (LlmBackend):
+            LLM backend implementing the LlmBackend protocol. This can be an AirlockBackend,
+            OpenAICompatibleBackend, or any other compatible backend.
 
         max_new_tokens (int, optional):
             Maximum number of tokens to generate. Defaults to 1024.
@@ -139,7 +125,7 @@ def parse_natural_date_expression_with_backend(
         ... )
         >>> dsl_code, dt = parse_natural_date_expression_with_backend(
         ...     "next Tuesday at 5pm",
-        ...     backend
+        ...     backend=backend
         ... )
     """
     request = LlmRequest(
