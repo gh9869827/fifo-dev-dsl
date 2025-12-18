@@ -237,7 +237,7 @@ HOURLY(0, 20)   # every 20 minutes
 
 ## 📊 Model Evaluation
 
-The `evaluate_mini_recurrence_converter_dsl_model.py` script evaluates the accuracy of fine-tuned models on recurrence expression parsing tasks using a published test set from Hugging Face Hub.
+The `evaluate_mini_recurrence_converter_dsl_model.py` script evaluates the accuracy of fine-tuned models on recurrence expression parsing tasks defined by this DSL, using a published test set from Hugging Face Hub.
 
 ### Usage Examples
 

@@ -302,7 +302,8 @@ OFFSET_TIME(SET_TIME(TODAY, 12, 0), 0, 30)
 ## 📊 Model Evaluation
 
 The `evaluate_mini_date_converter_dsl_model.py` script evaluates the accuracy of
-fine-tuned models on date expression parsing tasks. It supports two evaluation modes:
+fine-tuned models on date expression parsing tasks defined by this DSL. It
+supports two evaluation modes:
 
 1. **Test Dataset Mode**: Evaluates against a published test set from the Hugging Face Hub.
 
