@@ -5,8 +5,9 @@ This script supports two evaluation modes:
 
 1. It can load a published test set from the Hugging Face Hub and evaluate the model's ability to
    parse each expression and return the correct DSL output.
-2. It can exhaustively test `DATE_FROM_MONTH_WEEKDAY(...)` expressions using combinations of
-   ordinal, weekday, and month values to verify the model generalizes correctly.
+2. It can test `DATE_FROM_MONTH_WEEKDAY(...)` expressions using template-based
+   variations across ordinal, weekday, and month values to evaluate the model's
+   generalization across these constructions.
 
 Usage:
     # Using Airlock backend (default):
@@ -21,14 +22,15 @@ Usage:
         --base-url http://127.0.0.1:8001/v1 \
         --model your-model-name
 
-    # For exhaustive test mode:
+    # For template-based variations test mode:
     python evaluate_mini_date_converter_dsl_model.py \
         --backend-type airlock \
         --container phi \
         --adapter mini-date-converter-dsl-adapter \
-        --exhaustive
+        --template-base 1
 """
 
+import sys
 from datetime import datetime
 from typing import Iterator, cast
 import argparse
@@ -43,11 +45,16 @@ from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import (
 def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float) -> None:
     """
     Run the evaluation on the model test set from the Hugging Face dataset.
-    
+
     Args:
-        backend: LLM backend instance to use for parsing.
-        max_new_tokens: Maximum tokens to generate.
-        temperature: Sampling temperature.
+        backend (LlmBackend):
+            LLM backend instance to use for parsing.
+
+        max_new_tokens (int):
+            Maximum tokens to generate.
+
+        temperature (float):
+            Sampling temperature.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -92,18 +99,35 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
     print(f"\nSummary: {total - failures}/{total} passed, {failures} failed. "
           f"({((total - failures) / total) * 100:.2f}% success)")
 
-def run_exhaustive_DATE_FROM_MONTH_WEEKDAY(
-        backend: LlmBackend, max_new_tokens: int, temperature: float) -> None:
+def run_template_base_DATE_FROM_MONTH_WEEKDAY(backend: LlmBackend,
+                                              max_new_tokens: int,
+                                              temperature: float,
+                                              template: int) -> None:
     """
-    Exhaustively tests DATE_FROM_MONTH_WEEKDAY generation from natural phrases like
-    "the third Monday of July". This helps verify the model generalizes ordinal +
-    weekday + month constructions.
-    
+    Tests DATE_FROM_MONTH_WEEKDAY generation using template-based variations
+    of natural phrases like "the third Monday of July". This evaluates the model's
+    generalization across ordinal, weekday, and month constructions.
+
     Args:
-        backend: LLM backend instance to use for parsing.
-        max_new_tokens: Maximum tokens to generate.
-        temperature: Sampling temperature.
+        backend (LlmBackend):
+            LLM backend instance to use for parsing.
+
+        max_new_tokens (int):
+            Maximum tokens to generate.
+
+        temperature (float):
+            Sampling temperature.
+
+        template (int):
+            Either 1 for using the template "the {ordinal_str} {day_str} of {month_str}" or
+            2 for using "two weeks after the {ordinal_str} {day_str} in {month_str}"
+
+    Raises:
+        ValueError: template must be 1 or 2
     """
+    if template not in (1, 2):
+        raise ValueError("template must be 1 or 2")
+
     ordinals = [(1, "first"), (2, "second"), (3, "third"), (4, "fourth")]
     days = [(0, "Monday"), (1, "Tuesday"), (2, "Wednesday"), (3, "Thursday"),
             (4, "Friday"), (5, "Saturday"), (6, "Sunday")]
@@ -119,12 +143,16 @@ def run_exhaustive_DATE_FROM_MONTH_WEEKDAY(
             for month_idx, month_str in months:
                 total += 1
 
-                text = f"the {ordinal_str} {day_str} of {month_str}"
-                expected_dsl = f"DATE_FROM_MONTH_WEEKDAY({month_idx}, {day_idx}, {ordinal_idx})"
-
-                # alternate call
-                # text = f"two weeks after the {ordinal_str} {day_str} in {month_str}"
-                # expected_dsl = f"OFFSET(DATE_FROM_MONTH_WEEKDAY({month_idx}, {day_idx}, {ordinal_idx}), 2, WEEK)"
+                if template == 1:
+                    text = f"the {ordinal_str} {day_str} of {month_str}"
+                    expected_dsl = f"DATE_FROM_MONTH_WEEKDAY({month_idx}, {day_idx}, {ordinal_idx})"
+                else:
+                    text = f"two weeks after the {ordinal_str} {day_str} in {month_str}"
+                    expected_dsl = (
+                        f"OFFSET("
+                        f"DATE_FROM_MONTH_WEEKDAY({month_idx}, {day_idx}, {ordinal_idx}), "
+                        f"2, WEEK)"
+                    )
 
                 try:
                     actual_dsl, _ = parse_natural_date_expression_with_backend(
@@ -192,14 +220,15 @@ def main() -> None:
                 Sampling temperature (0.0 = greedy). (default: 0.0)
 
         Evaluation options:
-            --exhaustive:
-                If set, evaluates an exhaustive set of DATE_FROM_MONTH_WEEKDAY expressions
-                instead of the published test set.
+            --template-base:
+                If set, evaluates DATE_FROM_MONTH_WEEKDAY expressions using
+                template-based variations, focusing on this specific DSL function
+                rather than the broader published test set.
     """
     parser = argparse.ArgumentParser(
         description="Evaluate mini date converter DSL model accuracy"
     )
-    
+
     # Backend type selection
     parser.add_argument(
         "--backend-type",
@@ -207,7 +236,7 @@ def main() -> None:
         choices=["airlock", "openai-compatible"],
         help="Type of LLM backend to use"
     )
-    
+
     # Airlock backend parameters
     parser.add_argument(
         "--container",
@@ -224,7 +253,7 @@ def main() -> None:
         default="http://127.0.0.1:8000",
         help="Airlock server URL (for airlock backend)"
     )
-    
+
     # OpenAI-compatible backend parameters
     parser.add_argument(
         "--base-url",
@@ -239,7 +268,7 @@ def main() -> None:
         default="EMPTY",
         help="API key (for openai-compatible backend)"
     )
-    
+
     # LLM generation parameters
     parser.add_argument(
         "--max-new-tokens",
@@ -253,16 +282,20 @@ def main() -> None:
         default=0.0,
         help="Sampling temperature (0.0 = greedy)"
     )
-    
+
     # Evaluation options
     parser.add_argument(
-        "--exhaustive",
-        action="store_true",
-        help="Run exhaustive DATE_FROM_MONTH_WEEKDAY test suite"
+        "--template-base",
+        type=int,
+        choices=(1, 2),
+        help=(
+            "Template variation for DATE_FROM_MONTH_WEEKDAY"
+            "(1 = base form, 2 = compositional offset form)"
+        )
     )
-    
+
     args = parser.parse_args()
-    
+
     # Create backend based on type
     if args.backend_type == "airlock":
         backend = AirlockBackend(
@@ -282,10 +315,16 @@ def main() -> None:
         )
     else:
         parser.error(f"Unknown backend type: {args.backend_type}")
-    
+        sys.exit(1)
+
     # Run evaluation
-    if args.exhaustive:
-        run_exhaustive_DATE_FROM_MONTH_WEEKDAY(backend, args.max_new_tokens, args.temperature)
+    if args.template_base:
+        run_template_base_DATE_FROM_MONTH_WEEKDAY(
+            backend,
+            args.max_new_tokens,
+            args.temperature,
+            template=args.template_base
+        )
     else:
         run_test_dataset(backend, args.max_new_tokens, args.temperature)
 

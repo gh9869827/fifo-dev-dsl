@@ -18,6 +18,7 @@ Usage:
         --model your-model-name
 """
 
+import sys
 from typing import Iterator, cast
 import argparse
 
@@ -33,9 +34,14 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
     Run the evaluation on the model test set from the Hugging Face dataset.
     
     Args:
-        backend: LLM backend instance to use for parsing.
-        max_new_tokens: Maximum tokens to generate.
-        temperature: Sampling temperature.
+        backend (LlmBackend):
+            LLM backend instance to use for parsing.
+
+        max_new_tokens (int):
+            Maximum tokens to generate.
+
+        temperature (float):
+            Sampling temperature.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -125,7 +131,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Evaluate mini recurrence converter DSL model accuracy"
     )
-    
+
     # Backend type selection
     parser.add_argument(
         "--backend-type",
@@ -133,7 +139,7 @@ def main() -> None:
         choices=["airlock", "openai-compatible"],
         help="Type of LLM backend to use"
     )
-    
+
     # Airlock backend parameters
     parser.add_argument(
         "--container",
@@ -150,7 +156,7 @@ def main() -> None:
         default="http://127.0.0.1:8000",
         help="Airlock server URL (for airlock backend)"
     )
-    
+
     # OpenAI-compatible backend parameters
     parser.add_argument(
         "--base-url",
@@ -165,7 +171,7 @@ def main() -> None:
         default="EMPTY",
         help="API key (for openai-compatible backend)"
     )
-    
+
     # LLM generation parameters
     parser.add_argument(
         "--max-new-tokens",
@@ -179,9 +185,9 @@ def main() -> None:
         default=0.0,
         help="Sampling temperature (0.0 = greedy)"
     )
-    
+
     args = parser.parse_args()
-    
+
     # Create backend based on type
     if args.backend_type == "airlock":
         backend = AirlockBackend(
@@ -201,7 +207,8 @@ def main() -> None:
         )
     else:
         parser.error(f"Unknown backend type: {args.backend_type}")
-    
+        sys.exit(1)
+
     # Run evaluation
     run_test_dataset(backend, args.max_new_tokens, args.temperature)
 
