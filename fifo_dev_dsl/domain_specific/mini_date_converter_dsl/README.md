@@ -299,6 +299,65 @@ OFFSET_TIME(SET_TIME(TODAY, 12, 0), 0, 30)
 
 ---
 
+## 📊 Model Evaluation
+
+The `evaluate_mini_date_converter_dsl_model.py` script evaluates the accuracy of
+fine-tuned models on date expression parsing tasks defined by this DSL. It
+supports two evaluation modes:
+
+1. **Test Dataset Mode**: Evaluates against a published test set from the Hugging Face Hub.
+
+2. **Template-Based Mode**: Focuses the evaluation on the
+   `DATE_FROM_MONTH_WEEKDAY(...)` DSL function using template-based variations across
+   ordinal, weekday, and month values to evaluate the model’s generalization across
+   these constructions.
+
+   - *Variation 1*: Alternate phrasings of the template-based date expression
+     "the `nth` `weekday` of `month`" (e.g., "the second Tuesday in March").
+
+   - *Variation 2*: Compositional expressions involving an offset from *Variation 1*
+     outputs, following the pattern "two weeks after the `nth` `weekday` in `month`"
+     (e.g., "two weeks after the second Tuesday in March").
+
+### Usage Examples
+
+**Using Airlock backend (default):**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    --backend-type airlock \
+    --container phi \
+    --adapter mini-date-converter-dsl-adapter
+```
+
+**Using OpenAI-compatible backend:**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    --backend-type openai-compatible \
+    --base-url http://127.0.0.1:8001/v1 \
+    --model your-model-name
+```
+
+**Template-Based test mode:**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    --backend-type airlock \
+    --container phi \
+    --adapter mini-date-converter-dsl-adapter \
+    --template-base 1
+```
+
+**Additional options:**
+
+- `--max-new-tokens`: Maximum tokens to generate (default: 1024)
+- `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
+- `--host`: Airlock server URL (default: http://127.0.0.1:8000)
+- `--api-key`: API key for OpenAI-compatible servers (default: "EMPTY")
+
+---
+
 ## 🧪 Testing & Coverage
 
 To run tests:

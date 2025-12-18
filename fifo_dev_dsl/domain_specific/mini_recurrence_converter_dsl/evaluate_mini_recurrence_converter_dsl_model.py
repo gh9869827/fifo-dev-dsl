@@ -5,23 +5,43 @@ This script loads a published test set from the Hugging Face Hub and evaluates t
 to parse each recurrence expression and return the correct DSL output.
 
 Usage:
+    # Using Airlock backend (default):
     python evaluate_mini_recurrence_converter_dsl_model.py \
-        --container phi                                    \
+        --backend-type airlock \
+        --container phi \
         --adapter mini-recurrence-converter-dsl-adapter
+
+    # Using OpenAI-compatible backend:
+    python evaluate_mini_recurrence_converter_dsl_model.py \
+        --backend-type openai-compatible \
+        --base-url http://127.0.0.1:8001/v1 \
+        --model your-model-name
 """
 
+import sys
 from typing import Iterator, cast
 import argparse
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend
 from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import (
     MiniRecurrenceConverterDSL,
-    parse_natural_recurrence_expression
+    parse_natural_recurrence_expression_with_backend
 )
 
-def run_test_dataset(container_name: str, adapter: str) -> None:
+def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float) -> None:
     """
     Run the evaluation on the model test set from the Hugging Face dataset.
+    
+    Args:
+        backend (LlmBackend):
+            LLM backend instance to use for parsing.
+
+        max_new_tokens (int):
+            Maximum tokens to generate.
+
+        temperature (float):
+            Sampling temperature.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -45,8 +65,11 @@ def run_test_dataset(container_name: str, adapter: str) -> None:
         padded_out = expected_dsl_text.ljust(max_out_len)
 
         try:
-            actual_dsl, actual_output = parse_natural_recurrence_expression(
-                input_text, container_name=container_name, adapter=adapter
+            actual_dsl, actual_output = parse_natural_recurrence_expression_with_backend(
+                input_text,
+                backend=backend,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature
             )
             expected_output = MiniRecurrenceConverterDSL().parse(expected_dsl_text)
 
@@ -68,26 +91,126 @@ def main() -> None:
     summary.
 
     Arguments:
-        --container:
-            Name of the Docker container running the Airlock Model Environment where the model is
-            loaded. This is used to route DSL parsing queries. (default: "phi")
+        --backend-type:
+            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
+            (default: "airlock")
 
-        --adapter:
-            Adapter identifier used by the model to interpret DSL input.
-            (default: "mini-recurrence-converter-dsl-adapter")
+        Airlock backend parameters (used when --backend-type=airlock):
+            --container:
+                Name of the Docker container running the Airlock Model Environment.
+                (default: "phi")
+
+            --adapter:
+                Adapter identifier used by the model to interpret DSL input.
+                (default: "mini-recurrence-converter-dsl-adapter")
+
+            --host:
+                Base URL of the Airlock model server.
+                (default: "http://127.0.0.1:8000")
+
+        OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
+            --base-url:
+                Base URL for the OpenAI-compatible server, including "/v1".
+                (required for openai-compatible backend)
+
+            --model:
+                Model name exposed by the server.
+                (required for openai-compatible backend)
+
+            --api-key:
+                API key for the OpenAI-compatible server.
+                (default: "EMPTY")
+
+        LLM generation parameters:
+            --max-new-tokens:
+                Maximum number of tokens to generate. (default: 1024)
+
+            --temperature:
+                Sampling temperature (0.0 = greedy). (default: 0.0)
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Evaluate mini recurrence converter DSL model accuracy"
+    )
+
+    # Backend type selection
     parser.add_argument(
-        "--container", default="phi",
-        help="Model container name to route to"
+        "--backend-type",
+        default="airlock",
+        choices=["airlock", "openai-compatible"],
+        help="Type of LLM backend to use"
+    )
+
+    # Airlock backend parameters
+    parser.add_argument(
+        "--container",
+        default="phi",
+        help="Airlock container name (for airlock backend)"
     )
     parser.add_argument(
-        "--adapter", default="mini-recurrence-converter-dsl-adapter",
-        help="Adapter name to use for generation"
+        "--adapter",
+        default="mini-recurrence-converter-dsl-adapter",
+        help="Adapter name (for airlock backend)"
     )
+    parser.add_argument(
+        "--host",
+        default="http://127.0.0.1:8000",
+        help="Airlock server URL (for airlock backend)"
+    )
+
+    # OpenAI-compatible backend parameters
+    parser.add_argument(
+        "--base-url",
+        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--model",
+        help="Model name (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--api-key",
+        default="EMPTY",
+        help="API key (for openai-compatible backend)"
+    )
+
+    # LLM generation parameters
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=1024,
+        help="Maximum tokens to generate"
+    )
+    parser.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="Sampling temperature (0.0 = greedy)"
+    )
+
     args = parser.parse_args()
 
-    run_test_dataset(args.container, args.adapter)
+    # Create backend based on type
+    if args.backend_type == "airlock":
+        backend = AirlockBackend(
+            container_name=args.container,
+            adapter=args.adapter,
+            host=args.host
+        )
+    elif args.backend_type == "openai-compatible":
+        if not args.base_url or not args.model:
+            parser.error(
+                "--base-url and --model are required when using openai-compatible backend"
+            )
+        backend = OpenAICompatibleBackend(
+            base_url=args.base_url,
+            model=args.model,
+            api_key=args.api_key
+        )
+    else:
+        parser.error(f"Unknown backend type: {args.backend_type}")
+        sys.exit(1)
+
+    # Run evaluation
+    run_test_dataset(backend, args.max_new_tokens, args.temperature)
 
 if __name__ == "__main__":
     main()
