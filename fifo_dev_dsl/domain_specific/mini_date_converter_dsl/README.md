@@ -105,12 +105,24 @@ This evaluates to 9:30 AM on the day after the 4th Thursday of November — e.g.
 
 ### `TODAY`
 
-Returns the current date (time set to `00:00`).
+Returns the current date.
 
-**Example:**
+- In **date-only context**, the time is set to `00:00`.
+- In a **time-aware context**, the time is initialized to the current time.  
+  A time-aware context applies to **the entire expression subtree** under `OFFSET_TIME(...)` (not just the direct argument).
+
+**Examples:**
+
+Date-only (midnight): returns the current date set to `00:00`.
 
 ```dsl
 TODAY
+```
+
+Time-aware (propagates through nesting): returns the date and time offset by two days and 12 hours from the **current time**.
+
+```dsl
+OFFSET_TIME(OFFSET(TODAY, 2, DAY), 12, 0)
 ```
 
 ---
@@ -124,6 +136,10 @@ Adds or subtracts a time offset from a base expression.
 - `unit`: One of:
   - `DAY`, `WEEK`, `MONTH`, `YEAR`
   - or `WEEKDAY=<0-6>` (where `0 = Monday`, ..., `6 = Sunday`)
+    - When using `WEEKDAY=<n>`:
+      - `value = 0` selects the first matching weekday **on or after** `base_expr` (may return the same day).
+      - `value > 0` selects the *value*-th matching weekday **strictly after** `base_expr`.
+      - `value < 0` selects the *abs(value)*-th matching weekday **strictly before** `base_expr`.
 
 **Examples:**
 
