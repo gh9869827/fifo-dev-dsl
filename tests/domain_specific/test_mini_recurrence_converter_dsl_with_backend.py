@@ -203,21 +203,21 @@ def test_parse_natural_recurrence_expression_with_backend_user_prompt():
     assert backend.last_request.user_prompt == question
 
 
-def test_parse_natural_recurrence_expression_with_backend_reasoning_level():
-    """Test that reasoning_level parameter is passed to LlmRequest."""
+def test_parse_natural_recurrence_expression_with_backend_reasoning_effort():
+    """Test that reasoning_effort parameter is passed to LlmRequest."""
     backend = MockLlmBackend("DAILY(1)")
     
     parse_natural_recurrence_expression_with_backend(
         "every day",
         backend=backend,
-        reasoning_level="high"
+        reasoning_effort="high"
     )
     
-    assert backend.last_request.reasoning_level == "high"
+    assert backend.last_request.reasoning_effort == "high"
 
 
-def test_parse_natural_recurrence_expression_with_backend_default_reasoning_level():
-    """Test that default reasoning_level is 'low'."""
+def test_parse_natural_recurrence_expression_with_backend_default_reasoning_effort():
+    """Test that default reasoning_effort is None."""
     backend = MockLlmBackend("DAILY(1)")
     
     parse_natural_recurrence_expression_with_backend(
@@ -225,7 +225,7 @@ def test_parse_natural_recurrence_expression_with_backend_default_reasoning_leve
         backend=backend
     )
     
-    assert backend.last_request.reasoning_level == "low"
+    assert backend.last_request.reasoning_effort is None
 
 
 def test_parse_natural_recurrence_expression_deprecated_warning():
