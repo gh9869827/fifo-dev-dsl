@@ -26,12 +26,18 @@ class LlmRequest:
 
         temperature (float):
             Sampling temperature (higher = more random). When 0.0, use greedy decoding.
+
+        reasoning_level (str):
+            Reasoning level to use during evaluation. Supported values depend on the
+            backend implementation. Common values include "low", "medium", "high".
+            Defaults to "low".
     """
 
     system_prompt: str
     user_prompt: str
     max_new_tokens: int = 1024
     temperature: float = 0.0
+    reasoning_level: str = "low"
 
 
 class LlmBackend(Protocol):
@@ -219,6 +225,7 @@ class OpenAICompatibleBackend:
             ],
             temperature=req.temperature,
             max_tokens=req.max_new_tokens,  # OpenAI API uses max_tokens
+            reasoning_level=req.reasoning_level,
         )
 
         content = (resp.choices[0].message.content or "").strip()

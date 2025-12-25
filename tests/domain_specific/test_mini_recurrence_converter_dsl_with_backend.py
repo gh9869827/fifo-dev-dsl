@@ -203,6 +203,31 @@ def test_parse_natural_recurrence_expression_with_backend_user_prompt():
     assert backend.last_request.user_prompt == question
 
 
+def test_parse_natural_recurrence_expression_with_backend_reasoning_level():
+    """Test that reasoning_level parameter is passed to LlmRequest."""
+    backend = MockLlmBackend("DAILY(1)")
+    
+    parse_natural_recurrence_expression_with_backend(
+        "every day",
+        backend=backend,
+        reasoning_level="high"
+    )
+    
+    assert backend.last_request.reasoning_level == "high"
+
+
+def test_parse_natural_recurrence_expression_with_backend_default_reasoning_level():
+    """Test that default reasoning_level is 'low'."""
+    backend = MockLlmBackend("DAILY(1)")
+    
+    parse_natural_recurrence_expression_with_backend(
+        "every day",
+        backend=backend
+    )
+    
+    assert backend.last_request.reasoning_level == "low"
+
+
 def test_parse_natural_recurrence_expression_deprecated_warning():
     """Test that the old function emits a deprecation warning."""
     with pytest.warns(DeprecationWarning, match="parse_natural_recurrence_expression is deprecated"):
