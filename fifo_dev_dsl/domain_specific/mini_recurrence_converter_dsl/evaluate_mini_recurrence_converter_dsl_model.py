@@ -29,7 +29,7 @@ from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import (
     parse_natural_recurrence_expression_with_backend
 )
 
-def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float) -> None:
+def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float, reasoning_level: str = "low") -> None:
     """
     Run the evaluation on the model test set from the Hugging Face dataset.
     
@@ -42,6 +42,9 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
 
         temperature (float):
             Sampling temperature.
+
+        reasoning_level (str):
+            Reasoning level to use during evaluation.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -69,7 +72,8 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
                 input_text,
                 backend=backend,
                 max_new_tokens=max_new_tokens,
-                temperature=temperature
+                temperature=temperature,
+                reasoning_level=reasoning_level
             )
             expected_output = MiniRecurrenceConverterDSL().parse(expected_dsl_text)
 
@@ -185,6 +189,12 @@ def main() -> None:
         default=0.0,
         help="Sampling temperature (0.0 = greedy)"
     )
+    parser.add_argument(
+        "--reasoning-level",
+        type=str,
+        default="low",
+        help="Reasoning level to use during evaluation (default: low)"
+    )
 
     args = parser.parse_args()
 
@@ -208,6 +218,8 @@ def main() -> None:
     else:
         parser.error(f"Unknown backend type: {args.backend_type}")
         sys.exit(1)
+
+    run_test_dataset(backend, args.max_new_tokens, args.temperature, args.reasoning_level)
 
     # Run evaluation
     run_test_dataset(backend, args.max_new_tokens, args.temperature)

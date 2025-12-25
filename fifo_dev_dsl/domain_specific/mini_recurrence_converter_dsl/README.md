@@ -263,6 +263,7 @@ python evaluate_mini_recurrence_converter_dsl_model.py \
 
 - `--max-new-tokens`: Maximum tokens to generate (default: 1024)
 - `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
+- `--reasoning-level`: Reasoning level to use during evaluation (default: "low")
 - `--host`: Airlock server URL (default: http://127.0.0.1:8000)
 - `--api-key`: API key for OpenAI-compatible servers (default: "EMPTY")
 
