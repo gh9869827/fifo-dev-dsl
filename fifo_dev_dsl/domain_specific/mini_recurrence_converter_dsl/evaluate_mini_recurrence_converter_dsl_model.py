@@ -29,7 +29,7 @@ from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import (
     parse_natural_recurrence_expression_with_backend
 )
 
-def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float, reasoning_level: str = "low") -> None:
+def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float, reasoning_effort: str | None = None) -> None:
     """
     Run the evaluation on the model test set from the Hugging Face dataset.
     
@@ -43,8 +43,9 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
         temperature (float):
             Sampling temperature.
 
-        reasoning_level (str):
-            Reasoning level to use during evaluation.
+        reasoning_effort (str | None):
+            Reasoning effort level for reasoning models. When None, the parameter is
+            not passed to the backend.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -73,7 +74,7 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
                 backend=backend,
                 max_new_tokens=max_new_tokens,
                 temperature=temperature,
-                reasoning_level=reasoning_level
+                reasoning_effort=reasoning_effort
             )
             expected_output = MiniRecurrenceConverterDSL().parse(expected_dsl_text)
 
@@ -190,10 +191,10 @@ def main() -> None:
         help="Sampling temperature (0.0 = greedy)"
     )
     parser.add_argument(
-        "--reasoning-level",
+        "--reasoning-effort",
         type=str,
-        default="low",
-        help="Reasoning level to use during evaluation (default: low)"
+        default=None,
+        help="Reasoning effort level for reasoning models (default: None, not passed to backend)"
     )
 
     args = parser.parse_args()
@@ -219,7 +220,7 @@ def main() -> None:
         parser.error(f"Unknown backend type: {args.backend_type}")
         sys.exit(1)
 
-    run_test_dataset(backend, args.max_new_tokens, args.temperature, args.reasoning_level)
+    run_test_dataset(backend, args.max_new_tokens, args.temperature, args.reasoning_effort)
 
     # Run evaluation
     run_test_dataset(backend, args.max_new_tokens, args.temperature)
