@@ -156,12 +156,16 @@ Builds a date using the current year and provided `month` and `day`.
 If the date has passed, uses the next available year.
 
 - `month`: integer (1–12)
-- `day`: integer (1–31)
+- `day`: integer (positive for counting from start, negative for counting from end)
+  - Positive values (1–31): count from the start of the month
+  - Negative values: count backward from the end of the month (-1 is the last day, -2 is the second-to-last day, etc.)
 
-**Example:**
+**Examples:**
 
 ```dsl
-DATE_FROM_MONTH_DAY(12, 25)
+DATE_FROM_MONTH_DAY(12, 25)   # December 25th
+DATE_FROM_MONTH_DAY(1, -1)    # last day of January
+DATE_FROM_MONTH_DAY(1, -2)    # second-to-last day of January (January 30th)
 ```
 
 ---
@@ -172,12 +176,16 @@ Constructs a specific date.
 
 - `year`: four-digit year
 - `month`: integer (1–12)
-- `day`: integer (1–31)
+- `day`: integer (positive for counting from start, negative for counting from end)
+  - Positive values (1–31): count from the start of the month
+  - Negative values: count backward from the end of the month (-1 is the last day, -2 is the second-to-last day, etc.)
 
-**Example:**
+**Examples:**
 
 ```dsl
-DATE_FROM_YEAR_MONTH_DAY(2026, 1, 1)
+DATE_FROM_YEAR_MONTH_DAY(2026, 1, 1)    # January 1st, 2026
+DATE_FROM_YEAR_MONTH_DAY(2026, 1, -1)   # January 31st, 2026
+DATE_FROM_YEAR_MONTH_DAY(2026, 1, -2)   # January 30th, 2026
 ```
 
 ---

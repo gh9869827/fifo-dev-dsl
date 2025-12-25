@@ -11,6 +11,26 @@ def next_month_day(month: int, day: int) -> datetime:
     try_this_year = datetime(today.year, month, day)
     return try_this_year if try_this_year.date() >= today else datetime(today.year + 1, month, day)
 
+def next_month_day_negative(month: int, day: int) -> datetime:
+    """Helper for DATE_FROM_MONTH_DAY with negative day values."""
+    today = datetime.now().date()
+    for offset in range(10):
+        year = today.year + offset
+        # Calculate last day of the month
+        last_of_month = (
+            datetime(year, month, 1)
+            + relativedelta(months=1)
+            - timedelta(days=1)
+        ).day
+        actual_day = last_of_month + 1 + day
+        try:
+            candidate = datetime(year, month, actual_day)
+            if candidate.date() >= today:
+                return candidate
+        except ValueError:
+            continue
+    assert False  # pragma: no cover
+
 def last_day_of_month(dt: datetime) -> int:
     next_month = dt.replace(day=28) + timedelta(days=4)
     return (next_month.replace(day=1) - timedelta(days=1)).day
@@ -132,6 +152,32 @@ def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> da
             )
         ),
 
+        # DATE_FROM_MONTH_DAY with negative day values
+
+        # Last day of January (31st)
+        (
+            "DATE_FROM_MONTH_DAY(1, -1)",
+            lambda: next_month_day_negative(1, -1)
+        ),
+
+        # Second-to-last day of January (30th)
+        (
+            "DATE_FROM_MONTH_DAY(1, -2)",
+            lambda: next_month_day_negative(1, -2)
+        ),
+
+        # Last day of February (28th or 29th depending on leap year)
+        (
+            "DATE_FROM_MONTH_DAY(2, -1)",
+            lambda: next_month_day_negative(2, -1)
+        ),
+
+        # Last day of April (30th)
+        (
+            "DATE_FROM_MONTH_DAY(4, -1)",
+            lambda: next_month_day_negative(4, -1)
+        ),
+
         # DATE_FROM_YEAR_MONTH_DAY
 
         # DATE_FROM_YEAR_MONTH_DAY for Jan 1, 2025
@@ -156,6 +202,44 @@ def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> da
         (
             "DATE_FROM_YEAR_MONTH_DAY(2024, 2, 29)",
             lambda: datetime(2024, 2, 29)
+        ),
+
+        # DATE_FROM_YEAR_MONTH_DAY with negative day values
+        
+        # Last day of January 2026
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2026, 1, -1)",
+            lambda: datetime(2026, 1, 31)
+        ),
+
+        # Second-to-last day of January 2026
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2026, 1, -2)",
+            lambda: datetime(2026, 1, 30)
+        ),
+
+        # Last day of February 2026 (non-leap year)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2026, 2, -1)",
+            lambda: datetime(2026, 2, 28)
+        ),
+
+        # Last day of February 2024 (leap year)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2024, 2, -1)",
+            lambda: datetime(2024, 2, 29)
+        ),
+
+        # Third-to-last day of March 2025 (31 days)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2025, 3, -3)",
+            lambda: datetime(2025, 3, 29)
+        ),
+
+        # Last day of April 2025 (30 days)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2025, 4, -1)",
+            lambda: datetime(2025, 4, 30)
         ),
 
         # DATE_FROM_MONTH_WEEKDAY
