@@ -5,11 +5,36 @@ from dateutil.relativedelta import relativedelta
 from dateutil.rrule import weekday, MO, TH, FR, WE, SU
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import MiniDateConverterDSL
 
+# Constants
+MAX_YEAR_SEARCH_RANGE = 10  # Maximum number of years to search ahead for valid dates
+
 # Helper
 def next_month_day(month: int, day: int) -> datetime:
     today = datetime.now().date()
     try_this_year = datetime(today.year, month, day)
     return try_this_year if try_this_year.date() >= today else datetime(today.year + 1, month, day)
+
+def next_month_day_negative(month: int, day: int) -> datetime:
+    """Helper for DATE_FROM_MONTH_DAY with negative day values."""
+    today = datetime.now().date()
+    for offset in range(MAX_YEAR_SEARCH_RANGE):
+        year = today.year + offset
+        # Calculate last day of the month
+        last_of_month = (
+            datetime(year, month, 1)
+            + relativedelta(months=1)
+            - timedelta(days=1)
+        ).day
+        # Convert negative index to positive day number
+        # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
+        actual_day = last_of_month + (day + 1)
+        try:
+            candidate = datetime(year, month, actual_day)
+            if candidate.date() >= today:
+                return candidate
+        except ValueError:
+            continue
+    assert False  # pragma: no cover
 
 def last_day_of_month(dt: datetime) -> int:
     next_month = dt.replace(day=28) + timedelta(days=4)
@@ -17,7 +42,7 @@ def last_day_of_month(dt: datetime) -> int:
 
 def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> datetime:
     today = datetime.now()
-    for offset in range(10):
+    for offset in range(MAX_YEAR_SEARCH_RANGE):
         anchor = datetime(today.year + offset, month, 1)
         if occurrence < 0:
             anchor += relativedelta(months=1, days=-1)
@@ -132,6 +157,32 @@ def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> da
             )
         ),
 
+        # DATE_FROM_MONTH_DAY with negative day values
+
+        # Last day of January (31st)
+        (
+            "DATE_FROM_MONTH_DAY(1, -1)",
+            lambda: next_month_day_negative(1, -1)
+        ),
+
+        # Second-to-last day of January (30th)
+        (
+            "DATE_FROM_MONTH_DAY(1, -2)",
+            lambda: next_month_day_negative(1, -2)
+        ),
+
+        # Last day of February (28th or 29th depending on leap year)
+        (
+            "DATE_FROM_MONTH_DAY(2, -1)",
+            lambda: next_month_day_negative(2, -1)
+        ),
+
+        # Last day of April (30th)
+        (
+            "DATE_FROM_MONTH_DAY(4, -1)",
+            lambda: next_month_day_negative(4, -1)
+        ),
+
         # DATE_FROM_YEAR_MONTH_DAY
 
         # DATE_FROM_YEAR_MONTH_DAY for Jan 1, 2025
@@ -156,6 +207,44 @@ def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> da
         (
             "DATE_FROM_YEAR_MONTH_DAY(2024, 2, 29)",
             lambda: datetime(2024, 2, 29)
+        ),
+
+        # DATE_FROM_YEAR_MONTH_DAY with negative day values
+
+        # Last day of January 2026
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2026, 1, -1)",
+            lambda: datetime(2026, 1, 31)
+        ),
+
+        # Second-to-last day of January 2026
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2026, 1, -2)",
+            lambda: datetime(2026, 1, 30)
+        ),
+
+        # Last day of February 2026 (non-leap year)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2026, 2, -1)",
+            lambda: datetime(2026, 2, 28)
+        ),
+
+        # Last day of February 2024 (leap year)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2024, 2, -1)",
+            lambda: datetime(2024, 2, 29)
+        ),
+
+        # Third-to-last day of March 2025 (31 days)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2025, 3, -3)",
+            lambda: datetime(2025, 3, 29)
+        ),
+
+        # Last day of April 2025 (30 days)
+        (
+            "DATE_FROM_YEAR_MONTH_DAY(2025, 4, -1)",
+            lambda: datetime(2025, 4, 30)
         ),
 
         # DATE_FROM_MONTH_WEEKDAY
@@ -375,6 +464,7 @@ def test_date_from_month_weekday_future_rollover():
         ("DATE_FROM_MONTH_DAY(2, 30)", r"DATE_FROM_MONTH_DAY(2, 30) is invalid"),
         ("DATE_FROM_MONTH_DAY(4, 31)", r"DATE_FROM_MONTH_DAY(4, 31) is invalid"),
         ("DATE_FROM_MONTH_DAY(11, 31)", r"DATE_FROM_MONTH_DAY(11, 31) is invalid"),
+        ("DATE_FROM_MONTH_DAY(1, 0)", r"DATE_FROM_MONTH_DAY(1, 0) is invalid"),
 
         # DATE_FROM_YEAR_MONTH_DAY
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 1, 1, 0)", r"DATE_FROM_YEAR_MONTH_DAY requires exactly 3 arguments"),
@@ -386,6 +476,7 @@ def test_date_from_month_weekday_future_rollover():
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 12)", r"Invalid or missing day in DATE_FROM_YEAR_MONTH_DAY: got 'None'"),
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 12, error)", r"Invalid or missing day in DATE_FROM_YEAR_MONTH_DAY: got 'error'"),
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 11, 31)", r"DATE_FROM_YEAR_MONTH_DAY(2025, 11, 31) is invalid"),
+        ("DATE_FROM_YEAR_MONTH_DAY(2025, 1, 0)", r"DATE_FROM_YEAR_MONTH_DAY(2025, 1, 0) is invalid"),
 
         # DATE_FROM_MONTH_WEEKDAY
         ("DATE_FROM_MONTH_WEEKDAY(11, 1, 2, 0)", r"DATE_FROM_MONTH_WEEKDAY requires exactly 3 arguments"),
@@ -395,7 +486,7 @@ def test_date_from_month_weekday_future_rollover():
         ("DATE_FROM_MONTH_WEEKDAY(11, error)", r"Invalid or missing weekday in DATE_FROM_MONTH_WEEKDAY: got 'error'"),
         ("DATE_FROM_MONTH_WEEKDAY(11, 7)", r"Invalid weekday in DATE_FROM_MONTH_WEEKDAY: got 7"),
         ("DATE_FROM_MONTH_WEEKDAY(11, 4)", r"Invalid or missing occurrence in DATE_FROM_MONTH_WEEKDAY: got 'None'"),
-        ("DATE_FROM_MONTH_WEEKDAY(11, 4, error)", r"Invalid or missing occurrence in DATE_FROM_MONTH_WEEKDAY: got 'error'"), 
+        ("DATE_FROM_MONTH_WEEKDAY(11, 4, error)", r"Invalid or missing occurrence in DATE_FROM_MONTH_WEEKDAY: got 'error'"),
 
         # DATE_FROM_YEAR_MONTH_WEEKDAY
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 11, 1, 2, 0)", r"DATE_FROM_YEAR_MONTH_WEEKDAY requires exactly 4 arguments"),
