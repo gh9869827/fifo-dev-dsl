@@ -464,6 +464,7 @@ def test_date_from_month_weekday_future_rollover():
         ("DATE_FROM_MONTH_DAY(2, 30)", r"DATE_FROM_MONTH_DAY(2, 30) is invalid"),
         ("DATE_FROM_MONTH_DAY(4, 31)", r"DATE_FROM_MONTH_DAY(4, 31) is invalid"),
         ("DATE_FROM_MONTH_DAY(11, 31)", r"DATE_FROM_MONTH_DAY(11, 31) is invalid"),
+        ("DATE_FROM_MONTH_DAY(1, 0)", r"DATE_FROM_MONTH_DAY(1, 0) is invalid"),
 
         # DATE_FROM_YEAR_MONTH_DAY
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 1, 1, 0)", r"DATE_FROM_YEAR_MONTH_DAY requires exactly 3 arguments"),
@@ -475,6 +476,7 @@ def test_date_from_month_weekday_future_rollover():
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 12)", r"Invalid or missing day in DATE_FROM_YEAR_MONTH_DAY: got 'None'"),
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 12, error)", r"Invalid or missing day in DATE_FROM_YEAR_MONTH_DAY: got 'error'"),
         ("DATE_FROM_YEAR_MONTH_DAY(2025, 11, 31)", r"DATE_FROM_YEAR_MONTH_DAY(2025, 11, 31) is invalid"),
+        ("DATE_FROM_YEAR_MONTH_DAY(2025, 1, 0)", r"DATE_FROM_YEAR_MONTH_DAY(2025, 1, 0) is invalid"),
 
         # DATE_FROM_MONTH_WEEKDAY
         ("DATE_FROM_MONTH_WEEKDAY(11, 1, 2, 0)", r"DATE_FROM_MONTH_WEEKDAY requires exactly 3 arguments"),

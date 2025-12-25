@@ -261,7 +261,7 @@ class MiniDateConverterDSL:
                 try:
                     # Handle negative day values (count from end of month)
                     actual_day = day
-                    if day <= 0:
+                    if day < 0:
                         # Calculate last day of the month
                         last_of_month = (
                             datetime(year + offset, month, 1)
@@ -288,7 +288,7 @@ class MiniDateConverterDSL:
             day = extract_int(args, 2, "day", func)
 
             # Handle negative day values (count from end of month)
-            if day <= 0:
+            if day < 0:
                 # Calculate last day of the month
                 last_of_month = (
                     datetime(year, month, 1)
