@@ -255,6 +255,11 @@ class MiniDateConverterDSL:
                 raise ValueError("DATE_FROM_MONTH_DAY requires exactly 2 arguments")
             month = extract_month(args, 0, func)
             day = extract_int(args, 1, "day", func)
+            
+            # Validate day parameter
+            if day == 0:
+                raise ValueError(f"DATE_FROM_MONTH_DAY({month}, {day}) is invalid")
+            
             year = self.input_now.year
 
             for offset in range(10):  # search up to 10 years ahead
@@ -286,6 +291,10 @@ class MiniDateConverterDSL:
             year = extract_int(args, 0, "year", func)
             month = extract_month(args, 1, func)
             day = extract_int(args, 2, "day", func)
+
+            # Validate day parameter
+            if day == 0:
+                raise ValueError(f"DATE_FROM_YEAR_MONTH_DAY({year}, {month}, {day}) is invalid")
 
             # Handle negative day values (count from end of month)
             if day < 0:
