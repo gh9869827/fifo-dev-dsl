@@ -222,8 +222,5 @@ def main() -> None:
 
     run_test_dataset(backend, args.max_new_tokens, args.temperature, args.reasoning_effort)
 
-    # Run evaluation
-    run_test_dataset(backend, args.max_new_tokens, args.temperature)
-
 if __name__ == "__main__":
     main()
