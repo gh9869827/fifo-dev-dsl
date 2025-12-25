@@ -210,7 +210,7 @@ def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> da
         ),
 
         # DATE_FROM_YEAR_MONTH_DAY with negative day values
-        
+
         # Last day of January 2026
         (
             "DATE_FROM_YEAR_MONTH_DAY(2026, 1, -1)",
@@ -486,7 +486,7 @@ def test_date_from_month_weekday_future_rollover():
         ("DATE_FROM_MONTH_WEEKDAY(11, error)", r"Invalid or missing weekday in DATE_FROM_MONTH_WEEKDAY: got 'error'"),
         ("DATE_FROM_MONTH_WEEKDAY(11, 7)", r"Invalid weekday in DATE_FROM_MONTH_WEEKDAY: got 7"),
         ("DATE_FROM_MONTH_WEEKDAY(11, 4)", r"Invalid or missing occurrence in DATE_FROM_MONTH_WEEKDAY: got 'None'"),
-        ("DATE_FROM_MONTH_WEEKDAY(11, 4, error)", r"Invalid or missing occurrence in DATE_FROM_MONTH_WEEKDAY: got 'error'"), 
+        ("DATE_FROM_MONTH_WEEKDAY(11, 4, error)", r"Invalid or missing occurrence in DATE_FROM_MONTH_WEEKDAY: got 'error'"),
 
         # DATE_FROM_YEAR_MONTH_WEEKDAY
         ("DATE_FROM_YEAR_MONTH_WEEKDAY(2025, 11, 1, 2, 0)", r"DATE_FROM_YEAR_MONTH_WEEKDAY requires exactly 4 arguments"),
