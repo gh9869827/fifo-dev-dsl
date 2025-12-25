@@ -43,9 +43,10 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
         temperature (float):
             Sampling temperature.
 
-        reasoning_effort (str | None):
-            Reasoning effort level for reasoning models. When None, the parameter is
-            not passed to the backend.
+        reasoning_effort (str | None, optional):
+            Reasoning effort level for reasoning models. Only applicable when using
+            reasoning-capable models. When None, the parameter is not passed to the
+            backend. Defaults to None.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
