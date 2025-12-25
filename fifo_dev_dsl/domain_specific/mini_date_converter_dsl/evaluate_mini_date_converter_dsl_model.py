@@ -42,7 +42,7 @@ from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import (
     parse_natural_date_expression_with_backend
 )
 
-def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float) -> None:
+def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: float, reasoning_effort: str | None = None) -> None:
     """
     Run the evaluation on the model test set from the Hugging Face dataset.
 
@@ -55,6 +55,11 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
 
         temperature (float):
             Sampling temperature.
+
+        reasoning_effort (str | None, optional):
+            Reasoning effort level for reasoning models. Only applicable when using
+            reasoning-capable models. When None, the parameter is not passed to the
+            backend. Defaults to None.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -83,7 +88,8 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
                 now=now,
                 backend=backend,
                 max_new_tokens=max_new_tokens,
-                temperature=temperature
+                temperature=temperature,
+                reasoning_effort=reasoning_effort
             )
             expected_output = MiniDateConverterDSL(now=now).parse(expected_dsl_text)
 
@@ -102,7 +108,8 @@ def run_test_dataset(backend: LlmBackend, max_new_tokens: int, temperature: floa
 def run_template_base_DATE_FROM_MONTH_WEEKDAY(backend: LlmBackend,
                                               max_new_tokens: int,
                                               temperature: float,
-                                              template: int) -> None:
+                                              reasoning_effort: str | None = None,
+                                              template: int = 1) -> None:
     """
     Tests DATE_FROM_MONTH_WEEKDAY generation using template-based variations
     of natural phrases like "the third Monday of July". This evaluates the model's
@@ -117,6 +124,11 @@ def run_template_base_DATE_FROM_MONTH_WEEKDAY(backend: LlmBackend,
 
         temperature (float):
             Sampling temperature.
+
+        reasoning_effort (str | None, optional):
+            Reasoning effort level for reasoning models. Only applicable when using
+            reasoning-capable models. When None, the parameter is not passed to the
+            backend. Defaults to None.
 
         template (int):
             Either 1 for using the template "the {ordinal_str} {day_str} of {month_str}" or
@@ -159,7 +171,8 @@ def run_template_base_DATE_FROM_MONTH_WEEKDAY(backend: LlmBackend,
                         text,
                         backend=backend,
                         max_new_tokens=max_new_tokens,
-                        temperature=temperature
+                        temperature=temperature,
+                        reasoning_effort=reasoning_effort
                     )
                 except (RuntimeError, ValueError, TypeError) as e:
                     failures += 1
@@ -282,6 +295,12 @@ def main() -> None:
         default=0.0,
         help="Sampling temperature (0.0 = greedy)"
     )
+    parser.add_argument(
+        "--reasoning-effort",
+        type=str,
+        default=None,
+        help="Reasoning effort level for reasoning models (default: None, not passed to backend)"
+    )
 
     # Evaluation options
     parser.add_argument(
@@ -323,10 +342,11 @@ def main() -> None:
             backend,
             args.max_new_tokens,
             args.temperature,
+            args.reasoning_effort,
             template=args.template_base
         )
     else:
-        run_test_dataset(backend, args.max_new_tokens, args.temperature)
+        run_test_dataset(backend, args.max_new_tokens, args.temperature, args.reasoning_effort)
 
 if __name__ == "__main__":
     main()

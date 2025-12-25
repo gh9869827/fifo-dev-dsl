@@ -263,6 +263,7 @@ python evaluate_mini_recurrence_converter_dsl_model.py \
 
 - `--max-new-tokens`: Maximum tokens to generate (default: 1024)
 - `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
+- `--reasoning-effort`: Reasoning effort level for reasoning models. Only applicable when using reasoning-capable models. Supported values depend on the backend implementation. Common values include "low", "medium", "high". When None, the parameter is not passed to the backend, allowing the model to use its default reasoning behavior (default: None)
 - `--host`: Airlock server URL (default: http://127.0.0.1:8000)
 - `--api-key`: API key for OpenAI-compatible servers (default: "EMPTY")
 
