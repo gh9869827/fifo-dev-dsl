@@ -275,7 +275,7 @@ class MiniDateConverterDSL:
                         ).day
                         # Convert negative index to positive day number
                         # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
-                        actual_day = last_of_month + (day + 1)
+                        actual_day = last_of_month + 1 + day
 
                     target = datetime(year + offset, month, actual_day)
                     if target >= self.input_now:
@@ -306,7 +306,7 @@ class MiniDateConverterDSL:
                 ).day
                 # Convert negative index to positive day number
                 # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
-                day = last_of_month + (day + 1)
+                day = last_of_month + 1 + day
 
             try:
                 return datetime(year, month, day), False
