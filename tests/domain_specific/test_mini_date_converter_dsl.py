@@ -5,6 +5,9 @@ from dateutil.relativedelta import relativedelta
 from dateutil.rrule import weekday, MO, TH, FR, WE, SU
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import MiniDateConverterDSL
 
+# Constants
+MAX_YEAR_SEARCH_RANGE = 10  # Maximum number of years to search ahead for valid dates
+
 # Helper
 def next_month_day(month: int, day: int) -> datetime:
     today = datetime.now().date()
@@ -14,7 +17,7 @@ def next_month_day(month: int, day: int) -> datetime:
 def next_month_day_negative(month: int, day: int) -> datetime:
     """Helper for DATE_FROM_MONTH_DAY with negative day values."""
     today = datetime.now().date()
-    for offset in range(10):
+    for offset in range(MAX_YEAR_SEARCH_RANGE):
         year = today.year + offset
         # Calculate last day of the month
         last_of_month = (
@@ -22,7 +25,9 @@ def next_month_day_negative(month: int, day: int) -> datetime:
             + relativedelta(months=1)
             - timedelta(days=1)
         ).day
-        actual_day = last_of_month + 1 + day
+        # Convert negative index to positive day number
+        # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
+        actual_day = last_of_month + (day + 1)
         try:
             candidate = datetime(year, month, actual_day)
             if candidate.date() >= today:
@@ -37,7 +42,7 @@ def last_day_of_month(dt: datetime) -> int:
 
 def next_month_weekday(month: int, weekday_func: weekday, occurrence: int) -> datetime:
     today = datetime.now()
-    for offset in range(10):
+    for offset in range(MAX_YEAR_SEARCH_RANGE):
         anchor = datetime(today.year + offset, month, 1)
         if occurrence < 0:
             anchor += relativedelta(months=1, days=-1)

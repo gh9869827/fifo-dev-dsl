@@ -268,7 +268,9 @@ class MiniDateConverterDSL:
                             + relativedelta(months=1)
                             - timedelta(days=1)
                         ).day
-                        actual_day = last_of_month + 1 + day
+                        # Convert negative index to positive day number
+                        # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
+                        actual_day = last_of_month + (day + 1)
                     
                     target = datetime(year + offset, month, actual_day)
                     if target >= self.input_now:
@@ -293,7 +295,9 @@ class MiniDateConverterDSL:
                     + relativedelta(months=1)
                     - timedelta(days=1)
                 ).day
-                day = last_of_month + 1 + day
+                # Convert negative index to positive day number
+                # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
+                day = last_of_month + (day + 1)
 
             try:
                 return datetime(year, month, day), False
