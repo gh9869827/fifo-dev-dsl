@@ -99,15 +99,21 @@ class MiniDateConverterDSL:
     - DATE_FROM_MONTH_DAY(month, day)
         Constructs a date using this year with the given month and day. If that
         date has already passed, the same month/day of the next year is used.
+        `day` may be negative to count backward from the end of the month
+        (`-1` is the last day, `-2` is the second-to-last day, etc.).
 
         Example:
             DATE_FROM_MONTH_DAY(12, 25)
+            DATE_FROM_MONTH_DAY(1, -1)   # last day of January
 
     - DATE_FROM_YEAR_MONTH_DAY(year, month, day)
         Constructs a specific date.
+        `day` may be negative to count backward from the end of the month
+        (`-1` is the last day, `-2` is the second-to-last day, etc.).
 
         Example:
             DATE_FROM_YEAR_MONTH_DAY(2025, 5, 1)
+            DATE_FROM_YEAR_MONTH_DAY(2026, 1, -1)  # January 31st, 2026
 
     - DATE_FROM_MONTH_WEEKDAY(month, weekday_index, occurrence)
         Finds the nth occurrence of a weekday in the given month of the current
@@ -249,11 +255,29 @@ class MiniDateConverterDSL:
                 raise ValueError("DATE_FROM_MONTH_DAY requires exactly 2 arguments")
             month = extract_month(args, 0, func)
             day = extract_int(args, 1, "day", func)
+
+            # Validate day parameter
+            if day == 0:
+                raise ValueError(f"DATE_FROM_MONTH_DAY({month}, {day}) is invalid")
+
             year = self.input_now.year
 
             for offset in range(10):  # search up to 10 years ahead
                 try:
-                    target = datetime(year + offset, month, day)
+                    # Handle negative day values (count from end of month)
+                    actual_day = day
+                    if day < 0:
+                        # Calculate last day of the month
+                        last_of_month = (
+                            datetime(year + offset, month, 1)
+                            + relativedelta(months=1)
+                            - timedelta(days=1)
+                        ).day
+                        # Convert negative index to positive day number
+                        # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
+                        actual_day = last_of_month + 1 + day
+
+                    target = datetime(year + offset, month, actual_day)
                     if target >= self.input_now:
                         return target, False
                 except ValueError:
@@ -267,6 +291,22 @@ class MiniDateConverterDSL:
             year = extract_int(args, 0, "year", func)
             month = extract_month(args, 1, func)
             day = extract_int(args, 2, "day", func)
+
+            # Validate day parameter
+            if day == 0:
+                raise ValueError(f"DATE_FROM_YEAR_MONTH_DAY({year}, {month}, {day}) is invalid")
+
+            # Handle negative day values (count from end of month)
+            if day < 0:
+                # Calculate last day of the month
+                last_of_month = (
+                    datetime(year, month, 1)
+                    + relativedelta(months=1)
+                    - timedelta(days=1)
+                ).day
+                # Convert negative index to positive day number
+                # E.g., -1 becomes last_of_month, -2 becomes last_of_month - 1
+                day = last_of_month + 1 + day
 
             try:
                 return datetime(year, month, day), False
