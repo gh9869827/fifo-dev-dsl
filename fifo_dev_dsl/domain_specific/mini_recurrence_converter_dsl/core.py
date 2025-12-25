@@ -81,7 +81,8 @@ def parse_natural_recurrence_expression_with_backend(
         *,
         backend: LlmBackend,
         max_new_tokens: int = 1024,
-        temperature: float = 0.0) -> Tuple[str, RecurrenceRule]:
+        temperature: float = 0.0,
+        reasoning_level: str = "low") -> Tuple[str, RecurrenceRule]:
     """
     Given a natural language recurrence expression, this function uses an LLM backend to translate
     it to the DSL, then parses and returns the corresponding RecurrenceRule object.
@@ -104,6 +105,9 @@ def parse_natural_recurrence_expression_with_backend(
             Sampling temperature (higher = more random). When 0.0, use greedy decoding.
             Defaults to 0.0.
 
+        reasoning_level (str, optional):
+            Reasoning level to use during evaluation. Defaults to "low".
+
     Returns:
         Tuple[str, RecurrenceRule]:
             (the DSL code, the parsed RecurrenceRule object)
@@ -124,7 +128,8 @@ def parse_natural_recurrence_expression_with_backend(
         system_prompt=SYSTEM_PROMPT,
         user_prompt=question,
         max_new_tokens=max_new_tokens,
-        temperature=temperature
+        temperature=temperature,
+        reasoning_level=reasoning_level
     )
     
     answer = backend.complete(request)
