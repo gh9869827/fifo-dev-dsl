@@ -4,6 +4,7 @@ from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
 from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
 
 class RobotArm:
 
@@ -94,9 +95,16 @@ if __name__ == "__main__":
 
     robot = RobotArm()
 
-    runtime_context = LLMRuntimeContext(
+    # Create the LLM backend
+    # Using AirlockBackend - recommended approach
+    backend = AirlockBackend(
         container_name="phi",
-        intent_sequencer_adapter="dia-intent-sequencer-robot-arm-adapter",
+        adapter="dia-intent-sequencer-robot-arm-adapter",
+        host="http://127.0.0.1:8000"
+    )
+
+    runtime_context = LLMRuntimeContext(
+        llm_backend=backend,
         tools=[
             robot.retrieve_screw,
             robot.initialize_components,
