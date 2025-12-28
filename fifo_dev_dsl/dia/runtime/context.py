@@ -97,6 +97,7 @@ class LLMRuntimeContext:
                 Only used to construct a default AirlockBackend if llm_backend is not provided.
         """
         # Check if deprecated parameters are being used
+        # Note: Keep this list in sync with the deprecated parameters listed in the docstring above
         deprecated_params_used = any([
             container_name is not None,
             base_model is not None,

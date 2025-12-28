@@ -74,7 +74,7 @@ class TestLLMRuntimeContextBackend:
                 host="http://test:8000"
             )
             
-            # Verify the backend was created (we can't easily test it's an AirlockBackend
+            # Verify the backend was created (we cannot easily test it is an AirlockBackend
             # without importing airlock dependencies, but we can test it exists)
             assert ctx._llm_backend is not None
     
