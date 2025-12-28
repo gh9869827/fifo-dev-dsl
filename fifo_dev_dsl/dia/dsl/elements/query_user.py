@@ -4,9 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
-from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
-
 from fifo_dev_common.introspection.mini_docstring import MiniDocStringType
 
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
@@ -173,19 +170,10 @@ class QueryUser(DslBase):
 
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
-        answer = call_airlock_model_server(
-                    model=runtime_context.base_model,
-                    messages=[
-                        Message.system(runtime_context.system_prompt_query_user),
-                        Message.user(prompt_user)
-                    ],
-                    parameters=GenerationParameters(
-                        max_new_tokens=1024,
-                        do_sample=False
-                    ),
-                    container_name=runtime_context.container_name,
-                    host=runtime_context.host
-                )
+        answer = runtime_context.call_llm(
+            system_prompt=runtime_context.system_prompt_query_user,
+            user_prompt=prompt_user
+        )
 
         resolution_context.llm_call_logs.append(
             LLMCallLog(
