@@ -2,9 +2,7 @@ from typing import Iterator, cast
 import difflib
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
-from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
-from fifo_tool_airlock_model_env.common.models import Model
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, LlmRequest
 
 
 def dsl_similarity_indicator(str1: str, str2: str) -> str:
@@ -49,6 +47,13 @@ dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
 )
 dataset_test = list(cast(Iterator[dict[str, str]], dataset_dict["test"]))
 
+# Create the LLM backend
+backend = AirlockBackend(
+    container_name="phi",
+    adapter="dia-intent-sequencer-robot-arm-adapter",
+    host="http://127.0.0.1:8000"
+)
+
 for entry in dataset_test:
 
     system_prompt = entry["system"]
@@ -56,19 +61,13 @@ for entry in dataset_test:
     expected_dsl_text = entry["out"]
 
     try:
-        model_dsl_text = call_airlock_model_server(
-            model=Model.Phi4MiniInstruct,
-            adapter="dia-intent-sequencer-robot-arm-adapter",
-            messages=[
-                Message.system(system_prompt),
-                Message.user(input_text)
-            ],
-            parameters=GenerationParameters(
-                max_new_tokens=1024,
-                do_sample=False
-            ),
-            container_name="phi"
+        request = LlmRequest(
+            system_prompt=system_prompt,
+            user_prompt=input_text,
+            max_new_tokens=1024,
+            temperature=0.0
         )
+        model_dsl_text = backend.complete(request)
 
     except RuntimeError as e:
         model_dsl_text = ""
