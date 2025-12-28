@@ -22,7 +22,7 @@ def test_query_fill_abort_raises() -> None:
     ctx = _runtime_context()
     rc = ResolutionContext()
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_fill.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
         return_value="reasoning: r\nvalue: v\nabort: nope",
     ):
         with pytest.raises(RuntimeError, match="QueryFill failed: abort message was returned"):
@@ -34,7 +34,7 @@ def test_query_fill_unknown_value() -> None:
     ctx = _runtime_context()
     rc = ResolutionContext()
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_fill.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
         return_value="unexpected",
     ):
         outcome = qf.do_resolution(ctx, rc, None)
