@@ -88,13 +88,20 @@ from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
 
 # Assume we have a tool class like RobotArm providing methods and inventory
 robot = RobotArm()
 
+# Create the LLM backend
+backend = AirlockBackend(
+    container_name="phi",
+    adapter="dia-intent-sequencer-robot-arm-adapter",
+    host="http://127.0.0.1:8000"
+)
+
 runtime_context = LLMRuntimeContext(
-    container_name="phi",  # or any model label you use
-    intent_sequencer_adapter="dia-intent-sequencer-robot-arm-adapter",
+    llm_backend=backend,
     tools=[
         robot.retrieve_screw,
         robot.initialize_components,
