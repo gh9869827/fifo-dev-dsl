@@ -1,4 +1,5 @@
 import argparse
+import sys
 from collections import defaultdict
 from typing import Iterator, cast, Callable
 import re
@@ -25,28 +26,13 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
-from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend
 
 calculator = Calculator()
 
-# Create the LLM backend
-backend = AirlockBackend(
-    container_name="phi",
-    adapter="dia-intent-sequencer-calculator-adapter",
-    host="http://127.0.0.1:8000"
-)
-
-runtime_context = LLMRuntimeContext(
-    llm_backend=backend,
-    tools=[
-        calculator.add,
-        calculator.subtract,
-        calculator.divide,
-        calculator.multiply
-    ],
-    query_sources=[
-    ]
-)
+# Global variables to be initialized in main()
+backend: LlmBackend
+runtime_context: LLMRuntimeContext
 
 def eval_prompt(prompt: str) -> float:
     """
@@ -345,14 +331,93 @@ def custom_evaluate_arithmetic_dsl_tree(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluation script")
+    parser = argparse.ArgumentParser(
+        description="Evaluate DIA intent sequencer calculator adapter accuracy"
+    )
+    
+    # Backend type selection
+    parser.add_argument(
+        "--backend-type",
+        default="airlock",
+        choices=["airlock", "openai-compatible"],
+        help="Type of LLM backend to use"
+    )
+
+    # Airlock backend parameters
+    parser.add_argument(
+        "--container",
+        default="phi",
+        help="Airlock container name (for airlock backend)"
+    )
+    parser.add_argument(
+        "--adapter",
+        default="dia-intent-sequencer-calculator-adapter",
+        help="Adapter name (for airlock backend)"
+    )
+    parser.add_argument(
+        "--host",
+        default="http://127.0.0.1:8000",
+        help="Airlock server URL (for airlock backend)"
+    )
+
+    # OpenAI-compatible backend parameters
+    parser.add_argument(
+        "--base-url",
+        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--model",
+        help="Model name (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--api-key",
+        default="EMPTY",
+        help="API key (for openai-compatible backend)"
+    )
+
+    # Evaluation mode
     parser.add_argument("--random", action="store_true", help="Evaluate on random examples")
     parser.add_argument(
         "--delta-flag",
         action="store_true",
         help="Log failed random examples to 'delta.dat'. If not set, no file is created."
     )
+    
     args = parser.parse_args()
+
+    # Create backend based on type
+    if args.backend_type == "airlock":
+        backend = AirlockBackend(
+            container_name=args.container,
+            adapter=args.adapter,
+            host=args.host
+        )
+    elif args.backend_type == "openai-compatible":
+        if not args.base_url or not args.model:
+            parser.error(
+                "--base-url and --model are required when using openai-compatible backend"
+            )
+        backend = OpenAICompatibleBackend(
+            base_url=args.base_url,
+            model=args.model,
+            api_key=args.api_key
+        )
+    else:
+        parser.error(f"Unknown backend type: {args.backend_type}")
+        sys.exit(1)
+
+    # Initialize runtime context
+    runtime_context = LLMRuntimeContext(
+        llm_backend=backend,
+        tools=[
+            calculator.add,
+            calculator.subtract,
+            calculator.divide,
+            calculator.multiply
+        ],
+        query_sources=[
+        ]
+    )
 
     if args.random:
         eval_random(args.delta_flag)

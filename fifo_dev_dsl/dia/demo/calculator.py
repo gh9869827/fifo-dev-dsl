@@ -4,7 +4,7 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
-from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend
 
 class Calculator:
     """
@@ -99,12 +99,19 @@ if __name__ == "__main__":
     calculator = Calculator()
 
     # Create the LLM backend
-    # Using AirlockBackend - recommended approach
+    # Example 1: Using AirlockBackend
     backend = AirlockBackend(
         container_name="phi",
         adapter="dia-intent-sequencer-calculator-adapter",
         host="http://127.0.0.1:8000"
     )
+
+    # Example 2: Using OpenAICompatibleBackend (commented out)
+    # backend = OpenAICompatibleBackend(
+    #     base_url="http://127.0.0.1:8001/v1",
+    #     model="your-model-name",
+    #     api_key="EMPTY"
+    # )
 
     runtime_context = LLMRuntimeContext(
         llm_backend=backend,
@@ -117,20 +124,6 @@ if __name__ == "__main__":
         query_sources=[
         ]
     )
-
-    # Alternative (deprecated): using old parameters directly
-    # This will emit a deprecation warning but still works for backward compatibility
-    # runtime_context = LLMRuntimeContext(
-    #     container_name="phi",
-    #     intent_sequencer_adapter="dia-intent-sequencer-calculator-adapter",
-    #     tools=[
-    #         calculator.add,
-    #         calculator.subtract,
-    #         calculator.divide,
-    #         calculator.multiply
-    #     ],
-    #     query_sources=[]
-    # )
 
     print("> ready for command")
 

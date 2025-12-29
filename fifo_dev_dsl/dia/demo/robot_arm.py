@@ -4,7 +4,7 @@ from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
 from fifo_dev_dsl.dia.runtime.exceptions import ApiErrorAbortAndResolve
-from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend
 
 class RobotArm:
 
@@ -96,12 +96,19 @@ if __name__ == "__main__":
     robot = RobotArm()
 
     # Create the LLM backend
-    # Using AirlockBackend - recommended approach
+    # Example 1: Using AirlockBackend
     backend = AirlockBackend(
         container_name="phi",
         adapter="dia-intent-sequencer-robot-arm-adapter",
         host="http://127.0.0.1:8000"
     )
+
+    # Example 2: Using OpenAICompatibleBackend (commented out)
+    # backend = OpenAICompatibleBackend(
+    #     base_url="http://127.0.0.1:8001/v1",
+    #     model="your-model-name",
+    #     api_key="EMPTY"
+    # )
 
     runtime_context = LLMRuntimeContext(
         llm_backend=backend,
