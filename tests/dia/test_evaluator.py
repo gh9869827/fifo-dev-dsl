@@ -163,9 +163,7 @@ def test_query_fill() -> None:
     )
 
     with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-               return_value=mock_dsl_response) ,\
-         patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-               return_value=mock_dsl_answer_query_fill):
+               side_effect=[mock_dsl_response, mock_dsl_answer_query_fill]):
 
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
@@ -250,10 +248,7 @@ def test_query_user() -> None:
 
     with patch(
         "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-        return_value=mock_dsl_response,
-    ), patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-        return_value=mock_query_user_llm_answer,
+        side_effect=[mock_dsl_response, mock_query_user_llm_answer],
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         first_outcome = resolver(interaction_reply=None)
@@ -306,13 +301,7 @@ def test_query_gather() -> None:
 
     with patch(
         "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-        return_value=mock_dsl_response,
-    ), patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-        return_value=mock_query_gather_llm_answer,
-    ), patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-        return_value=mock_intent_sequencer_answer,
+        side_effect=[mock_dsl_response, mock_query_gather_llm_answer, mock_intent_sequencer_answer],
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
