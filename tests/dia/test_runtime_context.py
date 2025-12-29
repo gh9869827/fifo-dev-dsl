@@ -1,10 +1,7 @@
 """Tests for LLMRuntimeContext with LlmBackend integration."""
 import warnings
-import pytest
-from unittest.mock import Mock, MagicMock
-from fifo_dev_common.introspection.tool_decorator import tool_handler
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
-from fifo_dev_dsl.common.llm_abstraction import LlmBackend, LlmRequest
+from fifo_dev_dsl.common.llm_abstraction import LlmRequest
 
 
 class MockBackend:
@@ -40,6 +37,7 @@ class TestLLMRuntimeContextBackend:
         # Verify it was called
         assert result == "MOCK_RESPONSE"
         assert mock_backend.call_count == 1
+        assert mock_backend.last_request is not None
         assert mock_backend.last_request.system_prompt == "system prompt"
         assert mock_backend.last_request.user_prompt == "user prompt"
         assert mock_backend.last_request.max_new_tokens == 1024
@@ -50,7 +48,7 @@ class TestLLMRuntimeContextBackend:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             
-            ctx = LLMRuntimeContext(
+            _ = LLMRuntimeContext(
                 tools=[],
                 query_sources=[],
                 container_name="test-container"
@@ -76,8 +74,8 @@ class TestLLMRuntimeContextBackend:
             
             # Verify the backend was created (we cannot easily test it is an AirlockBackend
             # without importing airlock dependencies, but we can test it exists)
-            assert ctx._llm_backend is not None
-    
+            assert ctx._llm_backend is not None # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access
+
     def test_llm_backend_takes_precedence(self):
         """Test that llm_backend parameter takes precedence over deprecated params."""
         mock_backend = MockBackend()
@@ -106,8 +104,8 @@ class TestLLMRuntimeContextBackend:
         
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            
-            ctx = LLMRuntimeContext(
+
+            _ = LLMRuntimeContext(
                 tools=[],
                 query_sources=[],
                 llm_backend=mock_backend
@@ -163,4 +161,4 @@ class TestLLMRuntimeContextBackend:
             )
             
             # Should have an llm_backend created
-            assert ctx._llm_backend is not None
+            assert ctx._llm_backend is not None # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access

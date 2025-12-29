@@ -1,9 +1,15 @@
 from typing import Iterator, cast
+import sys
 import difflib
 import argparse
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
-from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend, LlmRequest
+from fifo_dev_dsl.common.llm_abstraction import (
+    AirlockBackend,
+    OpenAICompatibleBackend,
+    LlmBackend,
+    LlmRequest
+)
 
 
 def dsl_similarity_indicator(str1: str, str2: str) -> str:
@@ -144,6 +150,7 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+    backend: LlmBackend
 
     # Create backend based on type
     if args.backend_type == "airlock":
@@ -164,6 +171,7 @@ def main() -> None:
         )
     else:
         parser.error(f"Unknown backend type: {args.backend_type}")
+        sys.exit(1)
 
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -186,7 +194,7 @@ def main() -> None:
             )
             model_dsl_text = backend.complete(request)
 
-        except RuntimeError as e:
+        except RuntimeError:
             model_dsl_text = ""
 
         sim = dsl_similarity_indicator(model_dsl_text, expected_dsl_text)

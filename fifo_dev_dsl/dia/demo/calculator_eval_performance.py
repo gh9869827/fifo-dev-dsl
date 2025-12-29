@@ -1,6 +1,7 @@
 import argparse
 from collections import defaultdict
 from typing import Iterator, cast, Callable
+import sys
 import re
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
@@ -403,6 +404,7 @@ if __name__ == "__main__":
         )
     else:
         parser.error(f"Unknown backend type: {args.backend_type}")
+        sys.exit(1)
 
     # Initialize runtime context
     runtime_context = LLMRuntimeContext(
