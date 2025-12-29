@@ -1,7 +1,6 @@
 from typing import Iterator, cast
 import difflib
 import argparse
-import sys
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
 from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend, LlmRequest
@@ -165,7 +164,6 @@ def main() -> None:
         )
     else:
         parser.error(f"Unknown backend type: {args.backend_type}")
-        sys.exit(1)
 
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(

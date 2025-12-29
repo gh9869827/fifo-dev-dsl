@@ -1,5 +1,4 @@
 import argparse
-import sys
 from collections import defaultdict
 from typing import Iterator, cast, Callable
 import re
@@ -404,7 +403,6 @@ if __name__ == "__main__":
         )
     else:
         parser.error(f"Unknown backend type: {args.backend_type}")
-        sys.exit(1)
 
     # Initialize runtime context
     runtime_context = LLMRuntimeContext(
