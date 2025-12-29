@@ -332,9 +332,9 @@ def custom_evaluate_arithmetic_dsl_tree(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Evaluate DIA intent sequencer calculator adapter accuracy"
+        description="Evaluate accuracy of the DIA intent-sequencer calculator adapter."
     )
-    
+
     # Backend type selection
     parser.add_argument(
         "--backend-type",
@@ -382,7 +382,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Log failed random examples to 'delta.dat'. If not set, no file is created."
     )
-    
+
     args = parser.parse_args()
 
     # Create backend based on type
