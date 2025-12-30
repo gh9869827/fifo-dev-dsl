@@ -1,7 +1,14 @@
 """Tests for LlmRequest and LlmBackend implementations."""
+import argparse
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from fifo_dev_dsl.common.llm_abstraction import LlmRequest, OpenAICompatibleBackend, AirlockBackend
+from fifo_dev_dsl.common.llm_abstraction import (
+    LlmRequest, 
+    OpenAICompatibleBackend, 
+    AirlockBackend,
+    add_backend_cli_arguments,
+    create_backend_from_args
+)
 
 
 class TestLlmRequest:
@@ -294,3 +301,230 @@ class TestAirlockBackend:
         )
         assert call_kwargs['parameters'] == "gen_params_instance"
         assert result == "DSL_OUTPUT"
+
+
+class TestAddBackendCliArguments:
+    """Tests for add_backend_cli_arguments function."""
+
+    def test_add_backend_cli_arguments_default_adapter(self):
+        """Test that add_backend_cli_arguments adds all arguments with correct defaults."""
+        # Create a mock Model enum
+        mock_model_instance = MagicMock()
+        mock_model_instance.value = "Phi4MiniInstruct"
+        mock_model = MagicMock()
+        mock_model.Phi4MiniInstruct = mock_model_instance
+        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_instance]))
+        
+        # Mock the entire module
+        mock_models_module = MagicMock()
+        mock_models_module.Model = mock_model
+        
+        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
+                                        'fifo_tool_airlock_model_env.common': MagicMock(),
+                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
+            parser = argparse.ArgumentParser()
+            add_backend_cli_arguments(parser, default_adapter="test-adapter")
+            
+            # Parse with no arguments to check defaults
+            args = parser.parse_args([])
+            
+            assert args.backend_type == "airlock"
+            assert args.container == "phi"
+            assert args.host == "http://127.0.0.1:8000"
+            assert args.model == "Phi4MiniInstruct"
+            assert args.api_key == "EMPTY"
+            assert args.adapter == "test-adapter"
+            assert args.base_url is None
+
+    def test_add_backend_cli_arguments_custom_default_adapter(self):
+        """Test that custom default_adapter is used."""
+        # Create a mock Model enum
+        mock_model_instance = MagicMock()
+        mock_model_instance.value = "Phi4MiniInstruct"
+        mock_model = MagicMock()
+        mock_model.Phi4MiniInstruct = mock_model_instance
+        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_instance]))
+        
+        # Mock the entire module
+        mock_models_module = MagicMock()
+        mock_models_module.Model = mock_model
+        
+        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
+                                        'fifo_tool_airlock_model_env.common': MagicMock(),
+                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
+            parser = argparse.ArgumentParser()
+            add_backend_cli_arguments(parser, default_adapter="my-custom-adapter")
+            
+            args = parser.parse_args([])
+            assert args.adapter == "my-custom-adapter"
+
+    def test_add_backend_cli_arguments_accepts_custom_values(self):
+        """Test that custom values can be provided for all arguments."""
+        # Create mock Model enum with multiple models
+        mock_model_mini = MagicMock()
+        mock_model_mini.value = "Phi4MiniInstruct"
+        mock_model_multi = MagicMock()
+        mock_model_multi.value = "Phi4MultimodalInstruct"
+        
+        mock_model = MagicMock()
+        mock_model.Phi4MiniInstruct = mock_model_mini
+        mock_model.Phi4MultimodalInstruct = mock_model_multi
+        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_mini, mock_model_multi]))
+        
+        # Mock the entire module
+        mock_models_module = MagicMock()
+        mock_models_module.Model = mock_model
+        
+        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
+                                        'fifo_tool_airlock_model_env.common': MagicMock(),
+                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
+            parser = argparse.ArgumentParser()
+            add_backend_cli_arguments(parser, default_adapter="default-adapter")
+            
+            args = parser.parse_args([
+                "--backend-type", "openai-compatible",
+                "--container", "my-container",
+                "--host", "http://custom-host:9000",
+                "--model", "Phi4MultimodalInstruct",
+                "--base-url", "http://localhost:8001/v1",
+                "--api-key", "my-api-key",
+                "--adapter", "custom-adapter"
+            ])
+            
+            assert args.backend_type == "openai-compatible"
+            assert args.container == "my-container"
+            assert args.host == "http://custom-host:9000"
+            assert args.model == "Phi4MultimodalInstruct"
+            assert args.base_url == "http://localhost:8001/v1"
+            assert args.api_key == "my-api-key"
+            assert args.adapter == "custom-adapter"
+
+    def test_add_backend_cli_arguments_backend_type_choices(self):
+        """Test that backend-type only accepts valid choices."""
+        # Create a mock Model enum
+        mock_model_instance = MagicMock()
+        mock_model_instance.value = "Phi4MiniInstruct"
+        mock_model = MagicMock()
+        mock_model.Phi4MiniInstruct = mock_model_instance
+        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_instance]))
+        
+        # Mock the entire module
+        mock_models_module = MagicMock()
+        mock_models_module.Model = mock_model
+        
+        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
+                                        'fifo_tool_airlock_model_env.common': MagicMock(),
+                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
+            parser = argparse.ArgumentParser()
+            add_backend_cli_arguments(parser, default_adapter="test-adapter")
+            
+            # Test invalid backend type
+            with pytest.raises(SystemExit):
+                parser.parse_args(["--backend-type", "invalid-backend"])
+
+
+class TestCreateBackendFromArgs:
+    """Tests for create_backend_from_args function."""
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
+    def test_create_airlock_backend_with_default_values(self, mock_airlock_backend):
+        """Test creating AirlockBackend with default values."""
+        parser = argparse.ArgumentParser()
+        args = argparse.Namespace(
+            backend_type="airlock",
+            container="phi",
+            adapter="test-adapter",
+            host="http://127.0.0.1:8000",
+            model="Phi4MiniInstruct"
+        )
+        
+        create_backend_from_args(args, parser)
+        
+        mock_airlock_backend.assert_called_once_with(
+            container_name="phi",
+            adapter="test-adapter",
+            host="http://127.0.0.1:8000",
+            model="Phi4MiniInstruct"
+        )
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
+    def test_create_airlock_backend_with_custom_values(self, mock_airlock_backend):
+        """Test creating AirlockBackend with custom values."""
+        parser = argparse.ArgumentParser()
+        args = argparse.Namespace(
+            backend_type="airlock",
+            container="custom-container",
+            adapter="custom-adapter",
+            host="http://custom-host:9000",
+            model="Phi4MultimodalInstruct"
+        )
+        
+        create_backend_from_args(args, parser)
+        
+        mock_airlock_backend.assert_called_once_with(
+            container_name="custom-container",
+            adapter="custom-adapter",
+            host="http://custom-host:9000",
+            model="Phi4MultimodalInstruct"
+        )
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
+    def test_create_openai_backend_with_base_url(self, mock_openai_backend):
+        """Test creating OpenAICompatibleBackend with valid base_url."""
+        parser = argparse.ArgumentParser()
+        args = argparse.Namespace(
+            backend_type="openai-compatible",
+            base_url="http://localhost:8001/v1",
+            adapter="gpt-4",
+            api_key="EMPTY"
+        )
+        
+        create_backend_from_args(args, parser)
+        
+        mock_openai_backend.assert_called_once_with(
+            base_url="http://localhost:8001/v1",
+            model="gpt-4",
+            api_key="EMPTY"
+        )
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
+    def test_create_openai_backend_with_custom_api_key(self, mock_openai_backend):
+        """Test creating OpenAICompatibleBackend with custom api_key."""
+        parser = argparse.ArgumentParser()
+        args = argparse.Namespace(
+            backend_type="openai-compatible",
+            base_url="http://localhost:8001/v1",
+            adapter="custom-model",
+            api_key="my-secret-key"
+        )
+        
+        create_backend_from_args(args, parser)
+        
+        mock_openai_backend.assert_called_once_with(
+            base_url="http://localhost:8001/v1",
+            model="custom-model",
+            api_key="my-secret-key"
+        )
+
+    def test_create_openai_backend_missing_base_url_raises_error(self):
+        """Test that missing base_url for openai-compatible backend raises error."""
+        parser = argparse.ArgumentParser()
+        args = argparse.Namespace(
+            backend_type="openai-compatible",
+            base_url=None,
+            adapter="gpt-4",
+            api_key="EMPTY"
+        )
+        
+        with pytest.raises(SystemExit):
+            create_backend_from_args(args, parser)
+
+    def test_create_backend_unknown_backend_type_raises_error(self):
+        """Test that unknown backend type raises error."""
+        parser = argparse.ArgumentParser()
+        args = argparse.Namespace(
+            backend_type="unknown-backend"
+        )
+        
+        with pytest.raises(SystemExit):
+            create_backend_from_args(args, parser)
