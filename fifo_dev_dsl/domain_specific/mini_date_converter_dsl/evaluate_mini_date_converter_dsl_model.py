@@ -32,14 +32,16 @@ Usage:
         --template-base 1
 """
 
-import sys
 from datetime import datetime
 from typing import Iterator, cast
 import argparse
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
-from fifo_tool_airlock_model_env.common.models import Model
-from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend
+from fifo_dev_dsl.common.llm_abstraction import (
+    LlmBackend,
+    add_backend_cli_arguments,
+    create_backend_from_args,
+)
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import (
     MiniDateConverterDSL,
     parse_natural_date_expression_with_backend
@@ -197,106 +199,27 @@ def main() -> None:
     Runs the evaluation loop over the test dataset, printing per-example results and a final
     summary.
 
-    Arguments:
-        --backend-type:
-            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
-            (default: "airlock")
+    For available command-line arguments, see add_backend_cli_arguments() in
+    fifo_dev_dsl.common.llm_abstraction.
 
-        Airlock backend parameters (used when --backend-type=airlock):
-            --container:
-                Name of the Docker container running the Airlock Model Environment.
-                (default: "phi")
+    LLM generation parameters:
+        --max-new-tokens:
+            Maximum number of tokens to generate. (default: 1024)
 
-            --adapter:
-                Adapter identifier used by the model to interpret DSL input.
-                (default: "mini-date-converter-dsl-adapter")
+        --temperature:
+            Sampling temperature (0.0 = greedy). (default: 0.0)
 
-            --host:
-                Base URL of the Airlock model server.
-                (default: "http://127.0.0.1:8000")
-
-            --model:
-                Base model to use. Options: 'Phi4MiniInstruct', 'Phi4MultimodalInstruct'.
-                (default: "Phi4MiniInstruct")
-
-        OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
-            --base-url:
-                Base URL for the OpenAI-compatible server, including "/v1".
-                (required for openai-compatible backend)
-
-            --adapter:
-                Adapter/model name exposed by the server.
-                (required for openai-compatible backend)
-
-            --api-key:
-                API key for the OpenAI-compatible server.
-                (default: "EMPTY")
-
-        LLM generation parameters:
-            --max-new-tokens:
-                Maximum number of tokens to generate. (default: 1024)
-
-            --temperature:
-                Sampling temperature (0.0 = greedy). (default: 0.0)
-
-        Evaluation options:
-            --template-base:
-                If set, evaluates DATE_FROM_MONTH_WEEKDAY expressions using
-                template-based variations, focusing on this specific DSL function
-                rather than the broader published test set.
+    Evaluation options:
+        --template-base:
+            If set, evaluates DATE_FROM_MONTH_WEEKDAY expressions using
+            template-based variations, focusing on this specific DSL function
+            rather than the broader published test set.
     """
     parser = argparse.ArgumentParser(
         description="Evaluate mini date converter DSL model accuracy"
     )
 
-    # Backend type selection
-    parser.add_argument(
-        "--backend-type",
-        default="airlock",
-        choices=["airlock", "openai-compatible"],
-        help="Type of LLM backend to use"
-    )
-
-    # Airlock backend parameters
-    parser.add_argument(
-        "--container",
-        default="phi",
-        help="Airlock container name (for airlock backend)"
-    )
-    parser.add_argument(
-        "--host",
-        default="http://127.0.0.1:8000",
-        help="Airlock server URL (for airlock backend)"
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        choices=[m.value for m in Model],
-        default=Model.Phi4MiniInstruct.value,
-        help=(
-            "Base model to use (for airlock backend). "
-            f"One of: {', '.join(m.value for m in Model)}. "
-            f"Default: {Model.Phi4MiniInstruct.value}"
-        ),
-    )
-
-    # OpenAI-compatible backend parameters
-    parser.add_argument(
-        "--base-url",
-        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
-    )
-    parser.add_argument(
-        "--api-key",
-        default="EMPTY",
-        help="API key (for openai-compatible backend)"
-    )
-
-    # Common backend parameters
-    parser.add_argument(
-        "--adapter",
-        default="mini-date-converter-dsl-adapter",
-        help="Adapter name"
-    )
+    add_backend_cli_arguments(parser, default_adapter="mini-date-converter-dsl-adapter")
 
     # LLM generation parameters
     parser.add_argument(
@@ -330,28 +253,7 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-
-    # Create backend based on type
-    if args.backend_type == "airlock":
-        backend = AirlockBackend(
-            container_name=args.container,
-            adapter=args.adapter,
-            host=args.host,
-            model=args.model
-        )
-    elif args.backend_type == "openai-compatible":
-        if not args.base_url or not args.adapter:
-            parser.error(
-                "--base-url and --adapter are required when using openai-compatible backend"
-            )
-        backend = OpenAICompatibleBackend(
-            base_url=args.base_url,
-            model=args.adapter,
-            api_key=args.api_key
-        )
-    else:
-        parser.error(f"Unknown backend type: {args.backend_type}")
-        sys.exit(1)
+    backend = create_backend_from_args(args, parser)
 
     # Run evaluation
     if args.template_base:

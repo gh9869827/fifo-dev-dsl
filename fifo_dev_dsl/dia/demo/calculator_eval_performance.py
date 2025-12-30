@@ -1,11 +1,9 @@
 import argparse
 from collections import defaultdict
 from typing import Iterator, cast, Callable
-import sys
 import re
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
-from fifo_tool_airlock_model_env.common.models import Model
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
@@ -27,7 +25,10 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
-from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend
+from fifo_dev_dsl.common.llm_abstraction import (
+    add_backend_cli_arguments,
+    create_backend_from_args,
+)
 
 calculator = Calculator()
 
@@ -340,100 +341,21 @@ def main() -> None:
     """
     Evaluate accuracy of the DIA intent-sequencer calculator adapter.
 
-    Arguments:
-        --backend-type:
-            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
-            (default: "airlock")
+    For available command-line arguments, see add_backend_cli_arguments() in
+    fifo_dev_dsl.common.llm_abstraction.
 
-        Airlock backend parameters (used when --backend-type=airlock):
-            --container:
-                Name of the Docker container running the Airlock Model Environment.
-                (default: "phi")
+    Evaluation mode:
+        --random:
+            Evaluate on random examples.
 
-            --adapter:
-                Adapter identifier used by the model to interpret DSL input.
-                (default: "dia-intent-sequencer-calculator-adapter")
-
-            --host:
-                Base URL of the Airlock model server.
-                (default: "http://127.0.0.1:8000")
-
-            --model:
-                Base model to use. Options: 'Phi4MiniInstruct', 'Phi4MultimodalInstruct'.
-                (default: "Phi4MiniInstruct")
-
-        OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
-            --base-url:
-                Base URL for the OpenAI-compatible server, including "/v1".
-                (required for openai-compatible backend)
-
-            --adapter:
-                Adapter/model name exposed by the server.
-                (required for openai-compatible backend)
-
-            --api-key:
-                API key for the OpenAI-compatible server.
-                (default: "EMPTY")
-
-        Evaluation mode:
-            --random:
-                Evaluate on random examples.
-
-            --delta-flag:
-                Log failed random examples to 'delta.dat'. If not set, no file is created.
+        --delta-flag:
+            Log failed random examples to 'delta.dat'. If not set, no file is created.
     """
     parser = argparse.ArgumentParser(
         description="Evaluate accuracy of the DIA intent-sequencer calculator adapter."
     )
 
-    # Backend type selection
-    parser.add_argument(
-        "--backend-type",
-        default="airlock",
-        choices=["airlock", "openai-compatible"],
-        help="Type of LLM backend to use"
-    )
-
-    # Airlock backend parameters
-    parser.add_argument(
-        "--container",
-        default="phi",
-        help="Airlock container name (for airlock backend)"
-    )
-    parser.add_argument(
-        "--host",
-        default="http://127.0.0.1:8000",
-        help="Airlock server URL (for airlock backend)"
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        choices=[m.value for m in Model],
-        default=Model.Phi4MiniInstruct.value,
-        help=(
-            "Base model to use (for airlock backend). "
-            f"One of: {', '.join(m.value for m in Model)}. "
-            f"Default: {Model.Phi4MiniInstruct.value}"
-        ),
-    )
-
-    # OpenAI-compatible backend parameters
-    parser.add_argument(
-        "--base-url",
-        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
-    )
-    parser.add_argument(
-        "--api-key",
-        default="EMPTY",
-        help="API key (for openai-compatible backend)"
-    )
-
-    # Common backend parameters
-    parser.add_argument(
-        "--adapter",
-        default="dia-intent-sequencer-calculator-adapter",
-        help="Adapter name"
-    )
+    add_backend_cli_arguments(parser, default_adapter="dia-intent-sequencer-calculator-adapter")
 
     # Evaluation mode
     parser.add_argument("--random", action="store_true", help="Evaluate on random examples")
@@ -444,29 +366,7 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-    backend: LlmBackend
-
-    # Create backend based on type
-    if args.backend_type == "airlock":
-        backend = AirlockBackend(
-            container_name=args.container,
-            adapter=args.adapter,
-            host=args.host,
-            model=args.model
-        )
-    elif args.backend_type == "openai-compatible":
-        if not args.base_url or not args.adapter:
-            parser.error(
-                "--base-url and --adapter are required when using openai-compatible backend"
-            )
-        backend = OpenAICompatibleBackend(
-            base_url=args.base_url,
-            model=args.adapter,
-            api_key=args.api_key
-        )
-    else:
-        parser.error(f"Unknown backend type: {args.backend_type}")
-        sys.exit(1)
+    backend = create_backend_from_args(args, parser)
 
     # Initialize runtime context
     runtime_context = LLMRuntimeContext(

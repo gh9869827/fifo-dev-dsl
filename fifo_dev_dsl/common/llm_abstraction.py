@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import argparse
+import sys
 from dataclasses import dataclass
 from typing import Any, Protocol, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     # Optional dependency: used by static type checkers only, not imported at runtime.
     from openai.types.chat import ChatCompletion
+    from fifo_tool_airlock_model_env.common.models import Model
 
 @dataclass(frozen=True)
 class LlmRequest:
@@ -88,7 +91,12 @@ class AirlockBackend:
             Phi4MultimodalInstruct). Defaults to Phi4MiniInstruct if not provided.
     """
 
-    def __init__(self, *, container_name: str, adapter: str, host: str, model: "str | Model | None" = None) -> None:
+    def __init__(self,
+                 *,
+                 container_name: str,
+                 adapter: str,
+                 host: str,
+                 model: str | Model | None = None) -> None:
         """
         Initialize an Airlock-backed LLM interface.
 
@@ -129,7 +137,7 @@ class AirlockBackend:
         self._container_name = container_name
         self._adapter = adapter
         self._host = host
-        
+
         # Store the model, defaulting to Phi4MiniInstruct
         if model is None:
             self._model = Model.Phi4MiniInstruct
@@ -267,3 +275,149 @@ class OpenAICompatibleBackend:
 
         content = (resp.choices[0].message.content or "").strip()
         return content
+
+
+def add_backend_cli_arguments(
+    parser: argparse.ArgumentParser,
+    default_adapter: str
+) -> None:
+    """
+    Add common backend-related CLI arguments to an ArgumentParser.
+
+    This function adds the following argument groups:
+
+    Backend type selection:
+        --backend-type:
+            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
+            (default: "airlock")
+
+    Airlock backend parameters (used when --backend-type=airlock):
+        --container:
+            Name of the Docker container running the Airlock Model Environment.
+            (default: "phi")
+
+        --host:
+            Base URL of the Airlock model server.
+            (default: "http://127.0.0.1:8000")
+
+        --model:
+            Base model to use. Options: 'Phi4MiniInstruct', 'Phi4MultimodalInstruct'.
+            (default: "Phi4MiniInstruct")
+
+    OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
+        --base-url:
+            Base URL for the OpenAI-compatible server, including "/v1".
+            (required)
+
+        --api-key:
+            API key for the OpenAI-compatible server.
+            (default: "EMPTY")
+
+    Common backend parameters:
+        --adapter:
+            Adapter/model identifier used to interpret DSL input.
+            (default: value of default_adapter parameter)
+
+    Args:
+        parser (argparse.ArgumentParser):
+            The parser to add arguments to.
+
+        default_adapter (str):
+            Default value for the --adapter argument.
+    """
+    # pylint: disable=import-outside-toplevel
+    from fifo_tool_airlock_model_env.common.models import Model
+
+    # Backend type selection
+    parser.add_argument(
+        "--backend-type",
+        default="airlock",
+        choices=["airlock", "openai-compatible"],
+        help="Type of LLM backend to use"
+    )
+
+    # Airlock backend parameters
+    parser.add_argument(
+        "--container",
+        default="phi",
+        help="Airlock container name (for airlock backend)"
+    )
+    parser.add_argument(
+        "--host",
+        default="http://127.0.0.1:8000",
+        help="Airlock server URL (for airlock backend)"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=[m.value for m in Model],
+        default=Model.Phi4MiniInstruct.value,
+        help=(
+            "Base model to use (for airlock backend). "
+            f"One of: {', '.join(m.value for m in Model)}. "
+            f"Default: {Model.Phi4MiniInstruct.value}"
+        ),
+    )
+
+    # OpenAI-compatible backend parameters
+    parser.add_argument(
+        "--base-url",
+        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--api-key",
+        default="EMPTY",
+        help="API key (for openai-compatible backend)"
+    )
+
+    # Common backend parameters
+    parser.add_argument(
+        "--adapter",
+        default=default_adapter,
+        help="Adapter name"
+    )
+
+
+def create_backend_from_args(
+    args: argparse.Namespace,
+    parser: argparse.ArgumentParser
+) -> LlmBackend:
+    """
+    Create an LLM backend instance from parsed CLI arguments.
+
+    Args:
+        args (argparse.Namespace):
+            Parsed command-line arguments containing backend configuration.
+
+        parser (argparse.ArgumentParser):
+            Parser instance used for error reporting.
+
+    Returns:
+        LlmBackend:
+            Instantiated backend (either AirlockBackend or OpenAICompatibleBackend).
+
+    Raises:
+        SystemExit:
+            If required arguments are missing or backend type is invalid.
+    """
+    if args.backend_type == "airlock":
+        return AirlockBackend(
+            container_name=args.container,
+            adapter=args.adapter,
+            host=args.host,
+            model=args.model
+        )
+
+    if args.backend_type == "openai-compatible":
+        if not args.base_url:
+            parser.error(
+                "--base-url is required when using openai-compatible backend"
+            )
+        return OpenAICompatibleBackend(
+            base_url=args.base_url,
+            model=args.adapter,
+            api_key=args.api_key
+        )
+
+    parser.error(f"Unknown backend type: {args.backend_type}")
+    sys.exit(1)
