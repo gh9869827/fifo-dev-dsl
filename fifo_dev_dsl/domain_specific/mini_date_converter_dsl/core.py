@@ -60,14 +60,15 @@ def parse_natural_date_expression(
         stacklevel=2
     )
     
-    # Import AirlockBackend only when needed (for backward compatibility)
-    # pylint: disable=import-outside-toplevel
-    from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
-    
+    # Import AirlockBackend and AirlockModelEnv only when needed (for backward compatibility)
+    from fifo_dev_dsl.common.llm_abstraction import AirlockBackend # pylint: disable=import-outside-toplevel
+    from fifo_tool_airlock_model_env.common.models import Model # pylint: disable=import-outside-toplevel
+
     backend = AirlockBackend(
         container_name=container_name,
         adapter=adapter,
-        host=host
+        host=host,
+        model=Model.Phi4MiniInstruct
     )
     
     return parse_natural_date_expression_with_backend(

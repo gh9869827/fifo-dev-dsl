@@ -134,7 +134,8 @@ class LLMRuntimeContext:
             self._llm_backend = AirlockBackend(
                 container_name=_container_name,
                 adapter=_adapter,
-                host=_host
+                host=_host,
+                model=_base_model
             )
 
         # Store deprecated parameters for backward compatibility (property access)

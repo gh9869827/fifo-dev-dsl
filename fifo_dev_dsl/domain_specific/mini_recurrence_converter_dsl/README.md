@@ -78,7 +78,8 @@ from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import pars
 backend = AirlockBackend(
     container_name="my-container",
     adapter="mini-recurrence-converter-dsl-adapter",
-    host="http://127.0.0.1:8000"
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
 )
 
 dsl_code, rule = parse_natural_recurrence_expression_with_backend(

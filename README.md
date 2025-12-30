@@ -97,7 +97,8 @@ robot = RobotArm()
 backend = AirlockBackend(
     container_name="phi",
     adapter="dia-intent-sequencer-robot-arm-adapter",
-    host="http://127.0.0.1:8000"
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Base model (optional, defaults to Phi4MiniInstruct)
 )
 
 runtime_context = LLMRuntimeContext(
