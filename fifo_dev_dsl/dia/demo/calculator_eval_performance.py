@@ -351,19 +351,23 @@ def main() -> None:
 
             --adapter:
                 Adapter identifier used by the model to interpret DSL input.
-                (default: "dia-intent-sequencer-robot-arm-adapter")
+                (default: "dia-intent-sequencer-calculator-adapter")
 
             --host:
                 Base URL of the Airlock model server.
                 (default: "http://127.0.0.1:8000")
+
+            --model:
+                Base model to use. Options: 'Phi4MiniInstruct', 'Phi4MultimodalInstruct'.
+                (default: "Phi4MiniInstruct")
 
         OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
             --base-url:
                 Base URL for the OpenAI-compatible server, including "/v1".
                 (required for openai-compatible backend)
 
-            --model:
-                Model name exposed by the server.
+            --adapter:
+                Adapter/model name exposed by the server.
                 (required for openai-compatible backend)
 
             --api-key:
@@ -398,22 +402,23 @@ def main() -> None:
     parser.add_argument(
         "--adapter",
         default="dia-intent-sequencer-calculator-adapter",
-        help="Adapter name (for airlock backend)"
+        help="Adapter name"
     )
     parser.add_argument(
         "--host",
         default="http://127.0.0.1:8000",
         help="Airlock server URL (for airlock backend)"
     )
+    parser.add_argument(
+        "--model",
+        default="Phi4MiniInstruct",
+        help="Base model to use (for airlock backend)"
+    )
 
     # OpenAI-compatible backend parameters
     parser.add_argument(
         "--base-url",
         help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
-    )
-    parser.add_argument(
-        "--model",
-        help="Model name (for openai-compatible backend)"
     )
     parser.add_argument(
         "--api-key",
@@ -437,16 +442,17 @@ def main() -> None:
         backend = AirlockBackend(
             container_name=args.container,
             adapter=args.adapter,
-            host=args.host
+            host=args.host,
+            model=args.model
         )
     elif args.backend_type == "openai-compatible":
-        if not args.base_url or not args.model:
+        if not args.base_url or not args.adapter:
             parser.error(
-                "--base-url and --model are required when using openai-compatible backend"
+                "--base-url and --adapter are required when using openai-compatible backend"
             )
         backend = OpenAICompatibleBackend(
             base_url=args.base_url,
-            model=args.model,
+            model=args.adapter,
             api_key=args.api_key
         )
     else:

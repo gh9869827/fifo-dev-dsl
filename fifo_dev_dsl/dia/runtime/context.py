@@ -131,10 +131,14 @@ class LLMRuntimeContext:
             )
             _host = host if host is not None else "http://127.0.0.1:8000"
 
+            # Convert Model enum to string for AirlockBackend
+            _model_str = _base_model.value if hasattr(_base_model, 'value') else str(_base_model)
+
             self._llm_backend = AirlockBackend(
                 container_name=_container_name,
                 adapter=_adapter,
-                host=_host
+                host=_host,
+                model=_model_str
             )
 
         # Store deprecated parameters for backward compatibility (property access)

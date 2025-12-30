@@ -67,7 +67,8 @@ def parse_natural_date_expression(
     backend = AirlockBackend(
         container_name=container_name,
         adapter=adapter,
-        host=host
+        host=host,
+        model="Phi4MiniInstruct"
     )
     
     return parse_natural_date_expression_with_backend(

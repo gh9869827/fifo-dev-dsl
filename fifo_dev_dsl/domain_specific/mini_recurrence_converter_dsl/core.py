@@ -65,7 +65,8 @@ def parse_natural_recurrence_expression(
     backend = AirlockBackend(
         container_name=container_name,
         adapter=adapter,
-        host=host
+        host=host,
+        model="Phi4MiniInstruct"
     )
     
     return parse_natural_recurrence_expression_with_backend(

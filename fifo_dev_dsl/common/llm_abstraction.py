@@ -82,9 +82,13 @@ class AirlockBackend:
         _host (str):
             Base URL of the Airlock model server
             (e.g. "http://127.0.0.1:8000").
+
+        _model (Model):
+            Base model to use for DSL generation (e.g., Phi4MiniInstruct,
+            Phi4MultimodalInstruct). Defaults to Phi4MiniInstruct if not provided.
     """
 
-    def __init__(self, *, container_name: str, adapter: str, host: str) -> None:
+    def __init__(self, *, container_name: str, adapter: str, host: str, model: str | None = None) -> None:
         """
         Initialize an Airlock-backed LLM interface.
 
@@ -101,6 +105,11 @@ class AirlockBackend:
 
             host (str):
                 Base URL of the Airlock model server.
+
+            model (str | None):
+                Base model to use for DSL generation. Should be one of the Model enum
+                values (e.g., "Phi4MiniInstruct", "Phi4MultimodalInstruct").
+                If not provided, defaults to "Phi4MiniInstruct".
         """
         # pylint: disable=import-outside-toplevel
         from fifo_tool_airlock_model_env.common.models import (
@@ -119,6 +128,16 @@ class AirlockBackend:
         self._container_name = container_name
         self._adapter = adapter
         self._host = host
+        
+        # Store the model, defaulting to Phi4MiniInstruct
+        if model is None:
+            self._model = Model.Phi4MiniInstruct
+        else:
+            # Convert string to Model enum
+            try:
+                self._model = getattr(Model, model)
+            except AttributeError as e:
+                raise ValueError(f"Invalid model: {model}. Must be one of: Phi4MiniInstruct, Phi4MultimodalInstruct") from e
 
     def complete(self, req: LlmRequest) -> str:
         """
@@ -135,10 +154,9 @@ class AirlockBackend:
         """
         Message = self._message_cls
         GenerationParameters = self._generation_parameters_cls
-        Model = self._model_enum
 
         return self._call_airlock_model_server(
-            model=Model.Phi4MiniInstruct,
+            model=self._model,
             adapter=self._adapter,
             messages=[
                 Message.system(req.system_prompt),
