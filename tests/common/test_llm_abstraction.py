@@ -1,7 +1,7 @@
 """Tests for LlmRequest and LlmBackend implementations."""
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from fifo_dev_dsl.common.llm_abstraction import LlmRequest, OpenAICompatibleBackend
+from fifo_dev_dsl.common.llm_abstraction import LlmRequest, OpenAICompatibleBackend, AirlockBackend
 
 
 class TestLlmRequest:
@@ -162,3 +162,135 @@ class TestOpenAICompatibleBackend:
         assert call_kwargs['messages'][1]['role'] == "user"
         assert call_kwargs['messages'][1]['content'] == "Convert this to DSL"
         assert result == "DSL CODE"
+
+
+class TestAirlockBackend:
+    """Tests for AirlockBackend."""
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend.__init__', return_value=None)
+    def test_airlock_backend_default_model(self, mock_init):
+        """Test that AirlockBackend defaults to Phi4MiniInstruct when no model is provided."""
+        # Create mock classes
+        mock_model_enum = MagicMock()
+        mock_model_enum.Phi4MiniInstruct = "Phi4MiniInstruct"
+        
+        mock_message = MagicMock()
+        mock_message.system = MagicMock(return_value="system_message")
+        mock_message.user = MagicMock(return_value="user_message")
+        
+        mock_gen_params = MagicMock()
+        mock_call_server = MagicMock(return_value="DSL_OUTPUT")
+        
+        # Create backend instance manually
+        backend = AirlockBackend.__new__(AirlockBackend)
+        backend._model_enum = mock_model_enum
+        backend._message_cls = mock_message
+        backend._generation_parameters_cls = mock_gen_params
+        backend._call_airlock_model_server = mock_call_server
+        backend._model = mock_model_enum.Phi4MiniInstruct
+        backend._adapter = "test-adapter"
+        backend._container_name = "test-container"
+        backend._host = "http://localhost:8000"
+        
+        req = LlmRequest(
+            system_prompt="system",
+            user_prompt="user"
+        )
+        
+        result = backend.complete(req)
+        
+        # Verify the model server was called with the default model
+        mock_call_server.assert_called_once()
+        call_kwargs = mock_call_server.call_args.kwargs
+        assert call_kwargs['model'] == mock_model_enum.Phi4MiniInstruct
+        assert result == "DSL_OUTPUT"
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend.__init__', return_value=None)
+    def test_airlock_backend_custom_model(self, mock_init):
+        """Test that AirlockBackend uses the provided model."""
+        # Create mock classes
+        mock_model_enum = MagicMock()
+        mock_model_enum.Phi4MultimodalInstruct = "Phi4MultimodalInstruct"
+        
+        mock_message = MagicMock()
+        mock_message.system = MagicMock(return_value="system_message")
+        mock_message.user = MagicMock(return_value="user_message")
+        
+        mock_gen_params = MagicMock()
+        mock_call_server = MagicMock(return_value="DSL_OUTPUT")
+        
+        # Create backend instance manually
+        backend = AirlockBackend.__new__(AirlockBackend)
+        backend._model_enum = mock_model_enum
+        backend._message_cls = mock_message
+        backend._generation_parameters_cls = mock_gen_params
+        backend._call_airlock_model_server = mock_call_server
+        backend._model = mock_model_enum.Phi4MultimodalInstruct
+        backend._adapter = "test-adapter"
+        backend._container_name = "test-container"
+        backend._host = "http://localhost:8000"
+        
+        req = LlmRequest(
+            system_prompt="system",
+            user_prompt="user"
+        )
+        
+        result = backend.complete(req)
+        
+        # Verify the model server was called with the custom model
+        mock_call_server.assert_called_once()
+        call_kwargs = mock_call_server.call_args.kwargs
+        assert call_kwargs['model'] == mock_model_enum.Phi4MultimodalInstruct
+        assert result == "DSL_OUTPUT"
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend.__init__', return_value=None)
+    def test_airlock_backend_passes_all_parameters(self, mock_init):
+        """Test that AirlockBackend passes all parameters correctly."""
+        # Create mock classes
+        mock_model_enum = MagicMock()
+        mock_model_enum.Phi4MiniInstruct = "Phi4MiniInstruct"
+        
+        mock_message = MagicMock()
+        mock_message.system = MagicMock(return_value="system_message")
+        mock_message.user = MagicMock(return_value="user_message")
+        
+        mock_gen_params = MagicMock(return_value="gen_params_instance")
+        mock_call_server = MagicMock(return_value="DSL_OUTPUT")
+        
+        # Create backend instance manually
+        backend = AirlockBackend.__new__(AirlockBackend)
+        backend._model_enum = mock_model_enum
+        backend._message_cls = mock_message
+        backend._generation_parameters_cls = mock_gen_params
+        backend._call_airlock_model_server = mock_call_server
+        backend._model = mock_model_enum.Phi4MiniInstruct
+        backend._adapter = "test-adapter"
+        backend._container_name = "test-container"
+        backend._host = "http://localhost:8000"
+        
+        req = LlmRequest(
+            system_prompt="system prompt",
+            user_prompt="user prompt",
+            max_new_tokens=2048,
+            temperature=0.5
+        )
+        
+        result = backend.complete(req)
+        
+        # Verify all parameters are passed
+        mock_call_server.assert_called_once()
+        call_kwargs = mock_call_server.call_args.kwargs
+        
+        assert call_kwargs['model'] == mock_model_enum.Phi4MiniInstruct
+        assert call_kwargs['adapter'] == "test-adapter"
+        assert call_kwargs['container_name'] == "test-container"
+        assert call_kwargs['host'] == "http://localhost:8000"
+        assert len(call_kwargs['messages']) == 2
+        
+        # Verify generation parameters
+        mock_gen_params.assert_called_once_with(
+            max_new_tokens=2048,
+            do_sample=True  # temperature > 0
+        )
+        assert call_kwargs['parameters'] == "gen_params_instance"
+        assert result == "DSL_OUTPUT"
