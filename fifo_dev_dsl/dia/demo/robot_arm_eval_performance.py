@@ -83,13 +83,6 @@ def main() -> None:
             --api-key:
                 API key for the OpenAI-compatible server.
                 (default: "EMPTY")
-
-        LLM generation parameters:
-            --max-new-tokens:
-                Maximum number of tokens to generate. (default: 1024)
-
-            --temperature:
-                Sampling temperature (0.0 = greedy). (default: 0.0)
     """
     parser = argparse.ArgumentParser(
         description="Evaluate DIA intent sequencer robot arm adapter accuracy"
@@ -135,20 +128,6 @@ def main() -> None:
         help="API key (for openai-compatible backend)"
     )
 
-    # LLM generation parameters
-    parser.add_argument(
-        "--max-new-tokens",
-        type=int,
-        default=1024,
-        help="Maximum tokens to generate"
-    )
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.0,
-        help="Sampling temperature (0.0 = greedy)"
-    )
-
     args = parser.parse_args()
     backend: LlmBackend
 
@@ -189,8 +168,8 @@ def main() -> None:
             request = LlmRequest(
                 system_prompt=system_prompt,
                 user_prompt=input_text,
-                max_new_tokens=args.max_new_tokens,
-                temperature=args.temperature
+                max_new_tokens=1024,
+                temperature=0.0
             )
             model_dsl_text = backend.complete(request)
 
