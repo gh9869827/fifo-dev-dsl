@@ -14,19 +14,21 @@ Usage:
     python evaluate_mini_date_converter_dsl_model.py \
         --backend-type airlock \
         --container phi \
-        --adapter mini-date-converter-dsl-adapter
+        --adapter mini-date-converter-dsl-adapter \
+        --model Phi4MiniInstruct
 
     # Using OpenAI-compatible backend:
     python evaluate_mini_date_converter_dsl_model.py \
         --backend-type openai-compatible \
         --base-url http://127.0.0.1:8001/v1 \
-        --model your-model-name
+        --adapter your-adapter-name
 
     # For template-based variations test mode:
     python evaluate_mini_date_converter_dsl_model.py \
         --backend-type airlock \
         --container phi \
         --adapter mini-date-converter-dsl-adapter \
+        --model Phi4MiniInstruct \
         --template-base 1
 """
 

@@ -9,13 +9,14 @@ Usage:
     python evaluate_mini_recurrence_converter_dsl_model.py \
         --backend-type airlock \
         --container phi \
-        --adapter mini-recurrence-converter-dsl-adapter
+        --adapter mini-recurrence-converter-dsl-adapter \
+        --model Phi4MiniInstruct
 
     # Using OpenAI-compatible backend:
     python evaluate_mini_recurrence_converter_dsl_model.py \
         --backend-type openai-compatible \
         --base-url http://127.0.0.1:8001/v1 \
-        --model your-model-name
+        --adapter your-adapter-name
 """
 
 import sys

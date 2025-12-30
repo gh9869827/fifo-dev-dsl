@@ -78,7 +78,8 @@ from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natu
 backend = AirlockBackend(
     container_name="my-container",
     adapter="mini-date-converter-dsl-adapter",
-    host="http://127.0.0.1:8000"
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
 )
 
 dsl_code, date_time_object = parse_natural_date_expression_with_backend(

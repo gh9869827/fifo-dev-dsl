@@ -121,7 +121,8 @@ from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
 backend = AirlockBackend(
     container_name="phi",
     adapter="dia-intent-sequencer-robot-arm-adapter",
-    host="http://127.0.0.1:8000"
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
 )
 
 runtime = LLMRuntimeContext(llm_backend=backend, tools=[...], query_sources=[...])
@@ -233,7 +234,8 @@ robot = Robot()
 backend = AirlockBackend(
     container_name="phi",
     adapter="dia-intent-sequencer-robot-arm-adapter",
-    host="http://127.0.0.1:8000"
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
 )
 
 runtime = LLMRuntimeContext(
