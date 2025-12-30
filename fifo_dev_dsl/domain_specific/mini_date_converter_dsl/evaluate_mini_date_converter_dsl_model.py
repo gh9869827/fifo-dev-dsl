@@ -38,6 +38,7 @@ from typing import Iterator, cast
 import argparse
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
+from fifo_tool_airlock_model_env.common.models import Model
 from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import (
     MiniDateConverterDSL,
@@ -263,19 +264,20 @@ def main() -> None:
         help="Airlock container name (for airlock backend)"
     )
     parser.add_argument(
-        "--adapter",
-        default="mini-date-converter-dsl-adapter",
-        help="Adapter name"
-    )
-    parser.add_argument(
         "--host",
         default="http://127.0.0.1:8000",
         help="Airlock server URL (for airlock backend)"
     )
     parser.add_argument(
         "--model",
-        default="Phi4MiniInstruct",
-        help="Base model to use (for airlock backend)"
+        type=str,
+        choices=[m.value for m in Model],
+        default=Model.Phi4MiniInstruct.value,
+        help=(
+            "Base model to use (for airlock backend). "
+            f"One of: {', '.join(m.value for m in Model)}. "
+            f"Default: {Model.Phi4MiniInstruct.value}"
+        ),
     )
 
     # OpenAI-compatible backend parameters
@@ -287,6 +289,13 @@ def main() -> None:
         "--api-key",
         default="EMPTY",
         help="API key (for openai-compatible backend)"
+    )
+
+    # Common backend parameters
+    parser.add_argument(
+        "--adapter",
+        default="mini-date-converter-dsl-adapter",
+        help="Adapter name"
     )
 
     # LLM generation parameters

@@ -88,7 +88,7 @@ class AirlockBackend:
             Phi4MultimodalInstruct). Defaults to Phi4MiniInstruct if not provided.
     """
 
-    def __init__(self, *, container_name: str, adapter: str, host: str, model: str | None = None) -> None:
+    def __init__(self, *, container_name: str, adapter: str, host: str, model: "str | Model | None" = None) -> None:
         """
         Initialize an Airlock-backed LLM interface.
 
@@ -106,10 +106,11 @@ class AirlockBackend:
             host (str):
                 Base URL of the Airlock model server.
 
-            model (str | None):
-                Base model to use for DSL generation. Should be one of the Model enum
-                values (e.g., "Phi4MiniInstruct", "Phi4MultimodalInstruct").
-                If not provided, defaults to "Phi4MiniInstruct".
+            model (str | Model | None):
+                Base model to use for DSL generation. Can be a Model enum instance,
+                a string matching a Model enum value (e.g., "Phi4MiniInstruct",
+                "Phi4MultimodalInstruct"), or None to use the default.
+                If not provided, defaults to Phi4MiniInstruct.
         """
         # pylint: disable=import-outside-toplevel
         from fifo_tool_airlock_model_env.common.models import (
@@ -132,12 +133,18 @@ class AirlockBackend:
         # Store the model, defaulting to Phi4MiniInstruct
         if model is None:
             self._model = Model.Phi4MiniInstruct
+        elif isinstance(model, Model):
+            # Model enum instance passed directly
+            self._model = model
         else:
-            # Convert string to Model enum
+            # String value - convert to Model enum using value-based parsing
             try:
-                self._model = getattr(Model, model)
-            except AttributeError as e:
-                raise ValueError(f"Invalid model: {model}. Must be one of: Phi4MiniInstruct, Phi4MultimodalInstruct") from e
+                self._model = Model(model)
+            except ValueError as e:
+                valid_values = ", ".join(m.value for m in Model)
+                raise ValueError(
+                    f"Invalid model: {model!r}. Must be one of: {valid_values}"
+                ) from e
 
     def complete(self, req: LlmRequest) -> str:
         """

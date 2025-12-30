@@ -5,6 +5,7 @@ import sys
 import re
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
+from fifo_tool_airlock_model_env.common.models import Model
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
 from fifo_dev_dsl.dia.dsl.elements.intent import Intent
 from fifo_dev_dsl.dia.dsl.elements.slot import Slot
@@ -400,19 +401,20 @@ def main() -> None:
         help="Airlock container name (for airlock backend)"
     )
     parser.add_argument(
-        "--adapter",
-        default="dia-intent-sequencer-calculator-adapter",
-        help="Adapter name"
-    )
-    parser.add_argument(
         "--host",
         default="http://127.0.0.1:8000",
         help="Airlock server URL (for airlock backend)"
     )
     parser.add_argument(
         "--model",
-        default="Phi4MiniInstruct",
-        help="Base model to use (for airlock backend)"
+        type=str,
+        choices=[m.value for m in Model],
+        default=Model.Phi4MiniInstruct.value,
+        help=(
+            "Base model to use (for airlock backend). "
+            f"One of: {', '.join(m.value for m in Model)}. "
+            f"Default: {Model.Phi4MiniInstruct.value}"
+        ),
     )
 
     # OpenAI-compatible backend parameters
@@ -424,6 +426,13 @@ def main() -> None:
         "--api-key",
         default="EMPTY",
         help="API key (for openai-compatible backend)"
+    )
+
+    # Common backend parameters
+    parser.add_argument(
+        "--adapter",
+        default="dia-intent-sequencer-calculator-adapter",
+        help="Adapter name"
     )
 
     # Evaluation mode
