@@ -85,7 +85,7 @@ def main() -> None:
                 (default: "EMPTY")
     """
     parser = argparse.ArgumentParser(
-        description="Evaluate DIA intent sequencer robot arm adapter accuracy"
+        description="Evaluate accuracy of the DIA intent-sequencer robot arm adapter."
     )
 
     # Backend type selection
