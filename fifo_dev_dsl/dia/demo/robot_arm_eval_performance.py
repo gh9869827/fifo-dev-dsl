@@ -1,10 +1,15 @@
 from typing import Iterator, cast
+import sys
 import difflib
+import argparse
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
-from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
-from fifo_tool_airlock_model_env.common.models import Model
+from fifo_dev_dsl.common.llm_abstraction import (
+    AirlockBackend,
+    OpenAICompatibleBackend,
+    LlmBackend,
+    LlmRequest
+)
 
 
 def dsl_similarity_indicator(str1: str, str2: str) -> str:
@@ -43,35 +48,137 @@ def dsl_similarity_indicator(str1: str, str2: str) -> str:
     return f"{emoji} {score:>3}"
 
 
-adapter_obj = DSLAdapter()
-dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
-    "a6188466/dia-intent-sequencer-robot-arm-dataset"
-)
-dataset_test = list(cast(Iterator[dict[str, str]], dataset_dict["test"]))
+def main() -> None:
+    """
+    Runs the evaluation loop over the test dataset, printing per-example results and a final
+    summary.
 
-for entry in dataset_test:
+    Arguments:
+        --backend-type:
+            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
+            (default: "airlock")
 
-    system_prompt = entry["system"]
-    input_text = entry["in"]
-    expected_dsl_text = entry["out"]
+        Airlock backend parameters (used when --backend-type=airlock):
+            --container:
+                Name of the Docker container running the Airlock Model Environment.
+                (default: "phi")
 
-    try:
-        model_dsl_text = call_airlock_model_server(
-            model=Model.Phi4MiniInstruct,
-            adapter="dia-intent-sequencer-robot-arm-adapter",
-            messages=[
-                Message.system(system_prompt),
-                Message.user(input_text)
-            ],
-            parameters=GenerationParameters(
-                max_new_tokens=1024,
-                do_sample=False
-            ),
-            container_name="phi"
+            --adapter:
+                Adapter identifier used by the model to interpret DSL input.
+                (default: "dia-intent-sequencer-robot-arm-adapter")
+
+            --host:
+                Base URL of the Airlock model server.
+                (default: "http://127.0.0.1:8000")
+
+        OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
+            --base-url:
+                Base URL for the OpenAI-compatible server, including "/v1".
+                (required for openai-compatible backend)
+
+            --model:
+                Model name exposed by the server.
+                (required for openai-compatible backend)
+
+            --api-key:
+                API key for the OpenAI-compatible server.
+                (default: "EMPTY")
+    """
+    parser = argparse.ArgumentParser(
+        description="Evaluate accuracy of the DIA intent-sequencer robot arm adapter."
+    )
+
+    # Backend type selection
+    parser.add_argument(
+        "--backend-type",
+        default="airlock",
+        choices=["airlock", "openai-compatible"],
+        help="Type of LLM backend to use"
+    )
+
+    # Airlock backend parameters
+    parser.add_argument(
+        "--container",
+        default="phi",
+        help="Airlock container name (for airlock backend)"
+    )
+    parser.add_argument(
+        "--adapter",
+        default="dia-intent-sequencer-robot-arm-adapter",
+        help="Adapter name (for airlock backend)"
+    )
+    parser.add_argument(
+        "--host",
+        default="http://127.0.0.1:8000",
+        help="Airlock server URL (for airlock backend)"
+    )
+
+    # OpenAI-compatible backend parameters
+    parser.add_argument(
+        "--base-url",
+        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--model",
+        help="Model name (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--api-key",
+        default="EMPTY",
+        help="API key (for openai-compatible backend)"
+    )
+
+    args = parser.parse_args()
+    backend: LlmBackend
+
+    # Create backend based on type
+    if args.backend_type == "airlock":
+        backend = AirlockBackend(
+            container_name=args.container,
+            adapter=args.adapter,
+            host=args.host
         )
+    elif args.backend_type == "openai-compatible":
+        if not args.base_url or not args.model:
+            parser.error(
+                "--base-url and --model are required when using openai-compatible backend"
+            )
+        backend = OpenAICompatibleBackend(
+            base_url=args.base_url,
+            model=args.model,
+            api_key=args.api_key
+        )
+    else:
+        parser.error(f"Unknown backend type: {args.backend_type}")
+        sys.exit(1)
 
-    except RuntimeError as e:
-        model_dsl_text = ""
+    adapter_obj = DSLAdapter()
+    dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
+        "a6188466/dia-intent-sequencer-robot-arm-dataset"
+    )
+    dataset_test = list(cast(Iterator[dict[str, str]], dataset_dict["test"]))
 
-    sim = dsl_similarity_indicator(model_dsl_text, expected_dsl_text)
-    print(f"{sim} {model_dsl_text} {expected_dsl_text}")
+    for entry in dataset_test:
+
+        system_prompt = entry["system"]
+        input_text = entry["in"]
+        expected_dsl_text = entry["out"]
+
+        try:
+            request = LlmRequest(
+                system_prompt=system_prompt,
+                user_prompt=input_text,
+                max_new_tokens=1024,
+                temperature=0.0
+            )
+            model_dsl_text = backend.complete(request)
+
+        except RuntimeError:
+            model_dsl_text = ""
+
+        sim = dsl_similarity_indicator(model_dsl_text, expected_dsl_text)
+        print(f"{sim} {model_dsl_text} {expected_dsl_text}")
+
+
+if __name__ == "__main__":
+    main()

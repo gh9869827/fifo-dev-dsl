@@ -1,6 +1,7 @@
 import argparse
 from collections import defaultdict
 from typing import Iterator, cast, Callable
+import sys
 import re
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
@@ -25,23 +26,11 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend, OpenAICompatibleBackend, LlmBackend
 
 calculator = Calculator()
 
-runtime_context = LLMRuntimeContext(
-    container_name="phi",
-    intent_sequencer_adapter="dia-intent-sequencer-calculator-adapter",
-    tools=[
-        calculator.add,
-        calculator.subtract,
-        calculator.divide,
-        calculator.multiply
-    ],
-    query_sources=[
-    ]
-)
-
-def eval_prompt(prompt: str) -> float:
+def eval_prompt(prompt: str, runtime_context: LLMRuntimeContext) -> float:
     """
     Parse a natural language math prompt into a DSL representation,
     evaluate it using the configured tool runtime, and return the final result.
@@ -53,6 +42,9 @@ def eval_prompt(prompt: str) -> float:
     Args:
         prompt (str):
             Natural language expression to evaluate, e.g. "2 + 3 * 4"
+
+        runtime_context (LLMRuntimeContext):
+            Runtime context passed to all DSL elements during resolution and evaluation.
 
     Returns:
         float:
@@ -84,7 +76,7 @@ def eval_prompt(prompt: str) -> float:
     return node.evaluation_outcome.value
 
 
-def eval_random(delta_flag: bool) -> None:
+def eval_random(delta_flag: bool, runtime_context: LLMRuntimeContext) -> None:
     """
     Evaluate randomly generated arithmetic expressions using the DIA DSL pipeline.
 
@@ -101,6 +93,9 @@ def eval_random(delta_flag: bool) -> None:
         delta_flag (bool):
             If True, failed prompts are logged to `delta.dat`.
             If False, no logging is performed.
+
+        runtime_context (LLMRuntimeContext):
+            Runtime context passed to all DSL elements during resolution and evaluation.
     """
     total_global, error_global = 0, 0
     results_by_length: dict[int, list[int]] = {k: [0, 0] for k in range(2, 7)}
@@ -128,7 +123,7 @@ def eval_random(delta_flag: bool) -> None:
                     continue
 
                 try:
-                    actual = eval_prompt(user)
+                    actual = eval_prompt(user, runtime_context)
                 except (ZeroDivisionError, TypeError, AssertionError, ValueError, KeyError):
                     actual = None
 
@@ -175,7 +170,7 @@ def eval_random(delta_flag: bool) -> None:
             f_delta.close()
 
 
-def eval_test() -> None:
+def eval_test(runtime_context: LLMRuntimeContext) -> None:
     """
     Evaluate a fixed test set of prompts from the Hugging Face dataset
     `a6188466/dia-intent-sequencer-calculator-dataset`.
@@ -188,6 +183,10 @@ def eval_test() -> None:
     Outputs ✅/❌ per test case and prints a final summary of pass/fail counts and accuracy,
     broken down by expression depth (tree length).
     Skips cases with division by zero.
+
+    Args:
+        runtime_context (LLMRuntimeContext):
+            Runtime context passed to all DSL elements during resolution and evaluation.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -212,7 +211,7 @@ def eval_test() -> None:
             continue
 
         try:
-            actual = eval_prompt(input_text)
+            actual = eval_prompt(input_text, runtime_context)
         except (TypeError, AssertionError, ValueError, KeyError):
             actual = None
 
@@ -336,18 +335,141 @@ def custom_evaluate_arithmetic_dsl_tree(
 
     raise TypeError(f"Unsupported node type: {type(node).__name__}")
 
+def main() -> None:
+    """
+    Evaluate accuracy of the DIA intent-sequencer calculator adapter.
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluation script")
+    Arguments:
+        --backend-type:
+            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
+            (default: "airlock")
+
+        Airlock backend parameters (used when --backend-type=airlock):
+            --container:
+                Name of the Docker container running the Airlock Model Environment.
+                (default: "phi")
+
+            --adapter:
+                Adapter identifier used by the model to interpret DSL input.
+                (default: "dia-intent-sequencer-robot-arm-adapter")
+
+            --host:
+                Base URL of the Airlock model server.
+                (default: "http://127.0.0.1:8000")
+
+        OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
+            --base-url:
+                Base URL for the OpenAI-compatible server, including "/v1".
+                (required for openai-compatible backend)
+
+            --model:
+                Model name exposed by the server.
+                (required for openai-compatible backend)
+
+            --api-key:
+                API key for the OpenAI-compatible server.
+                (default: "EMPTY")
+
+        Evaluation mode:
+            --random:
+                Evaluate on random examples.
+
+            --delta-flag:
+                Log failed random examples to 'delta.dat'. If not set, no file is created.
+    """
+    parser = argparse.ArgumentParser(
+        description="Evaluate accuracy of the DIA intent-sequencer calculator adapter."
+    )
+
+    # Backend type selection
+    parser.add_argument(
+        "--backend-type",
+        default="airlock",
+        choices=["airlock", "openai-compatible"],
+        help="Type of LLM backend to use"
+    )
+
+    # Airlock backend parameters
+    parser.add_argument(
+        "--container",
+        default="phi",
+        help="Airlock container name (for airlock backend)"
+    )
+    parser.add_argument(
+        "--adapter",
+        default="dia-intent-sequencer-calculator-adapter",
+        help="Adapter name (for airlock backend)"
+    )
+    parser.add_argument(
+        "--host",
+        default="http://127.0.0.1:8000",
+        help="Airlock server URL (for airlock backend)"
+    )
+
+    # OpenAI-compatible backend parameters
+    parser.add_argument(
+        "--base-url",
+        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--model",
+        help="Model name (for openai-compatible backend)"
+    )
+    parser.add_argument(
+        "--api-key",
+        default="EMPTY",
+        help="API key (for openai-compatible backend)"
+    )
+
+    # Evaluation mode
     parser.add_argument("--random", action="store_true", help="Evaluate on random examples")
     parser.add_argument(
         "--delta-flag",
         action="store_true",
         help="Log failed random examples to 'delta.dat'. If not set, no file is created."
     )
+
     args = parser.parse_args()
+    backend: LlmBackend
+
+    # Create backend based on type
+    if args.backend_type == "airlock":
+        backend = AirlockBackend(
+            container_name=args.container,
+            adapter=args.adapter,
+            host=args.host
+        )
+    elif args.backend_type == "openai-compatible":
+        if not args.base_url or not args.model:
+            parser.error(
+                "--base-url and --model are required when using openai-compatible backend"
+            )
+        backend = OpenAICompatibleBackend(
+            base_url=args.base_url,
+            model=args.model,
+            api_key=args.api_key
+        )
+    else:
+        parser.error(f"Unknown backend type: {args.backend_type}")
+        sys.exit(1)
+
+    # Initialize runtime context
+    runtime_context = LLMRuntimeContext(
+        llm_backend=backend,
+        tools=[
+            calculator.add,
+            calculator.subtract,
+            calculator.divide,
+            calculator.multiply
+        ],
+        query_sources=[
+        ]
+    )
 
     if args.random:
-        eval_random(args.delta_flag)
+        eval_random(args.delta_flag, runtime_context)
     else:
-        eval_test()
+        eval_test(runtime_context)
+
+if __name__ == "__main__":
+    main()

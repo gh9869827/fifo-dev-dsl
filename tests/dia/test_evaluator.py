@@ -131,7 +131,7 @@ def test_dsl_resolution(prompt: str,
         query_sources=[]
     )
 
-    with patch("fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
                return_value=mock_dsl_response):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
@@ -162,10 +162,8 @@ def test_query_fill() -> None:
         query_sources=[]
     )
 
-    with patch("fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
-               return_value=mock_dsl_response) ,\
-         patch("fifo_dev_dsl.dia.dsl.elements.query_fill.call_airlock_model_server",
-               return_value=mock_dsl_answer_query_fill):
+    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+               side_effect=[mock_dsl_response, mock_dsl_answer_query_fill]):
 
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
@@ -198,7 +196,7 @@ def test_ask() -> None:
         query_sources=[]
     )
 
-    with patch("fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
                return_value=mock_dsl_response):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
 
@@ -212,7 +210,7 @@ def test_ask() -> None:
         answer=InteractionAnswer(mock_user_answer)
     )
 
-    with patch("fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
                return_value=mock_ask_llm_answer):
         final_outcome = resolver(interaction)
 
@@ -249,11 +247,8 @@ def test_query_user() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
-        return_value=mock_dsl_response,
-    ), patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_user.call_airlock_model_server",
-        return_value=mock_query_user_llm_answer,
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+        side_effect=[mock_dsl_response, mock_query_user_llm_answer],
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         first_outcome = resolver(interaction_reply=None)
@@ -268,7 +263,7 @@ def test_query_user() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
         return_value=mock_followup_llm_answer,
     ):
         final_outcome = resolver(interaction)
@@ -305,14 +300,8 @@ def test_query_gather() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
-        return_value=mock_dsl_response,
-    ), patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_gather.call_airlock_model_server",
-        return_value=mock_query_gather_llm_answer,
-    ), patch(
-        "fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
-        return_value=mock_intent_sequencer_answer,
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+        side_effect=[mock_dsl_response, mock_query_gather_llm_answer, mock_intent_sequencer_answer],
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
@@ -347,7 +336,7 @@ def test_propagate_slots() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
         return_value=mock_dsl_response,
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
@@ -363,7 +352,7 @@ def test_propagate_slots() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
         return_value=mock_ask_llm_answer,
     ):
         final_outcome = resolver(interaction)
@@ -394,7 +383,7 @@ def test_recoverable_error_intent_execution() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.resolution.resolver.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
         return_value=mock_dsl_response,
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
@@ -442,7 +431,7 @@ def test_recoverable_error_intent_execution() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.helper.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
         return_value=mock_error_resolution_dsl,
     ):
         final_outcome = resolver_error(interaction)
