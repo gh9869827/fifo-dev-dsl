@@ -9,6 +9,7 @@ from fifo_dev_dsl.common.llm_abstraction import (
     add_backend_cli_arguments,
     create_backend_from_args
 )
+from fifo_tool_airlock_model_env.common.models import Model
 
 
 class TestLlmRequest:
@@ -308,119 +309,59 @@ class TestAddBackendCliArguments:
 
     def test_add_backend_cli_arguments_default_adapter(self):
         """Test that add_backend_cli_arguments adds all arguments with correct defaults."""
-        # Create a mock Model enum
-        mock_model_instance = MagicMock()
-        mock_model_instance.value = "Phi4MiniInstruct"
-        mock_model = MagicMock()
-        mock_model.Phi4MiniInstruct = mock_model_instance
-        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_instance]))
+        parser = argparse.ArgumentParser()
+        add_backend_cli_arguments(parser, default_adapter="test-adapter")
         
-        # Mock the entire module
-        mock_models_module = MagicMock()
-        mock_models_module.Model = mock_model
+        # Parse with no arguments to check defaults
+        args = parser.parse_args([])
         
-        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
-                                        'fifo_tool_airlock_model_env.common': MagicMock(),
-                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
-            parser = argparse.ArgumentParser()
-            add_backend_cli_arguments(parser, default_adapter="test-adapter")
-            
-            # Parse with no arguments to check defaults
-            args = parser.parse_args([])
-            
-            assert args.backend_type == "airlock"
-            assert args.container == "phi"
-            assert args.host == "http://127.0.0.1:8000"
-            assert args.model == "Phi4MiniInstruct"
-            assert args.api_key == "EMPTY"
-            assert args.adapter == "test-adapter"
-            assert args.base_url is None
+        assert args.backend_type == "airlock"
+        assert args.container == "phi"
+        assert args.host == "http://127.0.0.1:8000"
+        assert args.model == Model.Phi4MiniInstruct.value
+        assert args.api_key == "EMPTY"
+        assert args.adapter == "test-adapter"
+        assert args.base_url is None
 
     def test_add_backend_cli_arguments_custom_default_adapter(self):
         """Test that custom default_adapter is used."""
-        # Create a mock Model enum
-        mock_model_instance = MagicMock()
-        mock_model_instance.value = "Phi4MiniInstruct"
-        mock_model = MagicMock()
-        mock_model.Phi4MiniInstruct = mock_model_instance
-        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_instance]))
+        parser = argparse.ArgumentParser()
+        add_backend_cli_arguments(parser, default_adapter="my-custom-adapter")
         
-        # Mock the entire module
-        mock_models_module = MagicMock()
-        mock_models_module.Model = mock_model
-        
-        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
-                                        'fifo_tool_airlock_model_env.common': MagicMock(),
-                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
-            parser = argparse.ArgumentParser()
-            add_backend_cli_arguments(parser, default_adapter="my-custom-adapter")
-            
-            args = parser.parse_args([])
-            assert args.adapter == "my-custom-adapter"
+        args = parser.parse_args([])
+        assert args.adapter == "my-custom-adapter"
 
     def test_add_backend_cli_arguments_accepts_custom_values(self):
         """Test that custom values can be provided for all arguments."""
-        # Create mock Model enum with multiple models
-        mock_model_mini = MagicMock()
-        mock_model_mini.value = "Phi4MiniInstruct"
-        mock_model_multi = MagicMock()
-        mock_model_multi.value = "Phi4MultimodalInstruct"
+        parser = argparse.ArgumentParser()
+        add_backend_cli_arguments(parser, default_adapter="default-adapter")
         
-        mock_model = MagicMock()
-        mock_model.Phi4MiniInstruct = mock_model_mini
-        mock_model.Phi4MultimodalInstruct = mock_model_multi
-        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_mini, mock_model_multi]))
+        args = parser.parse_args([
+            "--backend-type", "openai-compatible",
+            "--container", "my-container",
+            "--host", "http://custom-host:9000",
+            "--model", Model.Phi4MultimodalInstruct.value,
+            "--base-url", "http://localhost:8001/v1",
+            "--api-key", "my-api-key",
+            "--adapter", "custom-adapter"
+        ])
         
-        # Mock the entire module
-        mock_models_module = MagicMock()
-        mock_models_module.Model = mock_model
-        
-        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
-                                        'fifo_tool_airlock_model_env.common': MagicMock(),
-                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
-            parser = argparse.ArgumentParser()
-            add_backend_cli_arguments(parser, default_adapter="default-adapter")
-            
-            args = parser.parse_args([
-                "--backend-type", "openai-compatible",
-                "--container", "my-container",
-                "--host", "http://custom-host:9000",
-                "--model", "Phi4MultimodalInstruct",
-                "--base-url", "http://localhost:8001/v1",
-                "--api-key", "my-api-key",
-                "--adapter", "custom-adapter"
-            ])
-            
-            assert args.backend_type == "openai-compatible"
-            assert args.container == "my-container"
-            assert args.host == "http://custom-host:9000"
-            assert args.model == "Phi4MultimodalInstruct"
-            assert args.base_url == "http://localhost:8001/v1"
-            assert args.api_key == "my-api-key"
-            assert args.adapter == "custom-adapter"
+        assert args.backend_type == "openai-compatible"
+        assert args.container == "my-container"
+        assert args.host == "http://custom-host:9000"
+        assert args.model == Model.Phi4MultimodalInstruct.value
+        assert args.base_url == "http://localhost:8001/v1"
+        assert args.api_key == "my-api-key"
+        assert args.adapter == "custom-adapter"
 
     def test_add_backend_cli_arguments_backend_type_choices(self):
         """Test that backend-type only accepts valid choices."""
-        # Create a mock Model enum
-        mock_model_instance = MagicMock()
-        mock_model_instance.value = "Phi4MiniInstruct"
-        mock_model = MagicMock()
-        mock_model.Phi4MiniInstruct = mock_model_instance
-        mock_model.__iter__ = MagicMock(return_value=iter([mock_model_instance]))
+        parser = argparse.ArgumentParser()
+        add_backend_cli_arguments(parser, default_adapter="test-adapter")
         
-        # Mock the entire module
-        mock_models_module = MagicMock()
-        mock_models_module.Model = mock_model
-        
-        with patch.dict('sys.modules', {'fifo_tool_airlock_model_env': MagicMock(), 
-                                        'fifo_tool_airlock_model_env.common': MagicMock(),
-                                        'fifo_tool_airlock_model_env.common.models': mock_models_module}):
-            parser = argparse.ArgumentParser()
-            add_backend_cli_arguments(parser, default_adapter="test-adapter")
-            
-            # Test invalid backend type
-            with pytest.raises(SystemExit):
-                parser.parse_args(["--backend-type", "invalid-backend"])
+        # Test invalid backend type
+        with pytest.raises(SystemExit):
+            parser.parse_args(["--backend-type", "invalid-backend"])
 
 
 class TestCreateBackendFromArgs:
