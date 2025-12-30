@@ -45,7 +45,7 @@ class LLMRuntimeContext:
     _prompt_slot_resolver: str
     _prompt_error_resolver: str
     _llm_backend: LlmBackend
-    
+
     # Deprecated fields - kept for backward compatibility
     _container_name: str | None
     _base_model: Model | None
@@ -104,7 +104,7 @@ class LLMRuntimeContext:
             intent_sequencer_adapter is not None,
             host is not None
         ])
-        
+
         if deprecated_params_used:
             warnings.warn(
                 "Parameters 'container_name', 'base_model', 'intent_sequencer_adapter', "
@@ -113,7 +113,7 @@ class LLMRuntimeContext:
                 DeprecationWarning,
                 stacklevel=2
             )
-        
+
         # Set up LLM backend
         if llm_backend is not None:
             self._llm_backend = llm_backend
@@ -121,24 +121,28 @@ class LLMRuntimeContext:
             # Backward compatibility: construct AirlockBackend from deprecated parameters
             # Import here to avoid circular dependency and to keep it optional
             from fifo_tool_airlock_model_env.common.models import Model as ModelEnum
-            
+
             _container_name = container_name if container_name is not None else "dev-phi"
             _base_model = base_model if base_model is not None else ModelEnum.Phi4MiniInstruct
-            _adapter = intent_sequencer_adapter if intent_sequencer_adapter is not None else "intent-sequencer"
+            _adapter = (
+                intent_sequencer_adapter
+                if intent_sequencer_adapter is not None
+                else "intent-sequencer"
+            )
             _host = host if host is not None else "http://127.0.0.1:8000"
-            
+
             self._llm_backend = AirlockBackend(
                 container_name=_container_name,
                 adapter=_adapter,
                 host=_host
             )
-        
+
         # Store deprecated parameters for backward compatibility (property access)
         self._container_name = container_name
         self._base_model = base_model
         self._intent_sequencer_adapter = intent_sequencer_adapter
         self._host = host
-        
+
         self._tools = ReadOnlyList(tools)
         self._query_sources = ReadOnlyList(query_sources)
 
@@ -180,7 +184,9 @@ class LLMRuntimeContext:
         """
         return self._prompt_query_fill
 
-    def get_user_prompt_dynamic_query(self, resolution_context: ResolutionContext, question: str) -> str:
+    def get_user_prompt_dynamic_query(self,
+                                      resolution_context: ResolutionContext,
+                                      question: str) -> str:
         """
         Dynamically create the user prompt used for QUERY_FILL, QUERY_USER and QUERY_GATHER
         resolution.
@@ -275,7 +281,7 @@ class LLMRuntimeContext:
     def container_name(self) -> str:
         """
         **DEPRECATED**: This property is deprecated and will be removed in a future version.
-        
+
         Container used for calls to the model server.
         """
         warnings.warn(
@@ -289,7 +295,7 @@ class LLMRuntimeContext:
     def base_model(self) -> Model:
         """
         **DEPRECATED**: This property is deprecated and will be removed in a future version.
-        
+
         Default model used for LLM calls.
         """
         warnings.warn(
@@ -307,7 +313,7 @@ class LLMRuntimeContext:
     def host(self) -> str:
         """
         **DEPRECATED**: This property is deprecated and will be removed in a future version.
-        
+
         URL of the airlock model server.
         """
         warnings.warn(
@@ -321,27 +327,32 @@ class LLMRuntimeContext:
     def intent_sequencer_adapter(self) -> str:
         """
         **DEPRECATED**: This property is deprecated and will be removed in a future version.
-        
+
         Adapter used for intent sequencing calls.
         """
         warnings.warn(
-            "The 'intent_sequencer_adapter' property is deprecated and will be removed in a future version.",
+            "The 'intent_sequencer_adapter' property is deprecated "
+            "and will be removed in a future version.",
             DeprecationWarning,
             stacklevel=2
         )
-        return self._intent_sequencer_adapter if self._intent_sequencer_adapter is not None else "intent-sequencer"
-    
+        return (
+            self._intent_sequencer_adapter
+            if self._intent_sequencer_adapter is not None
+            else "intent-sequencer"
+        )
+
     def call_llm(self, system_prompt: str, user_prompt: str) -> str:
         """
         Call the LLM backend with the given prompts.
-        
+
         Args:
             system_prompt (str):
                 The system prompt to send to the LLM.
-            
+
             user_prompt (str):
                 The user prompt to send to the LLM.
-        
+
         Returns:
             str:
                 The LLM's response.
