@@ -339,19 +339,19 @@ class TestAddBackendCliArguments:
         args = parser.parse_args([
             "--backend-type", "openai-compatible",
             "--container", "my-container",
-            "--host", "http://custom-host:9000",
+            "--host", "http://localhost:9000",
             "--model", Model.Phi4MultimodalInstruct.value,
             "--base-url", "http://localhost:8001/v1",
-            "--api-key", "my-api-key",
+            "--api-key", "dummy-api-key",
             "--adapter", "custom-adapter"
         ])
         
         assert args.backend_type == "openai-compatible"
         assert args.container == "my-container"
-        assert args.host == "http://custom-host:9000"
+        assert args.host == "http://localhost:9000"
         assert args.model == Model.Phi4MultimodalInstruct.value
         assert args.base_url == "http://localhost:8001/v1"
-        assert args.api_key == "my-api-key"
+        assert args.api_key == "dummy-api-key"
         assert args.adapter == "custom-adapter"
 
     def test_add_backend_cli_arguments_backend_type_choices(self):
@@ -396,7 +396,7 @@ class TestCreateBackendFromArgs:
             backend_type="airlock",
             container="custom-container",
             adapter="custom-adapter",
-            host="http://custom-host:9000",
+            host="http://localhost:9000",
             model="Phi4MultimodalInstruct"
         )
         
@@ -405,7 +405,7 @@ class TestCreateBackendFromArgs:
         mock_airlock_backend.assert_called_once_with(
             container_name="custom-container",
             adapter="custom-adapter",
-            host="http://custom-host:9000",
+            host="http://localhost:9000",
             model="Phi4MultimodalInstruct"
         )
 
@@ -416,7 +416,7 @@ class TestCreateBackendFromArgs:
         args = argparse.Namespace(
             backend_type="openai-compatible",
             base_url="http://localhost:8001/v1",
-            adapter="gpt-4",
+            adapter="test-adapter",
             api_key="EMPTY"
         )
         
@@ -424,7 +424,7 @@ class TestCreateBackendFromArgs:
         
         mock_openai_backend.assert_called_once_with(
             base_url="http://localhost:8001/v1",
-            model="gpt-4",
+            model="test-adapter",
             api_key="EMPTY"
         )
 
@@ -436,7 +436,7 @@ class TestCreateBackendFromArgs:
             backend_type="openai-compatible",
             base_url="http://localhost:8001/v1",
             adapter="custom-model",
-            api_key="my-secret-key"
+            api_key="dummy-api-key"
         )
         
         create_backend_from_args(args, parser)
@@ -444,7 +444,7 @@ class TestCreateBackendFromArgs:
         mock_openai_backend.assert_called_once_with(
             base_url="http://localhost:8001/v1",
             model="custom-model",
-            api_key="my-secret-key"
+            api_key="dummy-api-key"
         )
 
     def test_create_openai_backend_missing_base_url_raises_error(self):
@@ -453,7 +453,7 @@ class TestCreateBackendFromArgs:
         args = argparse.Namespace(
             backend_type="openai-compatible",
             base_url=None,
-            adapter="gpt-4",
+            adapter="test-adapter",
             api_key="EMPTY"
         )
         
