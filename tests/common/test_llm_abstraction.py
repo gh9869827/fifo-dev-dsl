@@ -9,8 +9,9 @@ from fifo_dev_dsl.common.llm_abstraction import (
     add_backend_cli_arguments,
     create_backend_from_args
 )
-from fifo_tool_airlock_model_env.common.models import Model
 
+# pyright: reportPrivateUsage=false
+# pylint: disable=protected-access
 
 class TestLlmRequest:
     """Tests for LlmRequest dataclass."""
@@ -62,14 +63,14 @@ class TestLlmRequest:
         )
 
         with pytest.raises(Exception):  # FrozenInstanceError in dataclasses
-            req.reasoning_effort = "high"
+            req.reasoning_effort = "high" # type: ignore
 
 
 class TestOpenAICompatibleBackend:
     """Tests for OpenAICompatibleBackend."""
 
     @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend.__init__', return_value=None)
-    def test_openai_backend_passes_reasoning_effort(self, mock_init):
+    def test_openai_backend_passes_reasoning_effort(self, _mock_init: MagicMock):
         """Test that OpenAICompatibleBackend passes reasoning_effort to API when set."""
         # Create a mock client
         mock_client = MagicMock()
@@ -100,7 +101,7 @@ class TestOpenAICompatibleBackend:
         assert result == "TEST_OUTPUT"
 
     @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend.__init__', return_value=None)
-    def test_openai_backend_omits_reasoning_effort_when_none(self, mock_init):
+    def test_openai_backend_omits_reasoning_effort_when_none(self, _mock_init: MagicMock):
         """Test that reasoning_effort is not passed when None."""
         # Create a mock client
         mock_client = MagicMock()
@@ -130,7 +131,7 @@ class TestOpenAICompatibleBackend:
         assert result == "TEST_OUTPUT"
 
     @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend.__init__', return_value=None)
-    def test_openai_backend_passes_all_parameters(self, mock_init):
+    def test_openai_backend_passes_all_parameters(self, _mock_init: MagicMock):
         """Test that all LlmRequest parameters are passed to API."""
         # Create a mock client
         mock_client = MagicMock()
@@ -368,7 +369,7 @@ class TestCreateBackendFromArgs:
     """Tests for create_backend_from_args function."""
 
     @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
-    def test_create_airlock_backend_with_default_values(self, mock_airlock_backend):
+    def test_create_airlock_backend_with_default_values(self, mock_airlock_backend: MagicMock):
         """Test creating AirlockBackend with default values."""
         parser = argparse.ArgumentParser()
         args = argparse.Namespace(
@@ -389,7 +390,7 @@ class TestCreateBackendFromArgs:
         )
 
     @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
-    def test_create_airlock_backend_with_custom_values(self, mock_airlock_backend):
+    def test_create_airlock_backend_with_custom_values(self, mock_airlock_backend: MagicMock):
         """Test creating AirlockBackend with custom values."""
         parser = argparse.ArgumentParser()
         args = argparse.Namespace(
@@ -410,7 +411,7 @@ class TestCreateBackendFromArgs:
         )
 
     @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
-    def test_create_openai_backend_with_base_url(self, mock_openai_backend):
+    def test_create_openai_backend_with_base_url(self, mock_openai_backend: MagicMock):
         """Test creating OpenAICompatibleBackend with valid base_url."""
         parser = argparse.ArgumentParser()
         args = argparse.Namespace(
@@ -429,7 +430,7 @@ class TestCreateBackendFromArgs:
         )
 
     @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
-    def test_create_openai_backend_with_custom_api_key(self, mock_openai_backend):
+    def test_create_openai_backend_with_custom_api_key(self, mock_openai_backend: MagicMock):
         """Test creating OpenAICompatibleBackend with custom api_key."""
         parser = argparse.ArgumentParser()
         args = argparse.Namespace(
