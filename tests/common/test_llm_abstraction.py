@@ -327,10 +327,10 @@ class TestAddBackendCliArguments:
     def test_add_backend_cli_arguments_custom_default_adapter(self):
         """Test that custom default_adapter is used."""
         parser = argparse.ArgumentParser()
-        add_backend_cli_arguments(parser, default_adapter="my-custom-adapter")
+        add_backend_cli_arguments(parser, default_adapter="test-adapter")
 
         args = parser.parse_args([])
-        assert args.adapter == "my-custom-adapter"
+        assert args.adapter == "test-adapter"
 
     def test_add_backend_cli_arguments_accepts_custom_values(self):
         """Test that custom values can be provided for all arguments."""
@@ -339,21 +339,21 @@ class TestAddBackendCliArguments:
 
         args = parser.parse_args([
             "--backend-type", "openai-compatible",
-            "--container", "my-container",
+            "--container", "test-container",
             "--host", "http://localhost:9000",
             "--model", Model.Phi4MultimodalInstruct.value,
             "--base-url", "http://localhost:8001/v1",
             "--api-key", "dummy-api-key",
-            "--adapter", "custom-adapter"
+            "--adapter", "test-adapter"
         ])
 
         assert args.backend_type == "openai-compatible"
-        assert args.container == "my-container"
+        assert args.container == "test-container"
         assert args.host == "http://localhost:9000"
         assert args.model == Model.Phi4MultimodalInstruct.value
         assert args.base_url == "http://localhost:8001/v1"
         assert args.api_key == "dummy-api-key"
-        assert args.adapter == "custom-adapter"
+        assert args.adapter == "test-adapter"
 
     def test_add_backend_cli_arguments_backend_type_choices(self):
         """Test that backend-type only accepts valid choices."""
@@ -395,8 +395,8 @@ class TestCreateBackendFromArgs:
         parser = argparse.ArgumentParser()
         args = argparse.Namespace(
             backend_type="airlock",
-            container="custom-container",
-            adapter="custom-adapter",
+            container="test-container",
+            adapter="test-adapter",
             host="http://localhost:9000",
             model="Phi4MultimodalInstruct"
         )
@@ -404,8 +404,8 @@ class TestCreateBackendFromArgs:
         create_backend_from_args(args, parser)
 
         mock_airlock_backend.assert_called_once_with(
-            container_name="custom-container",
-            adapter="custom-adapter",
+            container_name="test-container",
+            adapter="test-adapter",
             host="http://localhost:9000",
             model="Phi4MultimodalInstruct"
         )
@@ -436,7 +436,7 @@ class TestCreateBackendFromArgs:
         args = argparse.Namespace(
             backend_type="openai-compatible",
             base_url="http://localhost:8001/v1",
-            adapter="custom-model",
+            adapter="test-model",
             api_key="dummy-api-key"
         )
 
@@ -444,7 +444,7 @@ class TestCreateBackendFromArgs:
 
         mock_openai_backend.assert_called_once_with(
             base_url="http://localhost:8001/v1",
-            model="custom-model",
+            model="test-model",
             api_key="dummy-api-key"
         )
 
