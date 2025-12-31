@@ -354,7 +354,7 @@ class MiniDateConverterDSL:
                         actual_day = last_of_month + 1 + day
 
                     target = datetime(year + offset, month, actual_day)
-                    if target >= self.input_now:
+                    if target.date() >= self.input_now.date():
                         return target, False
                 except ValueError:
                     continue  # skip invalid dates like Feb 29 on non-leap years
@@ -407,7 +407,7 @@ class MiniDateConverterDSL:
                     if occurrence < 0:
                         anchor += relativedelta(months=1, days=-1)
                     candidate = anchor + relativedelta(weekday=weekday(occurrence))
-                    if candidate >= self.input_now:
+                    if candidate.date() >= self.input_now.date():
                         return candidate, False
                 except ValueError:
                     continue
