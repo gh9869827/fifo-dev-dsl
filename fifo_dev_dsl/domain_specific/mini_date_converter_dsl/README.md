@@ -153,12 +153,15 @@ OFFSET(DATE_FROM_MONTH_DAY(12, 25), 1, YEAR)
 ### `DATE_FROM_MONTH_DAY(month, day)`
 
 Builds a date using the current year and provided `month` and `day`.  
-If the date has passed, uses the next available year.
+If the date is before today, uses the next available year.  
 
 - `month`: integer (1–12)
 - `day`: integer (positive for counting from start, negative for counting from end)
   - Positive values (1–31): count from the start of the month
   - Negative values: count backward from the end of the month (-1 is the last day, -2 is the second-to-last day, etc.)
+
+> **Note:** Today is not considered passed.  
+> For example, on 12/30 at 2 PM, `DATE_FROM_MONTH_DAY(12, 30)` resolves to 12/30 of the current year.
 
 **Examples:**
 
@@ -192,15 +195,19 @@ DATE_FROM_YEAR_MONTH_DAY(2026, 1, -2)   # January 30th, 2026
 
 ### `DATE_FROM_MONTH_WEEKDAY(month, weekday_index, occurrence)`
 
-Returns the Nth weekday of a given month this year. `occurrence` can be
+Returns the Nth weekday of a given month in the current year. `occurrence` can be
 negative to count backward from the end of the month (`-1` is the last weekday,
-`-2` the second to last, etc.). If the resulting date has already
-passed this year, the same occurrence of that weekday in the following
+`-2` the second-to-last, etc.).  
+If the resulting date is before today, the same occurrence of that weekday in the following
 year is returned.
 
 - `month`: integer (1–12)
 - `weekday_index`: integer (0=Monday, ..., 6=Sunday)
 - `occurrence`: integer index of the weekday (positive or negative)
+
+> **Note:** Today is not considered passed.  
+> For example, if today is the third Monday of a month, requesting that same
+> occurrence returns today’s date in the current year.
 
 **Example:**
 
