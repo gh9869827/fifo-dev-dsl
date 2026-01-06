@@ -110,7 +110,7 @@ class QueryFill(DslBase):
 
         prompt_user = runtime_context.get_user_prompt_dynamic_query(resolution_context, self.query)
 
-        answer = runtime_context.call_llm(
+        answer = runtime_context.call_llm_reasoning(
             system_prompt=runtime_context.system_prompt_query_fill,
             user_prompt=prompt_user
         )

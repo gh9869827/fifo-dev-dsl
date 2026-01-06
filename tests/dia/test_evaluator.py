@@ -19,6 +19,9 @@ from fifo_dev_dsl.dia.dsl.elements.intent_runtime_error_resolver import (
     IntentRuntimeErrorResolver,
 )
 
+# pyright: reportPrivateUsage=false
+# pylint: disable=protected-access
+
 class Demo:
 
     def __init__(self) -> None:
@@ -131,7 +134,7 @@ def test_dsl_resolution(prompt: str,
         query_sources=[]
     )
 
-    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
                return_value=mock_dsl_response):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
@@ -162,8 +165,16 @@ def test_query_fill() -> None:
         query_sources=[]
     )
 
-    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-               side_effect=[mock_dsl_response, mock_dsl_answer_query_fill]):
+    with (
+        patch(
+            "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
+            return_value=mock_dsl_response
+        ),
+        patch(
+            "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_reasoning",
+            return_value=mock_dsl_answer_query_fill
+        ),
+    ):
 
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
@@ -196,7 +207,7 @@ def test_ask() -> None:
         query_sources=[]
     )
 
-    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
                return_value=mock_dsl_response):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
 
@@ -210,7 +221,7 @@ def test_ask() -> None:
         answer=InteractionAnswer(mock_user_answer)
     )
 
-    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+    with patch("fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
                return_value=mock_ask_llm_answer):
         final_outcome = resolver(interaction)
 
@@ -246,9 +257,15 @@ def test_query_user() -> None:
         query_sources=[],
     )
 
-    with patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-        side_effect=[mock_dsl_response, mock_query_user_llm_answer],
+    with (
+        patch(
+            "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
+            return_value=mock_dsl_response,
+        ),
+        patch(
+            "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_reasoning",
+            return_value=mock_query_user_llm_answer,
+        )
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         first_outcome = resolver(interaction_reply=None)
@@ -263,7 +280,7 @@ def test_query_user() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
         return_value=mock_followup_llm_answer,
     ):
         final_outcome = resolver(interaction)
@@ -299,9 +316,15 @@ def test_query_gather() -> None:
         query_sources=[],
     )
 
-    with patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
-        side_effect=[mock_dsl_response, mock_query_gather_llm_answer, mock_intent_sequencer_answer],
+    with (
+        patch(
+            "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
+            side_effect=[mock_dsl_response, mock_intent_sequencer_answer],
+        ),
+        patch(
+            "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_reasoning",
+            side_effect=[mock_query_gather_llm_answer],
+        )
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
         outcome_resolver = resolver(interaction_reply=None)
@@ -336,7 +359,7 @@ def test_propagate_slots() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
         return_value=mock_dsl_response,
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
@@ -352,7 +375,7 @@ def test_propagate_slots() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
         return_value=mock_ask_llm_answer,
     ):
         final_outcome = resolver(interaction)
@@ -383,7 +406,7 @@ def test_recoverable_error_intent_execution() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
         return_value=mock_dsl_response,
     ):
         resolver = Resolver(runtime_context=runtime_context, prompt=prompt)
@@ -406,7 +429,7 @@ def test_recoverable_error_intent_execution() -> None:
         """
         raise ApiErrorAbortAndResolve(error_message)
 
-    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw  # pyright: ignore[reportPrivateUsage]  # pylint: disable=protected-access
+    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw
 
     evaluator = Evaluator(runtime_context, dsl)
     outcome = evaluator.evaluate()
@@ -415,7 +438,7 @@ def test_recoverable_error_intent_execution() -> None:
     assert isinstance(outcome.error, ApiErrorAbortAndResolve)
     assert isinstance(dsl.get_children()[0], IntentRuntimeErrorResolver)
 
-    runtime_context._tool_name_to_tool["retrieve_screw"] = demo.retrieve_screw  # pyright: ignore[reportPrivateUsage]  # pylint: disable=protected-access
+    runtime_context._tool_name_to_tool["retrieve_screw"] = demo.retrieve_screw
 
     resolver_error = Resolver(runtime_context=runtime_context, dsl=dsl)
 
@@ -431,7 +454,7 @@ def test_recoverable_error_intent_execution() -> None:
     )
 
     with patch(
-        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_dsl",
         return_value=mock_error_resolution_dsl,
     ):
         final_outcome = resolver_error(interaction)
@@ -470,7 +493,7 @@ def test_unrecoverable_error_intent_execution() -> None:
         """
         raise RuntimeError("boom")
 
-    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw  # pyright: ignore[reportPrivateUsage]  # pylint: disable=protected-access
+    runtime_context._tool_name_to_tool["retrieve_screw"] = failing_retrieve_screw
 
     evaluator = Evaluator(runtime_context, root)
     outcome = evaluator.evaluate()
@@ -538,7 +561,7 @@ def test_evaluate_empty_call_stack() -> None:
     runtime_context = LLMRuntimeContext(tools=[], query_sources=[])
     root = parse_dsl("add(a=1, b=2)")
     evaluator = Evaluator(runtime_context, root)
-    evaluator._call_stack = []  # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access
+    evaluator._call_stack = []
     outcome = evaluator.evaluate()
 
     assert outcome.status is EvaluationStatus.ABORTED_UNRECOVERABLE

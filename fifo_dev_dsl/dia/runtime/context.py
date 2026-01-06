@@ -44,7 +44,8 @@ class LLMRuntimeContext:
     _prompt_intent_sequencer: str
     _prompt_slot_resolver: str
     _prompt_error_resolver: str
-    _llm_backend: LlmBackend
+    _llm_backend_dsl: LlmBackend
+    _llm_backend_reasoning: LlmBackend
 
     # Deprecated fields - kept for backward compatibility
     _container_name: str | None
@@ -56,7 +57,8 @@ class LLMRuntimeContext:
         self,
         tools: list[ToolHandler],
         query_sources: list[ToolQuerySource],
-        llm_backend: LlmBackend | None = None,
+        llm_backend_dsl: LlmBackend | None = None,
+        llm_backend_reasoning: LlmBackend | None = None,
         container_name: str | None = None,
         base_model: Model | None = None,
         intent_sequencer_adapter: str | None = None,
@@ -72,11 +74,31 @@ class LLMRuntimeContext:
             query_sources (list[ToolQuerySource]):
                 Sources that can be queried at runtime to answer user or slot-filling questions.
 
-            llm_backend (LlmBackend | None):
-                LLM backend to use for generating DSL code. This is the preferred way to
-                configure LLM behavior. If not provided, will be constructed from the
-                deprecated parameters (container_name, base_model, intent_sequencer_adapter,
-                host).
+            llm_backend_dsl (LlmBackend | None):
+                LLM backend used to generate DSL code by calling the intent-sequencer
+                LoRA-fine-tuned adapter. It is used by the resolver after all missing
+                or ambiguous information has been resolved.
+
+                This backend is specialized for structured DSL generation, not
+                general reasoning. This is the preferred way to configure the
+                intent-sequencing backend. If not provided, it will be constructed
+                from the deprecated parameters (container_name, base_model,
+                intent_sequencer_adapter, host).
+
+            llm_backend_reasoning (LlmBackend | None):
+                LLM backend used to leverage the reasoning capabilities of a base
+                (non-fine-tuned) foundation model with strong general reasoning ability.
+
+                It is used to:
+                    - Compute or infer missing values
+                    - Collect contextual information
+                    - Attempt to answer direct questions from users
+
+                It is used by `QUERY_USER`, `QUERY_FILL`, and `QUERY_GATHER`, and is not
+                responsible for DSL generation. This is the preferred way to configure the
+                reasoning backend. If not provided, it will be constructed from the
+                deprecated parameters (container_name, base_model,
+                intent_sequencer_adapter, host).
 
             container_name (str | None):
                 **DEPRECATED**: Use `llm_backend` instead. Container used for calls to the
@@ -115,9 +137,13 @@ class LLMRuntimeContext:
             )
 
         # Set up LLM backend
-        if llm_backend is not None:
-            self._llm_backend = llm_backend
-        else:
+        if llm_backend_dsl is not None:
+            self._llm_backend_dsl = llm_backend_dsl
+
+        if llm_backend_reasoning is not None:
+            self._llm_backend_reasoning = llm_backend_reasoning
+
+        if llm_backend_dsl is None or llm_backend_reasoning is None:
             # Backward compatibility: construct AirlockBackend from deprecated parameters
             # Import here to avoid circular dependency and to keep it optional
             from fifo_tool_airlock_model_env.common.models import Model as ModelEnum
@@ -131,12 +157,21 @@ class LLMRuntimeContext:
             )
             _host = host if host is not None else "http://127.0.0.1:8000"
 
-            self._llm_backend = AirlockBackend(
-                container_name=_container_name,
-                adapter=_adapter,
-                host=_host,
-                model=_base_model
-            )
+            if llm_backend_dsl is None:
+                self._llm_backend_dsl = AirlockBackend(
+                    container_name=_container_name,
+                    adapter=_adapter,
+                    host=_host,
+                    base_model=_base_model
+                )
+
+            if llm_backend_reasoning is None:
+                self._llm_backend_reasoning = AirlockBackend(
+                    container_name=_container_name,
+                    # adapter=_adapter, # use the base model directly
+                    host=_host,
+                    base_model=_base_model
+                )
 
         # Store deprecated parameters for backward compatibility (property access)
         self._container_name = container_name
@@ -343,9 +378,38 @@ class LLMRuntimeContext:
             else "intent-sequencer"
         )
 
-    def call_llm(self, system_prompt: str, user_prompt: str) -> str:
+    def call_llm_dsl(self, system_prompt: str, user_prompt: str) -> str:
         """
-        Call the LLM backend with the given prompts.
+        Call the intent-sequencer LoRA-fine-tuned adapter with the given prompts.
+
+        This helper is used for deterministic DSL generation and is not intended
+        for open-ended reasoning.
+
+        Args:
+            system_prompt (str):
+                The system prompt to send to the adapter.
+
+            user_prompt (str):
+                The user prompt to send to the adapter.
+
+        Returns:
+            str:
+                The generated DSL expression.
+        """
+        request = LlmRequest(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_new_tokens=1024,
+            temperature=0.0
+        )
+        return self._llm_backend_dsl.complete(request)
+
+    def call_llm_reasoning(self, system_prompt: str, user_prompt: str) -> str:
+        """
+        Call the base (non-fine-tuned) LLM with the given prompts.
+
+        This helper is used for general reasoning, inference, and natural-language
+        responses, and is not responsible for DSL generation.
 
         Args:
             system_prompt (str):
@@ -356,7 +420,7 @@ class LLMRuntimeContext:
 
         Returns:
             str:
-                The LLM's response.
+                The model's natural-language response.
         """
         request = LlmRequest(
             system_prompt=system_prompt,
@@ -364,7 +428,7 @@ class LLMRuntimeContext:
             max_new_tokens=1024,
             temperature=0.0
         )
-        return self._llm_backend.complete(request)
+        return self._llm_backend_reasoning.complete(request)
 
     # formatting prompts
     # pylint: disable=line-too-long

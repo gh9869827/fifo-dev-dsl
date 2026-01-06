@@ -57,7 +57,7 @@ def parse_natural_recurrence_expression(
         DeprecationWarning,
         stacklevel=2
     )
-    
+
     # Import AirlockBackend and AirlockModelEnv only when needed (for backward compatibility)
     from fifo_dev_dsl.common.llm_abstraction import AirlockBackend # pylint: disable=import-outside-toplevel
     from fifo_tool_airlock_model_env.common.models import Model # pylint: disable=import-outside-toplevel
@@ -66,9 +66,9 @@ def parse_natural_recurrence_expression(
         container_name=container_name,
         adapter=adapter,
         host=host,
-        model=Model.Phi4MiniInstruct
+        base_model=Model.Phi4MiniInstruct
     )
-    
+
     return parse_natural_recurrence_expression_with_backend(
         question,
         backend=backend,
@@ -134,7 +134,7 @@ def parse_natural_recurrence_expression_with_backend(
         temperature=temperature,
         reasoning_effort=reasoning_effort
     )
-    
+
     answer = backend.complete(request)
 
     try:

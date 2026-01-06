@@ -2,6 +2,7 @@ import argparse
 from collections import defaultdict
 from typing import Iterator, cast, Callable
 import re
+import sys
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
@@ -26,8 +27,7 @@ from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
 from fifo_dev_dsl.common.llm_abstraction import (
-    add_backend_cli_arguments,
-    create_backend_from_args,
+    parse_cli_and_create_backends
 )
 
 calculator = Calculator()
@@ -337,7 +337,8 @@ def custom_evaluate_arithmetic_dsl_tree(
 
     raise TypeError(f"Unsupported node type: {type(node).__name__}")
 
-def main() -> None:
+
+def main(argv: list[str]) -> None:
     """
     Evaluate accuracy of the DIA intent-sequencer calculator adapter.
 
@@ -351,26 +352,36 @@ def main() -> None:
         --delta-flag:
             Log failed random examples to 'delta.dat'. If not set, no file is created.
     """
-    parser = argparse.ArgumentParser(
-        description="Evaluate accuracy of the DIA intent-sequencer calculator adapter."
+    def add_global_args(parser: argparse.ArgumentParser) -> None:
+
+        # Evaluation mode
+        parser.add_argument(
+            "--random",
+            action="store_true",
+            help="Evaluate on random examples"
+        )
+        parser.add_argument(
+            "--delta-flag",
+            action="store_true",
+            help="Log failed random examples to 'delta.dat'. If not set, no file is created."
+        )
+
+    res = parse_cli_and_create_backends(
+        argv,
+        prog="calculator_eval_performance.py",
+        description="Evaluate accuracy of the DIA intent-sequencer calculator adapter.",
+        default_adapter="dia-intent-sequencer-calculator-adapter",
+        require_reasoning=True,
+        add_global_arguments=add_global_args,
     )
 
-    add_backend_cli_arguments(parser, default_adapter="dia-intent-sequencer-calculator-adapter")
-
-    # Evaluation mode
-    parser.add_argument("--random", action="store_true", help="Evaluate on random examples")
-    parser.add_argument(
-        "--delta-flag",
-        action="store_true",
-        help="Log failed random examples to 'delta.dat'. If not set, no file is created."
-    )
-
-    args = parser.parse_args()
-    backend = create_backend_from_args(args, parser)
+    global_args = res.global_args
+    backends = res.backends
 
     # Initialize runtime context
     runtime_context = LLMRuntimeContext(
-        llm_backend=backend,
+        llm_backend_dsl=backends.dsl,
+        llm_backend_reasoning=backends.reasoning,
         tools=[
             calculator.add,
             calculator.subtract,
@@ -381,10 +392,10 @@ def main() -> None:
         ]
     )
 
-    if args.random:
-        eval_random(args.delta_flag, runtime_context)
+    if global_args.random:
+        eval_random(global_args.delta_flag, runtime_context)
     else:
         eval_test(runtime_context)
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

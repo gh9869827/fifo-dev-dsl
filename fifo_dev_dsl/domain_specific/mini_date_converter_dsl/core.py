@@ -68,9 +68,9 @@ def parse_natural_date_expression(
         container_name=container_name,
         adapter=adapter,
         host=host,
-        model=Model.Phi4MiniInstruct
+        base_model=Model.Phi4MiniInstruct
     )
-    
+
     return parse_natural_date_expression_with_backend(
         question,
         now,
@@ -142,7 +142,7 @@ def parse_natural_date_expression_with_backend(
         temperature=temperature,
         reasoning_effort=reasoning_effort
     )
-    
+
     answer = backend.complete(request)
 
     try:

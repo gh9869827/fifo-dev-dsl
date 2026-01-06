@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import sys
+import re
+from enum import StrEnum
 from dataclasses import dataclass
-from typing import Any, Protocol, cast, TYPE_CHECKING
+from abc import ABC, abstractmethod
+from typing import Any, cast, TYPE_CHECKING, Callable
+from textwrap import dedent
 
 if TYPE_CHECKING:  # pragma: no cover
     # Optional dependency: used by static type checkers only, not imported at runtime.
@@ -13,12 +16,16 @@ if TYPE_CHECKING:  # pragma: no cover
 @dataclass(frozen=True)
 class LlmRequest:
     """
-    Request sent to an LLM for DSL generation.
+    Request sent to an LLM.
+
+    Depending on the backend configuration, it can be used either for DSL
+    generation or general reasoning.
 
     The request consists of exactly two messages:
-    - a system prompt defining expected behavior, instructions, available tools, and
-      any data sources
-    - a user prompt containing the task, contextual information, and any retrieved data
+    - a system prompt defining expected behavior, instructions, available
+      tools, and data sources
+    - a user prompt containing the task, contextual information, and any
+      retrieved or provided data
 
     Args:
         system_prompt (str):
@@ -31,12 +38,13 @@ class LlmRequest:
             Maximum number of tokens to generate.
 
         temperature (float):
-            Sampling temperature (higher = more random). When 0.0, use greedy decoding.
+            Sampling temperature (higher = more random). When 0.0, use greedy
+            decoding.
 
         reasoning_effort (str | None):
-            Reasoning effort level for reasoning models. Only applicable when using
-            reasoning-capable models. Supported values depend on the backend
-            implementation. Common values include "low", "medium", "high".
+            Reasoning effort level for reasoning-capable models. Only applicable
+            when using such models. Supported values depend on the backend
+            implementation. Typical values include "low", "medium", and "high".
             When None, the parameter is not passed to the backend, allowing the
             model to use its default reasoning behavior. Defaults to None.
     """
@@ -48,55 +56,75 @@ class LlmRequest:
     reasoning_effort: str | None = None
 
 
-class LlmBackend(Protocol):
+class LlmBackend(ABC):
     """
-    Backend interface for generating DSL with an LLM.
+    Backend interface for invoking an LLM.
+
+    This abstract class defines a minimal, stateless request/response interface.
+
+    The `complete()` method may perform either DSL generation or general
+    reasoning, depending on the model and/or adapter invoked by the backend.
     """
 
+    @abstractmethod
     def complete(self, req: LlmRequest) -> str:
         """
-        Generate DSL output for the given request.
+        Execute the given LLM request and return the model output.
 
         Args:
             req (LlmRequest):
-                LLM request containing system/user prompts and generation parameters.
+                LLM request containing system and user prompts, along with
+                generation parameters.
 
         Returns:
             str:
-                Model output (expected to be DSL code).
+                Model output. The exact semantics (e.g. DSL code or natural
+                language) depend on the LLM invoked by the backend.
         """
-        ... # pylint: disable=unnecessary-ellipsis
+        raise NotImplementedError
 
 
-class AirlockBackend:
+class AirlockBackend(LlmBackend):
     """
-    LLM backend that generates DSL by calling the Airlock model environment.
+    LLM backend that calls the Airlock model environment.
 
     This backend routes requests to a locally hosted Airlock model server and
-    returns the raw DSL output produced by the model.
+    returns the output produced by the model.
+
+    Typically, when both a base model and an adapter are provided, the backend
+    returns structured DSL. When only a base model is provided, the backend is
+    used to leverage the reasoning capabilities of the base (non-fine-tuned)
+    foundation model. The backend does not enforce this behavior and returns
+    the output produced by the invoked model.
+
+    Behavior:
+        - When both `base_model` and `adapter` are provided, the adapter
+          fine-tuned on top of the base model is invoked.
+        - When only `base_model` is provided, the base model is invoked directly.
 
     Args:
-        _container_name (str):
-            Name of the container running the Airlock model server.
-
-        _adapter (str):
-            Adapter used by the model server to generate DSL.
-
         _host (str):
             Base URL of the Airlock model server
             (e.g. "http://127.0.0.1:8000").
 
-        _model (Model):
-            Base model to use for DSL generation (e.g., Phi4MiniInstruct,
-            Phi4MultimodalInstruct). Defaults to Phi4MiniInstruct if not provided.
+        _container_name (str):
+            Name of the container running the Airlock model server.
+
+        _base_model (Model):
+            Base model to use (e.g., Phi4MiniInstruct, Phi4MultimodalInstruct).
+            Defaults to Phi4MiniInstruct if not provided.
+
+        _adapter (str | None):
+            Optional adapter used by the model server.
+            Defaults to None.
     """
 
     def __init__(self,
                  *,
-                 container_name: str,
-                 adapter: str,
                  host: str,
-                 model: str | Model | None = None) -> None:
+                 container_name: str,
+                 base_model: str | Model | None = None,
+                 adapter: str | None = None) -> None:
         """
         Initialize an Airlock-backed LLM interface.
 
@@ -105,21 +133,22 @@ class AirlockBackend:
         backends.
 
         Args:
-            container_name (str):
-                Name of the container running the Airlock model server.
-
-            adapter (str):
-                Adapter to use when generating DSL.
-
             host (str):
                 Base URL of the Airlock model server.
 
-            model (str | Model | None):
-                Base model to use for DSL generation. Can be a Model enum instance,
-                a string matching a Model enum value (e.g., "Phi4MiniInstruct",
+            container_name (str):
+                Name of the container running the Airlock model server.
+
+            base_model (str | Model | None):
+                Base model to use. Can be a Model enum instance, a string matching a
+                Model enum value (e.g. "Phi4MiniInstruct",
                 "Phi4MultimodalInstruct"), or None to use the default.
                 If not provided, defaults to Phi4MiniInstruct.
+
+            adapter (str | None):
+                Fine-tuned adapter to use. If None, only the base model is invoked.
         """
+
         # pylint: disable=import-outside-toplevel
         from fifo_tool_airlock_model_env.common.models import (
             GenerationParameters,
@@ -139,24 +168,24 @@ class AirlockBackend:
         self._host = host
 
         # Store the model, defaulting to Phi4MiniInstruct
-        if model is None:
+        if base_model is None:
             self._model = Model.Phi4MiniInstruct
-        elif isinstance(model, Model):
+        elif isinstance(base_model, Model):
             # Model enum instance passed directly
-            self._model = model
+            self._model = base_model
         else:
             # String value - convert to Model enum using value-based parsing
             try:
-                self._model = Model(model)
+                self._model = Model(base_model)
             except ValueError as e:
                 valid_values = ", ".join(m.value for m in Model)
                 raise ValueError(
-                    f"Invalid model: {model!r}. Must be one of: {valid_values}"
+                    f"Invalid model: {base_model!r}. Must be one of: {valid_values}"
                 ) from e
 
     def complete(self, req: LlmRequest) -> str:
         """
-        Generate DSL by forwarding the request to the Airlock model server.
+        Forward the request to the Airlock model server.
 
         Args:
             req (LlmRequest):
@@ -165,7 +194,8 @@ class AirlockBackend:
 
         Returns:
             str:
-                DSL code generated by the model.
+                Model output. The exact semantics (e.g. DSL code or natural
+                language) depend on the LLM invoked by the backend.
         """
         Message = self._message_cls
         GenerationParameters = self._generation_parameters_cls
@@ -186,10 +216,20 @@ class AirlockBackend:
         )
 
 
-class OpenAICompatibleBackend:
+class OpenAICompatibleBackend(LlmBackend):
     """
     LLM backend using an OpenAI-compatible API (e.g. vLLM, LM Studio, Ollama).
-    This does not imply use of OpenAI-hosted services.
+
+    Note:
+        This does not imply use of OpenAI-hosted services.
+
+    This backend routes requests to an OpenAI-compatible server and returns
+    the output produced by the model exposed at the given endpoint.
+
+    The selected model may correspond either to a fine-tuned adapter intended
+    for structured DSL generation or to a general-purpose foundation model
+    intended for reasoning. The backend does not enforce a distinction and
+    returns the output produced by the invoked model.
 
     Args:
         base_url (str):
@@ -197,11 +237,11 @@ class OpenAICompatibleBackend:
             (e.g. "http://127.0.0.1:8001/v1").
 
         model (str):
-            Model name exposed by the server.
+            Name or identifier of the model exposed by the server.
 
         api_key (str):
-            API key used by the OpenAI client. Many local servers ignore this, but the
-            client expects a value.
+            API key used by the OpenAI client. Many local servers ignore this,
+            but the client expects a value.
 
         timeout_s (float):
             Request timeout in seconds.
@@ -245,7 +285,7 @@ class OpenAICompatibleBackend:
 
     def complete(self, req: LlmRequest) -> str:
         """
-        Generate DSL by forwarding the request to an OpenAI-compatible API.
+        Forward the request to an OpenAI-compatible API.
 
         Args:
             req (LlmRequest):
@@ -254,7 +294,8 @@ class OpenAICompatibleBackend:
 
         Returns:
             str:
-                DSL code generated by the model.
+                Model output. The exact semantics (e.g. DSL code or natural
+                language) depend on the LLM invoked by the backend.
         """
         # Build kwargs for chat.completions.create
         create_kwargs: dict[str, Any] = {
@@ -277,147 +318,655 @@ class OpenAICompatibleBackend:
         return content
 
 
-def add_backend_cli_arguments(
-    parser: argparse.ArgumentParser,
-    default_adapter: str
-) -> None:
+# ------------------------------
+# Command line arguments parsing
+# ------------------------------
+
+class LlmBackendType(StrEnum):
     """
-    Add common backend-related CLI arguments to an ArgumentParser.
+    Supported backend adapter types for routing LLM requests.
 
-    This function adds the following argument groups:
+    This enum defines the backends supported for routing. Inheriting from 
+    StrEnum provides direct compatibility with string-based interfaces 
+    like argparse, JSON serialization, and configuration files.
 
-    Backend type selection:
-        --backend-type:
-            Type of LLM backend to use. Options: 'airlock', 'openai-compatible'.
-            (default: "airlock")
+    Members:
+        AIRLOCK:
+            Backend running an Airlock model environment.
 
-    Airlock backend parameters (used when --backend-type=airlock):
-        --container:
-            Name of the Docker container running the Airlock Model Environment.
-            (default: "phi")
+        OPENAI_COMPATIBLE:
+            Backend implementing the OpenAI-compatible API surface.
+    """
 
-        --host:
-            Base URL of the Airlock model server.
-            (default: "http://127.0.0.1:8000")
+    AIRLOCK = "airlock"
+    """
+    Backend running an Airlock model environment.
+    """
 
-        --model:
-            Base model to use. Options: 'Phi4MiniInstruct', 'Phi4MultimodalInstruct'.
-            (default: "Phi4MiniInstruct")
+    OPENAI_COMPATIBLE = "openai-compatible"
+    """
+    Backend implementing the OpenAI-compatible API surface (e.g., vLLM, Ollama).
+    """
 
-    OpenAI-compatible backend parameters (used when --backend-type=openai-compatible):
-        --base-url:
-            Base URL for the OpenAI-compatible server, including "/v1".
-            (required)
 
-        --api-key:
-            API key for the OpenAI-compatible server.
-            (default: "EMPTY")
+@dataclass(frozen=True)
+class Backends:
+    """
+    Container for resolved backends from CLI.
 
-    Common backend parameters:
-        --adapter:
-            Adapter/model identifier used to interpret DSL input.
-            (default: value of default_adapter parameter)
+    Attributes:
+        dsl (LlmBackend):
+            Backend used for DSL generation.
+
+        reasoning (LlmBackend | None):
+            Optional backend used for general reasoning.
+    """
+    dsl: LlmBackend
+    reasoning: LlmBackend | None
+
+
+def _make_dsl_parser(
+    *,
+    backend: LlmBackendType,
+    default_adapter: str,
+) -> argparse.ArgumentParser:
+    """
+    Create the parser for the DSL backend *options* for a specific LLM backend type (airlock vs
+    openai-compatible).
+
+        Airlock Backend:
+        ================
+
+        tool dsl=airlock
+            [--host HOST]
+            [--container CONTAINER]
+            [--model MODEL]
+            [--adapter ADAPTER]
+
+        Defaults:
+            --host      http://127.0.0.1:8000
+            --container phi
+            --model     Phi4MiniInstruct
+            --adapter   {default_adapter}
+
+        OpenAI Compatible Backend:
+        ==========================
+
+        tool dsl=openai-compatible
+            --base-url URL
+            [--adapter ADAPTER]
+            [--api-key KEY]
+
+        Requirements:
+            --base-url  required
+
+        Defaults:
+            --adapter   {default_adapter}
+            --api-key   EMPTY
 
     Args:
-        parser (argparse.ArgumentParser):
-            The parser to add arguments to.
+        backend (LlmBackendType):
+            Backend selector value (e.g., "airlock" or "openai-compatible").
 
         default_adapter (str):
-            Default value for the --adapter argument.
-    """
-    # pylint: disable=import-outside-toplevel
-    from fifo_tool_airlock_model_env.common.models import Model
-
-    # Backend type selection
-    parser.add_argument(
-        "--backend-type",
-        default="airlock",
-        choices=["airlock", "openai-compatible"],
-        help="Type of LLM backend to use"
-    )
-
-    # Airlock backend parameters
-    parser.add_argument(
-        "--container",
-        default="phi",
-        help="Airlock container name (for airlock backend)"
-    )
-    parser.add_argument(
-        "--host",
-        default="http://127.0.0.1:8000",
-        help="Airlock server URL (for airlock backend)"
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        choices=[m.value for m in Model],
-        default=Model.Phi4MiniInstruct.value,
-        help=(
-            "Base model to use (for airlock backend). "
-            f"One of: {', '.join(m.value for m in Model)}. "
-            f"Default: {Model.Phi4MiniInstruct.value}"
-        ),
-    )
-
-    # OpenAI-compatible backend parameters
-    parser.add_argument(
-        "--base-url",
-        help="Base URL for OpenAI-compatible server (for openai-compatible backend)"
-    )
-    parser.add_argument(
-        "--api-key",
-        default="EMPTY",
-        help="API key (for openai-compatible backend)"
-    )
-
-    # Common backend parameters
-    parser.add_argument(
-        "--adapter",
-        default=default_adapter,
-        help="Adapter name"
-    )
-
-
-def create_backend_from_args(
-    args: argparse.Namespace,
-    parser: argparse.ArgumentParser
-) -> LlmBackend:
-    """
-    Create an LLM backend instance from parsed CLI arguments.
-
-    Args:
-        args (argparse.Namespace):
-            Parsed command-line arguments containing backend configuration.
-
-        parser (argparse.ArgumentParser):
-            Parser instance used for error reporting.
+            Default adapter name used when --adapter is omitted.
 
     Returns:
-        LlmBackend:
-            Instantiated backend (either AirlockBackend or OpenAICompatibleBackend).
+        argparse.ArgumentParser:
+            An ArgumentParser configured with the options for the selected LLM backend.
+
+    Raises:
+        ValueError:
+            If `backend` is not a recognized DSL backend.
+    """
+    p = argparse.ArgumentParser(add_help=False)
+
+    if backend == LlmBackendType.AIRLOCK:
+        p.add_argument(
+            "--host",
+            default="http://127.0.0.1:8000",
+            help='Airlock server URL. (default: http://127.0.0.1:8000)',
+        )
+        p.add_argument(
+            "--container",
+            default="phi",
+            help="Airlock container name. (default: phi)",
+        )
+        p.add_argument(
+            "--model",
+            default="Phi4MiniInstruct",
+            help="Airlock base model. (default: Phi4MiniInstruct)",
+        )
+        p.add_argument(
+            "--adapter",
+            default=default_adapter,
+            help=(
+                "Adapter identifier used for DSL generation. "
+                f"(default: {default_adapter})"
+            ),
+        )
+        return p
+
+    if backend == LlmBackendType.OPENAI_COMPATIBLE:
+        p.add_argument(
+            "--base-url",
+            required=True,
+            help='Base URL for OpenAI-compatible server, including "/v1". (required)',
+        )
+        p.add_argument(
+            "--adapter",
+            default=default_adapter,
+            help=(
+                "Model identifier used for DSL generation. "
+                f"(default: {default_adapter})"
+            ),
+        )
+        p.add_argument(
+            "--api-key",
+            default="EMPTY",
+            help='API key for OpenAI-compatible server. (default: "EMPTY")',
+        )
+        return p
+
+    raise ValueError(f"Unknown DSL backend: {backend!r}")
+
+
+def _make_reasoning_parser(*, backend: LlmBackendType) -> argparse.ArgumentParser:
+    """
+    Create the parser for the reasoning backend *options* for a specific LLM backend type
+    (airlock vs openai-compatible).
+
+        Airlock Backend:
+        ================
+
+        tool ... reasoning=airlock
+            [--host HOST]
+            [--container CONTAINER]
+            [--model MODEL]
+
+        Defaults:
+            --host      http://127.0.0.1:8000
+            --container phi
+            --model     Phi4MiniInstruct
+
+        OpenAI Compatible Backend:
+        ==========================
+
+        tool ... reasoning=openai-compatible
+            --base-url URL
+            --model MODEL
+            [--api-key KEY]
+
+        Requirements:
+            --base-url  required
+            --model     required
+
+        Defaults:
+            --api-key   EMPTY
+
+    Args:
+        backend (LlmBackendType):
+            Backend selector value (e.g. "airlock" or "openai-compatible").
+
+    Returns:
+        argparse.ArgumentParser:
+            An ArgumentParser configured with the options for the selected backend.
+
+    Raises:
+        ValueError:
+            If `backend` is not a recognized reasoning backend.
+    """
+    p = argparse.ArgumentParser(add_help=False)
+
+    if backend == LlmBackendType.AIRLOCK:
+        p.add_argument(
+            "--host",
+            default="http://127.0.0.1:8000",
+            help='Airlock server URL. (default: http://127.0.0.1:8000)',
+        )
+        p.add_argument(
+            "--container",
+            default="phi",
+            help="Airlock container name. (default: phi)",
+        )
+        p.add_argument(
+            "--model",
+            default="Phi4MiniInstruct",
+            help="Model identifier to use for reasoning. (default: Phi4MiniInstruct)",
+        )
+        return p
+
+    if backend == LlmBackendType.OPENAI_COMPATIBLE:
+        p.add_argument(
+            "--base-url",
+            required=True,
+            help='Base URL for OpenAI-compatible server, including "/v1". (required)',
+        )
+        p.add_argument(
+            "--model",
+            required=True,
+            help="Model identifier to use for reasoning. (required)",
+        )
+        p.add_argument(
+            "--api-key",
+            default="EMPTY",
+            help='API key for OpenAI-compatible server. (default: "EMPTY")',
+        )
+        return p
+
+    raise ValueError(f"Unknown reasoning backend: {backend!r}")
+
+
+@dataclass(frozen=True)
+class ParsedBackends:
+    """
+    Parsed backend configuration.
+
+    Attributes:
+        dsl_backend_type (LlmBackendType):
+            DSL backend type: "airlock" or "openai-compatible".
+
+        dsl_args (argparse.Namespace):
+            Parsed args for the DSL backend.
+
+        reasoning_backend_type (LlmBackendType | None):
+            Reasoning backend type: "airlock" or "openai-compatible", or None if not provided.
+
+        reasoning_args (argparse.Namespace | None):
+            Parsed args for the reasoning backend, or None if not provided.
+
+        extra_argv (list[str]):
+            Unparsed command-line arguments remaining after all backend-related
+            arguments have been consumed. These arguments may be application-
+            specific and are intended to be parsed by a separate ArgumentParser.
+    """
+    dsl_backend_type: LlmBackendType
+    dsl_args: argparse.Namespace
+    reasoning_backend_type: LlmBackendType | None
+    reasoning_args: argparse.Namespace | None
+    extra_argv: list[str]
+
+
+def _add_backend_cli_arguments(
+    parser: argparse.ArgumentParser,
+    default_adapter: str,
+    require_reasoning: bool
+) -> None:
+    """
+    Add usage/help text describing the key=value backend configuration syntax.
+
+    Note:
+        For the backend configuration, this tool uses an order-insensitive,
+        selector-based style:
+
+        - DSL only:
+            tool dsl=<airlock|openai-compatible> [dsl-args...]
+
+        - DSL + reasoning:
+            tool dsl=<...> [dsl-args...] reasoning=<...> [reasoning-args...]
+
+        Each selector (`dsl=...`, `reasoning=...`) appears at most once.
+        All arguments following a selector apply to that backend until the
+        next selector is encountered.
+
+        Actual parsing is performed by `_parse_backend_args()`. This function
+        documents the expected CLI shape for `-h` output only.
+    """
+    parser.formatter_class = argparse.RawTextHelpFormatter
+
+    parser.epilog = dedent(
+        f"""
+        Backend configuration
+        =====================
+
+        DSL backend (required)
+        ----------------------
+
+          {parser.prog} dsl=airlock
+              [--host HOST]
+              [--container CONTAINER]
+              [--model MODEL]
+              [--adapter ADAPTER]
+
+            Defaults:
+              --host      http://127.0.0.1:8000
+              --container phi
+              --model     Phi4MiniInstruct
+              --adapter   {default_adapter}
+
+
+          {parser.prog} dsl=openai-compatible
+              --base-url URL
+              [--adapter ADAPTER]
+              [--api-key KEY]
+
+            Requirements:
+              --base-url  required
+
+            Defaults:
+              --adapter   {default_adapter}
+              --api-key   EMPTY
+        """
+    ).strip()
+
+    if not require_reasoning:
+        return
+
+    parser.epilog += dedent(
+        f"""
+
+        Reasoning backend (optional)
+        ----------------------------
+
+          {parser.prog} ... reasoning=airlock
+              [--host HOST]
+              [--container CONTAINER]
+              [--model MODEL]
+
+            Defaults:
+              --host      http://127.0.0.1:8000
+              --container phi
+              --model     Phi4MiniInstruct
+
+
+          {parser.prog} ... reasoning=openai-compatible
+              --base-url URL
+              --model MODEL
+              [--api-key KEY]
+
+            Requirements:
+              --base-url  required
+              --model     required
+
+            Defaults:
+              --api-key   EMPTY
+        """
+    )
+
+    parser.epilog = parser.epilog.strip()
+
+
+def _parse_backend_args(
+    argv: list[str],
+    *,
+    default_adapter: str,
+    prog: str,
+    require_reasoning: bool = False,
+) -> ParsedBackends:
+    """
+    Parse backend configuration from argv using an assignment-token style.
+
+    Supported (order-insensitive, each at most once):
+      - dsl=<airlock|openai-compatible> [args...]
+      - reasoning=<airlock|openai-compatible> [args...]
+
+    Tokens appearing before the first assignment are returned in `extra_argv`.
+    Tokens following an assignment belong to that section until another 
+    assignment is encountered.
+    """
+
+    remaining = list(argv)
+
+    dsl_backend_type: LlmBackendType | None = None
+    dsl_args: argparse.Namespace | None = None
+    reasoning_backend_type: LlmBackendType | None = None
+    reasoning_args: argparse.Namespace | None = None
+
+    extra_argv: list[str] = []
+
+    assign_re = re.compile(r"^(dsl|reasoning)=([a-zA-Z-]+)$")
+
+    current_cmd: str | None = None
+    sections: dict[str, tuple[LlmBackendType, list[str]]] = {}
+
+    i = 0
+    while i < len(remaining):
+        tok = remaining[i]
+        m = assign_re.match(tok)
+
+        if m:
+            cmd = m.group(1)
+            backend = m.group(2)
+
+            try:
+                backend_type = LlmBackendType(backend)
+            except ValueError as e:
+                raise SystemExit(f"{prog}: error: invalid backend spec '{tok}'") from e
+
+            if cmd in sections:
+                raise SystemExit(f"{prog}: error: duplicate command '{cmd}'")
+
+            sections[cmd] = (backend_type, [])
+            current_cmd = cmd
+            i += 1
+            continue
+
+        if current_cmd is None:
+            extra_argv.append(tok)
+        else:
+            backend_type, args_list = sections[current_cmd]
+            args_list.append(tok)
+            sections[current_cmd] = (backend_type, args_list)
+
+        i += 1
+
+    if "dsl" not in sections:
+        raise SystemExit(f"{prog}: error: missing required 'dsl=...'")
+
+    dsl_backend_type, dsl_section_argv = sections["dsl"]
+    dsl_parser = _make_dsl_parser(backend=dsl_backend_type, default_adapter=default_adapter)
+    dsl_parser.prog = f"{prog} dsl={dsl_backend_type}"
+    dsl_args = dsl_parser.parse_args(dsl_section_argv)
+
+    if "reasoning" in sections:
+        reasoning_backend_type, reasoning_section_argv = sections["reasoning"]
+        reasoning_parser = _make_reasoning_parser(backend=reasoning_backend_type)
+        reasoning_parser.prog = f"{prog} reasoning={reasoning_backend_type}"
+        reasoning_args = reasoning_parser.parse_args(reasoning_section_argv)
+
+    if require_reasoning and reasoning_args is None:
+        raise SystemExit(f"{prog}: error: missing required 'reasoning=...'")
+
+    return ParsedBackends(
+        dsl_backend_type=dsl_backend_type,
+        dsl_args=dsl_args,
+        reasoning_backend_type=reasoning_backend_type,
+        reasoning_args=reasoning_args,
+        extra_argv=extra_argv,
+    )
+
+# -----------------------------
+# Backend instantiation
+# -----------------------------
+
+@dataclass(frozen=True)
+class CreatedBackends:
+    """
+    Created backend instances.
+
+    Attributes:
+        dsl (LlmBackend):
+            Backend used for DSL generation.
+
+        reasoning (LlmBackend | None):
+            Backend used for reasoning, or None if not configured.
+    """
+    dsl: LlmBackend
+    reasoning: LlmBackend | None
+
+
+def _create_backends_from_parsed(
+    parsed: ParsedBackends,
+    *,
+    parser: argparse.ArgumentParser | None = None,
+) -> CreatedBackends:
+    """
+    Instantiate DSL and optional reasoning backends from parsed configuration.
+
+    Args:
+        parsed (ParsedBackends):
+            Output of `_parse_backend_args()`.
+
+        parser (argparse.ArgumentParser | None):
+            Optional parser for consistent error formatting (in order to use parser.error()).
+
+    Returns:
+        CreatedBackends:
+            DSL backend and optional reasoning backend.
 
     Raises:
         SystemExit:
-            If required arguments are missing or backend type is invalid.
+            If a required argument is missing for the selected backend.
     """
-    if args.backend_type == "airlock":
-        return AirlockBackend(
-            container_name=args.container,
-            adapter=args.adapter,
-            host=args.host,
-            model=args.model
-        )
+    def _error(msg: str) -> None:
+        if parser is not None:
+            parser.error(msg)
+        raise SystemExit(f"error: {msg}")
 
-    if args.backend_type == "openai-compatible":
-        if not args.base_url:
-            parser.error(
-                "--base-url is required when using openai-compatible backend"
+    # DSL backend
+    dsl_backend: LlmBackend
+    if parsed.dsl_backend_type == LlmBackendType.AIRLOCK:
+        dsl_backend = AirlockBackend(
+            container_name=parsed.dsl_args.container,
+            host=parsed.dsl_args.host,
+            base_model=parsed.dsl_args.model,
+            adapter=parsed.dsl_args.adapter,  # DSL expects adapter (defaulted if omitted)
+        )
+    elif parsed.dsl_backend_type == LlmBackendType.OPENAI_COMPATIBLE:
+        if not parsed.dsl_args.base_url:
+            _error("'dsl openai-compatible' requires --base-url")
+        dsl_backend = OpenAICompatibleBackend(
+            base_url=parsed.dsl_args.base_url,
+            model=parsed.dsl_args.adapter,    # DSL uses adapter identifier as the model name
+            api_key=parsed.dsl_args.api_key,
+        )
+    else:
+        _error(f"Unknown DSL backend type: {parsed.dsl_backend_type}")
+        raise AssertionError("unreachable")
+
+    # Reasoning backend (optional)
+    reasoning_backend: LlmBackend | None = None
+    if parsed.reasoning_args is not None and parsed.reasoning_backend_type is not None:
+        if parsed.reasoning_backend_type == LlmBackendType.AIRLOCK:
+            reasoning_backend = AirlockBackend(
+                container_name=parsed.reasoning_args.container,
+                host=parsed.reasoning_args.host,
+                base_model=parsed.reasoning_args.model,
+                adapter=None,  # reasoning uses base model directly
             )
-        return OpenAICompatibleBackend(
-            base_url=args.base_url,
-            model=args.adapter,
-            api_key=args.api_key
-        )
+        elif parsed.reasoning_backend_type == LlmBackendType.OPENAI_COMPATIBLE:
+            if not parsed.reasoning_args.base_url:
+                _error("'reasoning openai-compatible' requires --base-url")
+            reasoning_backend = OpenAICompatibleBackend(
+                base_url=parsed.reasoning_args.base_url,
+                model=parsed.reasoning_args.model,  # reasoning uses base model name
+                api_key=parsed.reasoning_args.api_key,
+            )
+        else:
+            _error(f"Unknown reasoning backend type: {parsed.reasoning_backend_type}")
+            raise AssertionError("unreachable")
 
-    parser.error(f"Unknown backend type: {args.backend_type}")
-    sys.exit(1)
+    return CreatedBackends(dsl=dsl_backend, reasoning=reasoning_backend)
+
+
+@dataclass(frozen=True)
+class CliArgParsingResult:
+    """
+    Result of parsing the CLI.
+
+    Attributes:
+        backends (CreatedBackends):
+            The instantiated backend objects.
+
+        global_args (argparse.Namespace):
+            Parsed program-level arguments (the args added to the global parser).
+
+        parsed_backends (ParsedBackends):
+            Parsed backend configuration returned by `_parse_backend_args`.
+    """
+
+    backends: CreatedBackends
+    global_args: argparse.Namespace
+    parsed_backends: ParsedBackends
+
+
+def parse_cli_and_create_backends(
+    argv: list[str],
+    *,
+    prog: str,
+    description: str,
+    default_adapter: str,
+    require_reasoning: bool,
+    add_global_arguments: Callable[[argparse.ArgumentParser], None] | None = None,
+) -> CliArgParsingResult:
+    """
+    Orchestrates the multi-stage parsing of global and backend-specific arguments.
+
+    The parsing pipeline follows these steps:
+    1. Builds the global parser and applies optional extensions.
+    2. Scan `argv`, identifying backend selectors (`dsl=...`, `reasoning=...`)
+       while collecting arguments that appear before any backend selector.
+    3. Parses backend-specific arguments using specialized sub-parsers.
+    4. Parses global arguments using the primary parser.
+    5. Instantiates the resulting backend objects.
+
+    Args:
+        argv (list[str]):
+            Argument vector excluding the program name.
+
+        prog (str):
+            Program name used in help and error messages.
+
+        description (str):
+            High-level description for the global parser.
+
+        default_adapter (str):
+            Default adapter identifier used if the DSL backend configuration omits one.
+
+        require_reasoning (bool):
+            If True, validation will fail if a `reasoning=...` section is missing.
+
+        add_global_arguments (Callable[[argparse.ArgumentParser], None] | None):
+            Optional callback to add program-level flags (e.g., `--max-tokens`).
+            Note: Global arguments MUST appear before any backend specifications.
+
+    Returns:
+        CliArgParsingResult:
+            A container holding instantiated backends, parsed global arguments,
+            and the raw parsed backend configuration.
+    """
+    global_parser = argparse.ArgumentParser(
+        prog=prog,
+        description=description,
+    )
+
+    if add_global_arguments is not None:
+        add_global_arguments(global_parser)
+
+    # Backend help text (epilog only)
+    _add_backend_cli_arguments(global_parser, default_adapter, require_reasoning)
+
+    # If user asks for help, show it and exit
+    if "-h" in argv or "--help" in argv:
+        global_parser.parse_args(argv)  # prints help + exits via SystemExit
+        raise AssertionError("unreachable")
+
+    parsed_backends = _parse_backend_args(
+        argv,
+        default_adapter=default_adapter,
+        prog=global_parser.prog,
+        require_reasoning=require_reasoning,
+    )
+
+    global_args = global_parser.parse_args(parsed_backends.extra_argv)
+
+    backends = _create_backends_from_parsed(
+        parsed_backends,
+        parser=global_parser,
+    )
+
+    return CliArgParsingResult(
+        backends=backends,
+        global_args=global_args,
+        parsed_backends=parsed_backends,
+    )

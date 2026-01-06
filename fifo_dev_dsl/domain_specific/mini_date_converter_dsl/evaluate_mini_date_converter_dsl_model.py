@@ -12,35 +12,35 @@ This script supports two evaluation modes:
 Usage:
     # Using Airlock backend (default):
     python evaluate_mini_date_converter_dsl_model.py \
-        --backend-type airlock \
-        --container phi \
-        --adapter mini-date-converter-dsl-adapter \
-        --model Phi4MiniInstruct
+        dsl=airlock \
+            --container phi \
+            --adapter mini-date-converter-dsl-adapter \
+            --model Phi4MiniInstruct
 
     # Using OpenAI-compatible backend:
     python evaluate_mini_date_converter_dsl_model.py \
-        --backend-type openai-compatible \
-        --base-url http://127.0.0.1:8001/v1 \
-        --adapter your-adapter-name
+        dsl=openai-compatible \
+            --base-url http://127.0.0.1:8001/v1 \
+            --adapter mini-date-converter-dsl-adapter
 
     # For template-based variations test mode:
     python evaluate_mini_date_converter_dsl_model.py \
-        --backend-type airlock \
-        --container phi \
-        --adapter mini-date-converter-dsl-adapter \
-        --model Phi4MiniInstruct \
-        --template-base 1
+        --template-base 1 \
+        dsl=airlock \
+            --container phi \
+            --adapter mini-date-converter-dsl-adapter \
+            --model Phi4MiniInstruct
 """
 
 from datetime import datetime
 from typing import Iterator, cast
 import argparse
+import sys
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
 from fifo_dev_dsl.common.llm_abstraction import (
     LlmBackend,
-    add_backend_cli_arguments,
-    create_backend_from_args,
+    parse_cli_and_create_backends
 )
 from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import (
     MiniDateConverterDSL,
@@ -194,7 +194,7 @@ def run_template_base_DATE_FROM_MONTH_WEEKDAY(backend: LlmBackend,
           f"({((total - failures) / total) * 100:.2f}% success)")
 
 
-def main() -> None:
+def main(argv: list[str]) -> None:
     """
     Runs the evaluation loop over the test dataset, printing per-example results and a final
     summary.
@@ -209,63 +209,79 @@ def main() -> None:
         --temperature:
             Sampling temperature (0.0 = greedy). (default: 0.0)
 
+        --reasoning-effort:
+            Reasoning effort level for reasoning models. Only applicable when using
+            reasoning-capable models. When omitted, the parameter is not passed to the
+            backend.
+
     Evaluation options:
         --template-base:
             If set, evaluates DATE_FROM_MONTH_WEEKDAY expressions using
             template-based variations, focusing on this specific DSL function
             rather than the broader published test set.
     """
-    parser = argparse.ArgumentParser(
-        description="Evaluate mini date converter DSL model accuracy"
-    )
+    def add_global_args(parser: argparse.ArgumentParser) -> None:
 
-    add_backend_cli_arguments(parser, default_adapter="mini-date-converter-dsl-adapter")
-
-    # LLM generation parameters
-    parser.add_argument(
-        "--max-new-tokens",
-        type=int,
-        default=1024,
-        help="Maximum tokens to generate"
-    )
-    parser.add_argument(
-        "--temperature",
-        type=float,
-        default=0.0,
-        help="Sampling temperature (0.0 = greedy)"
-    )
-    parser.add_argument(
-        "--reasoning-effort",
-        type=str,
-        default=None,
-        help="Reasoning effort level for reasoning models (default: None, not passed to backend)"
-    )
-
-    # Evaluation options
-    parser.add_argument(
-        "--template-base",
-        type=int,
-        choices=(1, 2),
-        help=(
-            "Template variation for DATE_FROM_MONTH_WEEKDAY"
-            "(1 = base form, 2 = compositional offset form)"
+        # LLM generation parameters
+        parser.add_argument(
+            "--max-new-tokens",
+            type=int,
+            default=1024,
+            help="Maximum tokens to generate"
         )
+        parser.add_argument(
+            "--temperature",
+            type=float,
+            default=0.0,
+            help="Sampling temperature (0.0 = greedy)"
+        )
+        parser.add_argument(
+            "--reasoning-effort",
+            type=str,
+            default=None,
+            help="Reasoning effort level for reasoning models "
+                 "(default: None, not passed to backend)"
+        )
+
+        # Evaluation options
+        parser.add_argument(
+            "--template-base",
+            type=int,
+            choices=(1, 2),
+            help=(
+                "Template variation for DATE_FROM_MONTH_WEEKDAY "
+                "(1 = base form, 2 = compositional offset form)"
+            )
+        )
+
+    res = parse_cli_and_create_backends(
+        argv,
+        prog="evaluate_mini_date_converter_dsl_model.py",
+        description="Evaluate mini date converter DSL model accuracy",
+        default_adapter="mini-date-converter-dsl-adapter",
+        require_reasoning=False,
+        add_global_arguments=add_global_args,
     )
 
-    args = parser.parse_args()
-    backend = create_backend_from_args(args, parser)
+    global_args = res.global_args
+    backends = res.backends
 
     # Run evaluation
-    if args.template_base:
+    if global_args.template_base:
         run_template_base_DATE_FROM_MONTH_WEEKDAY(
-            backend,
-            args.max_new_tokens,
-            args.temperature,
-            args.reasoning_effort,
-            template=args.template_base
+            backends.dsl,
+            global_args.max_new_tokens,
+            global_args.temperature,
+            global_args.reasoning_effort,
+            template=global_args.template_base
         )
     else:
-        run_test_dataset(backend, args.max_new_tokens, args.temperature, args.reasoning_effort)
+        run_test_dataset(
+            backends.dsl,
+            global_args.max_new_tokens,
+            global_args.temperature,
+            global_args.reasoning_effort
+        )
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

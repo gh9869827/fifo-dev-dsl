@@ -3,6 +3,8 @@ import warnings
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.common.llm_abstraction import LlmRequest
 
+# pyright: reportPrivateUsage=false
+# pylint: disable=protected-access
 
 class MockBackend:
     """Mock LLM backend for testing."""
@@ -28,11 +30,12 @@ class TestLLMRuntimeContextBackend:
         ctx = LLMRuntimeContext(
             tools=[],
             query_sources=[],
-            llm_backend=mock_backend
+            llm_backend_dsl=mock_backend, # type: ignore
+            llm_backend_reasoning=mock_backend # type: ignore
         )
 
         # Call the LLM
-        result = ctx.call_llm("system prompt", "user prompt")
+        result = ctx.call_llm_dsl("system prompt", "user prompt")
 
         # Verify it was called
         assert result == "MOCK_RESPONSE"
@@ -72,9 +75,10 @@ class TestLLMRuntimeContextBackend:
                 host="http://test:8000"
             )
 
-            # Verify the backend was created (we cannot easily test it is an AirlockBackend
+            # Verify the backends were created (we cannot easily test it is an AirlockBackend
             # without importing airlock dependencies, but we can test it exists)
-            assert ctx._llm_backend is not None # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access
+            assert ctx._llm_backend_dsl is not None
+            assert ctx._llm_backend_reasoning is not None
 
     def test_llm_backend_takes_precedence(self):
         """Test that llm_backend parameter takes precedence over deprecated params."""
@@ -86,7 +90,8 @@ class TestLLMRuntimeContextBackend:
             ctx = LLMRuntimeContext(
                 tools=[],
                 query_sources=[],
-                llm_backend=mock_backend,
+                llm_backend_dsl=mock_backend, # type: ignore
+                llm_backend_reasoning=mock_backend, # type: ignore
                 container_name="test-container"  # Should be ignored
             )
 
@@ -94,7 +99,7 @@ class TestLLMRuntimeContextBackend:
             assert len(w) == 1
 
         # But the mock backend should be used
-        result = ctx.call_llm("test", "test")
+        result = ctx.call_llm_dsl("test", "test")
         assert result == "MOCK_RESPONSE"
         assert mock_backend.call_count == 1
 
@@ -108,7 +113,8 @@ class TestLLMRuntimeContextBackend:
             _ = LLMRuntimeContext(
                 tools=[],
                 query_sources=[],
-                llm_backend=mock_backend
+                llm_backend_dsl=mock_backend, # type: ignore
+                llm_backend_reasoning=mock_backend # type: ignore
             )
 
             # No warning should be emitted
@@ -121,7 +127,8 @@ class TestLLMRuntimeContextBackend:
         ctx = LLMRuntimeContext(
             tools=[],
             query_sources=[],
-            llm_backend=mock_backend
+            llm_backend_dsl=mock_backend, # type: ignore
+            llm_backend_reasoning=mock_backend, # type: ignore
         )
 
         # Test each deprecated property
@@ -160,5 +167,6 @@ class TestLLMRuntimeContextBackend:
                 query_sources=[]
             )
 
-            # Should have an llm_backend created
-            assert ctx._llm_backend is not None # pyright: ignore[reportPrivateUsage] # pylint: disable=protected-access
+            # Should have the llm_backends created
+            assert ctx._llm_backend_dsl
+            assert ctx._llm_backend_reasoning is not None

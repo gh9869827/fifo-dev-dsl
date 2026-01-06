@@ -1,12 +1,11 @@
 from typing import Iterator, cast
 import difflib
-import argparse
+import sys
 
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
 from fifo_dev_dsl.common.llm_abstraction import (
     LlmRequest,
-    add_backend_cli_arguments,
-    create_backend_from_args,
+    parse_cli_and_create_backends
 )
 
 
@@ -46,7 +45,7 @@ def dsl_similarity_indicator(str1: str, str2: str) -> str:
     return f"{emoji} {score:>3}"
 
 
-def main() -> None:
+def main(argv: list[str]) -> None:
     """
     Runs the evaluation loop over the test dataset, printing per-example results and a final
     summary.
@@ -54,14 +53,15 @@ def main() -> None:
     For available command-line arguments, see add_backend_cli_arguments() in
     fifo_dev_dsl.common.llm_abstraction.
     """
-    parser = argparse.ArgumentParser(
-        description="Evaluate accuracy of the DIA intent-sequencer robot arm adapter."
+    res = parse_cli_and_create_backends(
+        argv,
+        prog="robot_arm_eval_performance.py",
+        description="Evaluate accuracy of the DIA intent-sequencer robot arm adapter.",
+        default_adapter="dia-intent-sequencer-robot-arm-adapter",
+        require_reasoning=False,
     )
 
-    add_backend_cli_arguments(parser, default_adapter="dia-intent-sequencer-robot-arm-adapter")
-
-    args = parser.parse_args()
-    backend = create_backend_from_args(args, parser)
+    backends = res.backends
 
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -82,7 +82,7 @@ def main() -> None:
                 max_new_tokens=1024,
                 temperature=0.0
             )
-            model_dsl_text = backend.complete(request)
+            model_dsl_text = backends.dsl.complete(request)
 
         except RuntimeError:
             model_dsl_text = ""
@@ -92,4 +92,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

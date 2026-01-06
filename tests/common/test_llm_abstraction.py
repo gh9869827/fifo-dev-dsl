@@ -1,14 +1,15 @@
 """Tests for LlmRequest and LlmBackend implementations."""
 import argparse
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
 import pytest
 from fifo_tool_airlock_model_env.common.models import Model
 from fifo_dev_dsl.common.llm_abstraction import (
     LlmRequest,
     OpenAICompatibleBackend,
     AirlockBackend,
-    add_backend_cli_arguments,
-    create_backend_from_args
+    _parse_backend_args,
+    LlmBackendType,
+    parse_cli_and_create_backends
 )
 
 # pyright: reportPrivateUsage=false
@@ -185,7 +186,7 @@ class TestAirlockBackend:
             container_name="test-container",
             adapter="test-adapter",
             host="http://localhost:8000",
-            model=Model.Phi4MiniInstruct
+            base_model=Model.Phi4MiniInstruct
         )
 
         # Override call to airlock model server
@@ -213,7 +214,7 @@ class TestAirlockBackend:
             container_name="test-container",
             adapter="test-adapter",
             host="http://localhost:8000",
-            model=Model.Phi4MultimodalInstruct
+            base_model=Model.Phi4MultimodalInstruct
         )
 
         # Override call to airlock model server
@@ -241,7 +242,7 @@ class TestAirlockBackend:
             container_name="test-container",
             adapter="test-adapter",
             host="http://localhost:8000",
-            model=Model.Phi4MiniInstruct
+            base_model=Model.Phi4MiniInstruct
         )
 
         # Override call to airlock model server
@@ -274,61 +275,181 @@ class TestAirlockBackend:
 class TestAddBackendCliArguments:
     """Tests for add_backend_cli_arguments function."""
 
-    def test_add_backend_cli_arguments_default_adapter(self):
+    def test_add_backend_cli_arguments_default_adapter_airlock(self):
         """Test that add_backend_cli_arguments adds all arguments with correct defaults."""
-        parser = argparse.ArgumentParser()
-        add_backend_cli_arguments(parser, default_adapter="test-adapter")
+        global_parser = argparse.ArgumentParser()
 
-        # Parse with no arguments to check defaults
-        args = parser.parse_args([])
+        parsed_backends = _parse_backend_args(
+            ["dsl=airlock"],
+            default_adapter="test-adapter",
+            prog=global_parser.prog,
+            require_reasoning=False,
+        )
 
-        assert args.backend_type == "airlock"
-        assert args.container == "phi"
-        assert args.host == "http://127.0.0.1:8000"
-        assert args.model == Model.Phi4MiniInstruct.value
-        assert args.api_key == "EMPTY"
-        assert args.adapter == "test-adapter"
-        assert args.base_url is None
+        dsl = parsed_backends.dsl_args
 
-    def test_add_backend_cli_arguments_custom_default_adapter(self):
-        """Test that custom default_adapter is used."""
-        parser = argparse.ArgumentParser()
-        add_backend_cli_arguments(parser, default_adapter="test-adapter")
+        assert parsed_backends.dsl_backend_type == LlmBackendType.AIRLOCK
+        assert dsl.host == "http://127.0.0.1:8000"
+        assert dsl.container == "phi"
+        assert dsl.model == "Phi4MiniInstruct"
+        assert dsl.adapter == "test-adapter"
 
-        args = parser.parse_args([])
-        assert args.adapter == "test-adapter"
+    def test_add_backend_cli_arguments_default_adapter_openaicompatible(self):
+        """Test that add_backend_cli_arguments adds all arguments with correct defaults."""
+        global_parser = argparse.ArgumentParser()
 
-    def test_add_backend_cli_arguments_accepts_custom_values(self):
+        parsed_backends = _parse_backend_args(
+            [
+                "dsl=openai-compatible",
+                "--base-url",
+                "http://127.0.0.1:8000"
+            ],
+            default_adapter="test-adapter",
+            prog=global_parser.prog,
+            require_reasoning=False,
+        )
+
+        dsl = parsed_backends.dsl_args
+
+        assert parsed_backends.dsl_backend_type == LlmBackendType.OPENAI_COMPATIBLE
+        assert dsl.base_url == "http://127.0.0.1:8000"
+        assert dsl.adapter == "test-adapter"
+
+    def test_add_backend_cli_arguments_accepts_custom_values_airlock_openaicompatible(self):
         """Test that custom values can be provided for all arguments."""
-        parser = argparse.ArgumentParser()
-        add_backend_cli_arguments(parser, default_adapter="default-adapter")
+        global_parser = argparse.ArgumentParser()
 
-        args = parser.parse_args([
-            "--backend-type", "openai-compatible",
-            "--container", "test-container",
-            "--host", "http://localhost:9000",
-            "--model", Model.Phi4MultimodalInstruct.value,
-            "--base-url", "http://localhost:8001/v1",
-            "--api-key", "dummy-api-key",
-            "--adapter", "test-adapter"
-        ])
+        parsed_backends = _parse_backend_args(
+            [
+                "dsl=airlock",
+                "--adapter", "test-adapter",
+                "--container", "test-container",
+                "--host", "http://127.0.0.1:8000/test-url1",
+                "--model", "Phi4MiniMultimodal",
 
-        assert args.backend_type == "openai-compatible"
-        assert args.container == "test-container"
-        assert args.host == "http://localhost:9000"
-        assert args.model == Model.Phi4MultimodalInstruct.value
-        assert args.base_url == "http://localhost:8001/v1"
-        assert args.api_key == "dummy-api-key"
-        assert args.adapter == "test-adapter"
+                "reasoning=openai-compatible",
+                "--model", "test-model2",
+                "--base-url", "http://127.0.0.1:8000/test-url2",
+                "--api-key", "dummy-api-key",
+            ],
+            default_adapter="test-default-adapter",
+            prog=global_parser.prog,
+            require_reasoning=False,
+        )
 
-    def test_add_backend_cli_arguments_backend_type_choices(self):
+        dsl = parsed_backends.dsl_args
+        reasoning = parsed_backends.reasoning_args
+
+        assert parsed_backends.dsl_backend_type == LlmBackendType.AIRLOCK
+        assert dsl.host == "http://127.0.0.1:8000/test-url1"
+        assert dsl.container == "test-container"
+        assert dsl.model == "Phi4MiniMultimodal"
+        assert dsl.adapter == "test-adapter"
+
+        assert reasoning is not None
+        assert parsed_backends.reasoning_backend_type == LlmBackendType.OPENAI_COMPATIBLE
+        assert reasoning.model == "test-model2"
+        assert reasoning.base_url == "http://127.0.0.1:8000/test-url2"
+        assert reasoning.api_key == "dummy-api-key"
+
+    def test_add_backend_cli_arguments_accepts_custom_values_openaicompatible_airlock(self):
+        """Test that custom values can be provided for all arguments."""
+        global_parser = argparse.ArgumentParser()
+
+        parsed_backends = _parse_backend_args(
+            [
+                "dsl=openai-compatible",
+                "--adapter", "test-adapter",
+                "--base-url", "http://127.0.0.1:8000/test-url1",
+                "--api-key", "dummy-api-key",
+
+                "reasoning=airlock",
+                "--container", "test-container",
+                "--host", "http://127.0.0.1:8000/test-url2",
+                "--model", "Phi4MiniMultimodal",
+            ],
+            default_adapter="test-default-adapter",
+            prog=global_parser.prog,
+            require_reasoning=True,
+        )
+
+        dsl = parsed_backends.dsl_args
+        reasoning = parsed_backends.reasoning_args
+
+        assert parsed_backends.dsl_backend_type == LlmBackendType.OPENAI_COMPATIBLE
+        assert dsl.adapter == "test-adapter"
+        assert dsl.base_url == "http://127.0.0.1:8000/test-url1"
+        assert dsl.api_key == "dummy-api-key"
+
+        assert reasoning is not None
+        assert parsed_backends.reasoning_backend_type == LlmBackendType.AIRLOCK
+        assert reasoning.container == "test-container"
+        assert reasoning.host == "http://127.0.0.1:8000/test-url2"
+        assert reasoning.model == "Phi4MiniMultimodal"
+
+    def test_add_backend_cli_arguments_backend_type_choices_1(self):
         """Test that backend-type only accepts valid choices."""
-        parser = argparse.ArgumentParser()
-        add_backend_cli_arguments(parser, default_adapter="test-adapter")
+        global_parser = argparse.ArgumentParser()
 
         # Test invalid backend type
-        with pytest.raises(SystemExit):
-            parser.parse_args(["--backend-type", "invalid-backend"])
+        with pytest.raises(SystemExit, match="invalid backend spec 'dsl=error'"):
+            _parsed_backends = _parse_backend_args(
+                [
+                    "dsl=error",
+                    "--adapter", "test-adapter",
+                    "--base-url", "http://127.0.0.1:8000/test-url1",
+                    "--api-key", "dummy-api-key",
+
+                    "reasoning=error",
+                    "--container", "test-container",
+                    "--host", "http://127.0.0.1:8000/test-url2",
+                    "--model", "Phi4MiniMultimodal",
+                ],
+                default_adapter="test-default-adapter",
+                prog=global_parser.prog,
+                require_reasoning=True,
+            )
+
+    def test_add_backend_cli_arguments_backend_type_choices_2(self):
+        """Test that backend-type only accepts valid choices."""
+        global_parser = argparse.ArgumentParser()
+
+        # Test invalid backend type
+        with pytest.raises(SystemExit, match="invalid backend spec 'reasoning=error'"):
+            _parsed_backends = _parse_backend_args(
+                [
+                    "dsl=openai-compatible",
+                    "--adapter", "test-adapter",
+                    "--base-url", "http://127.0.0.1:8000/test-url1",
+                    "--api-key", "dummy-api-key",
+
+                    "reasoning=error",
+                    "--container", "test-container",
+                    "--host", "http://127.0.0.1:8000/test-url2",
+                    "--model", "Phi4MiniMultimodal",
+                ],
+                default_adapter="test-default-adapter",
+                prog=global_parser.prog,
+                require_reasoning=True,
+            )
+
+    def test_add_backend_cli_arguments_missing_reasoning(self):
+        """Test that reasoning is present when required."""
+        global_parser = argparse.ArgumentParser()
+
+        # Test invalid backend type
+        with pytest.raises(SystemExit, match="missing required 'reasoning=...'"):
+            _parsed_backends = _parse_backend_args(
+                [
+                    "dsl=openai-compatible",
+                    "--adapter", "test-adapter",
+                    "--base-url", "http://127.0.0.1:8000/test-url1",
+                    "--api-key", "dummy-api-key",
+                ],
+                default_adapter="test-default-adapter",
+                prog=global_parser.prog,
+                require_reasoning=True,
+            )
 
 
 class TestCreateBackendFromArgs:
@@ -336,103 +457,324 @@ class TestCreateBackendFromArgs:
 
     @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
     def test_create_airlock_backend_with_default_values(self, mock_airlock_backend: MagicMock):
-        """Test creating AirlockBackend with default values."""
-        parser = argparse.ArgumentParser()
-        args = argparse.Namespace(
-            backend_type="airlock",
-            container="phi",
-            adapter="test-adapter",
-            host="http://127.0.0.1:8000",
-            model="Phi4MiniInstruct"
-        )
+        """Test creating AirlockBackend with default values - dsl only."""
 
-        create_backend_from_args(args, parser)
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=airlock"
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=False,
+        )
 
         mock_airlock_backend.assert_called_once_with(
             container_name="phi",
-            adapter="test-adapter",
+            adapter="test-default-adapter",
             host="http://127.0.0.1:8000",
-            model="Phi4MiniInstruct"
+            base_model="Phi4MiniInstruct"
         )
 
     @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
     def test_create_airlock_backend_with_custom_values(self, mock_airlock_backend: MagicMock):
-        """Test creating AirlockBackend with custom values."""
-        parser = argparse.ArgumentParser()
-        args = argparse.Namespace(
-            backend_type="airlock",
-            container="test-container",
-            adapter="test-adapter",
-            host="http://localhost:9000",
-            model="Phi4MultimodalInstruct"
+        """Test creating AirlockBackend with custom values - dsl only."""
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=airlock",
+                "--adapter", "test-adapter",
+                "--container", "test-container",
+                "--host", "http://127.0.0.1:8000/test-url",
+                "--model", "Phi4MiniMultimodal",
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=False,
         )
-
-        create_backend_from_args(args, parser)
 
         mock_airlock_backend.assert_called_once_with(
             container_name="test-container",
             adapter="test-adapter",
-            host="http://localhost:9000",
-            model="Phi4MultimodalInstruct"
+            host="http://127.0.0.1:8000/test-url",
+            base_model="Phi4MiniMultimodal"
         )
 
+    @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
+    def test_create_airlock_backend_with_default_values_reasoning(self, mock_airlock_backend: MagicMock):
+        """Test creating AirlockBackend with default values - dsl + reasoning only."""
+
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=airlock",
+                "reasoning=airlock"
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=True,
+        )
+
+        mock_airlock_backend.assert_has_calls(
+            calls=[
+                call(
+                    container_name="phi",
+                    adapter="test-default-adapter",
+                    host="http://127.0.0.1:8000",
+                    base_model="Phi4MiniInstruct"
+                ),
+                call(
+                    container_name="phi",
+                    adapter=None,
+                    host="http://127.0.0.1:8000",
+                    base_model="Phi4MiniInstruct"
+                )
+
+            ]
+        )
+
+    @patch('fifo_dev_dsl.common.llm_abstraction.AirlockBackend')
+    def test_create_airlock_backend_with_custom_values_reasoning(self, mock_airlock_backend: MagicMock):
+        """Test creating AirlockBackend with custom values - dsl + reasoning only."""
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=airlock",
+                "--adapter", "test-adapter1",
+                "--container", "test-container1",
+                "--host", "http://127.0.0.1:8000/test-url1",
+                "--model", "Phi4MiniMultimodal",
+
+                "reasoning=airlock",
+                "--container", "test-container2",
+                "--host", "http://127.0.0.1:8000/test-url2",
+                "--model", "Phi4MiniMultimodal",
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=True,
+        )
+
+        mock_airlock_backend.assert_has_calls(
+            calls=[
+                call(
+                    container_name="test-container1",
+                    adapter="test-adapter1",
+                    host="http://127.0.0.1:8000/test-url1",
+                    base_model="Phi4MiniMultimodal"
+                ),
+                call(
+                    container_name="test-container2",
+                    adapter=None,
+                    host="http://127.0.0.1:8000/test-url2",
+                    base_model="Phi4MiniMultimodal"
+                )
+
+            ]
+        )
+
+
+
     @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
-    def test_create_openai_backend_with_base_url(self, mock_openai_backend: MagicMock):
-        """Test creating OpenAICompatibleBackend with valid base_url."""
-        parser = argparse.ArgumentParser()
-        args = argparse.Namespace(
-            backend_type="openai-compatible",
-            base_url="http://localhost:8001/v1",
-            adapter="test-adapter",
+    def test_create_openaicompatible_backend_with_default_values(self, mock_airlock_backend: MagicMock):
+        """Test creating OpenAICompatibleBackend with default values - dsl only."""
+
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=openai-compatible",
+                "--base-url", "http://127.0.0.1:8000/test-url1",
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=False,
+        )
+
+        mock_airlock_backend.assert_called_once_with(
+            base_url="http://127.0.0.1:8000/test-url1",
+            model="test-default-adapter",
             api_key="EMPTY"
         )
 
-        create_backend_from_args(args, parser)
+    @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
+    def test_create_openaicompatible_backend_with_custom_values(self, mock_airlock_backend: MagicMock):
+        """Test creating OpenAICompatibleBackend with custom values - dsl only."""
 
-        mock_openai_backend.assert_called_once_with(
-            base_url="http://localhost:8001/v1",
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=openai-compatible",
+                "--adapter", "test-adapter",
+                "--base-url", "http://127.0.0.1:8000/test-url1",
+                "--api-key", "dummy-api-key",
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=False,
+        )
+
+        mock_airlock_backend.assert_called_once_with(
+            base_url="http://127.0.0.1:8000/test-url1",
             model="test-adapter",
-            api_key="EMPTY"
+            api_key="dummy-api-key"
         )
 
     @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
-    def test_create_openai_backend_with_custom_api_key(self, mock_openai_backend: MagicMock):
-        """Test creating OpenAICompatibleBackend with custom api_key."""
-        parser = argparse.ArgumentParser()
-        args = argparse.Namespace(
-            backend_type="openai-compatible",
-            base_url="http://localhost:8001/v1",
-            adapter="test-model",
-            api_key="dummy-api-key"
+    def test_create_openaicompatible_backend_with_default_values_reasoning(self, mock_airlock_backend: MagicMock):
+        """Test creating OpenAICompatibleBackend with default values - dsl + reasoning only."""
+
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=openai-compatible",
+                "--base-url", "http://127.0.0.1:8000/test-url1",
+
+                "reasoning=openai-compatible",
+                "--base-url", "http://127.0.0.1:8000/test-url2",
+                "--model", "test-model"
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=True,
         )
 
-        create_backend_from_args(args, parser)
+        mock_airlock_backend.assert_has_calls(
+            calls=[
+                call(
+                    base_url="http://127.0.0.1:8000/test-url1",
+                    model="test-default-adapter",
+                    api_key="EMPTY"
+                ),
+                call(
+                    base_url="http://127.0.0.1:8000/test-url2",
+                    model="test-model",
+                    api_key="EMPTY"
+                )
 
-        mock_openai_backend.assert_called_once_with(
-            base_url="http://localhost:8001/v1",
-            model="test-model",
-            api_key="dummy-api-key"
+            ]
         )
 
-    def test_create_openai_backend_missing_base_url_raises_error(self):
+    @patch('fifo_dev_dsl.common.llm_abstraction.OpenAICompatibleBackend')
+    def test_create_openaicompatible_backend_with_custom_values_reasoning(self, mock_airlock_backend: MagicMock):
+        """Test creating OpenAICompatibleBackend with custom values - dsl + reasoning only."""
+        _ = parse_cli_and_create_backends(
+            [
+                "dsl=openai-compatible",
+                "--adapter", "test-adapter",
+                "--base-url", "http://127.0.0.1:8000/test-url1",
+                "--api-key", "dummy-api-key1",
+
+                "reasoning=openai-compatible",
+                "--model", "test-model",
+                "--base-url", "http://127.0.0.1:8000/test-url2",
+                "--api-key", "dummy-api-key2",
+            ],
+            prog="test_program.py",
+            description="Test description",
+            default_adapter="test-default-adapter",
+            require_reasoning=True,
+        )
+
+        mock_airlock_backend.assert_has_calls(
+            calls=[
+                call(
+                    base_url="http://127.0.0.1:8000/test-url1",
+                    model="test-adapter",
+                    api_key="dummy-api-key1"
+                ),
+                call(
+                    base_url="http://127.0.0.1:8000/test-url2",
+                    model="test-model",
+                    api_key="dummy-api-key2"
+                )
+
+            ]
+        )
+
+    def test_create_openai_backend_missing_base_url_raises_error_dsl(self):
         """Test that missing base_url for openai-compatible backend raises error."""
-        parser = argparse.ArgumentParser()
-        args = argparse.Namespace(
-            backend_type="openai-compatible",
-            base_url=None,
-            adapter="test-adapter",
-            api_key="EMPTY"
-        )
 
         with pytest.raises(SystemExit):
-            create_backend_from_args(args, parser)
+            _ = parse_cli_and_create_backends(
+                [
+                    "dsl=openai-compatible",
+                    "--adapter", "test-adapter",
+                    # "--base-url", "http://127.0.0.1:8000/test-url1",
+                    "--api-key", "dummy-api-key1",
 
-    def test_create_backend_unknown_backend_type_raises_error(self):
-        """Test that unknown backend type raises error."""
-        parser = argparse.ArgumentParser()
-        args = argparse.Namespace(
-            backend_type="unknown-backend"
-        )
+                    "reasoning=openai-compatible",
+                    "--model", "test-model",
+                    "--base-url", "http://127.0.0.1:8000/test-url2",
+                    "--api-key", "dummy-api-key2",
+                ],
+                prog="test_program.py",
+                description="Test description",
+                default_adapter="test-default-adapter",
+                require_reasoning=True,
+            )
+
+    def test_create_openai_backend_missing_base_url_raises_error_reasoning(self):
+        """Test that missing base_url for openai-compatible backend raises error."""
 
         with pytest.raises(SystemExit):
-            create_backend_from_args(args, parser)
+            _ = parse_cli_and_create_backends(
+                [
+                    "dsl=openai-compatible",
+                    "--adapter", "test-adapter",
+                    "--base-url", "http://127.0.0.1:8000/test-url1",
+                    "--api-key", "dummy-api-key1",
+
+                    "reasoning=openai-compatible",
+                    "--model", "test-model",
+                    # "--base-url", "http://127.0.0.1:8000/test-url2",
+                    "--api-key", "dummy-api-key2",
+                ],
+                prog="test_program.py",
+                description="Test description",
+                default_adapter="test-default-adapter",
+                require_reasoning=True,
+            )
+
+    def test_create_backend_unknown_backend_type_raises_error_dsl(self):
+        """Test that missing base_url for openai-compatible backend raises error."""
+
+        with pytest.raises(SystemExit):
+            _ = parse_cli_and_create_backends(
+                [
+                    "dsl=invalid-openai-compatible",
+                    "--adapter", "test-adapter",
+                    "--base-url", "http://127.0.0.1:8000/test-url1",
+                    "--api-key", "dummy-api-key1",
+
+                    "reasoning=openai-compatible",
+                    "--model", "test-model",
+                    "--base-url", "http://127.0.0.1:8000/test-url2",
+                    "--api-key", "dummy-api-key2",
+                ],
+                prog="test_program.py",
+                description="Test description",
+                default_adapter="test-default-adapter",
+                require_reasoning=True,
+            )
+
+    def test_create_backend_unknown_backend_type_raises_error_reasoning(self):
+        """Test that missing base_url for openai-compatible backend raises error."""
+
+        with pytest.raises(SystemExit):
+            _ = parse_cli_and_create_backends(
+                [
+                    "dsl=openai-compatible",
+                    "--adapter", "test-adapter",
+                    "--base-url", "http://127.0.0.1:8000/test-url1",
+                    "--api-key", "dummy-api-key1",
+
+                    "reasoning=reasoning-openai-compatible",
+                    "--model", "test-model",
+                    "--base-url", "http://127.0.0.1:8000/test-url2",
+                    "--api-key", "dummy-api-key2",
+                ],
+                prog="test_program.py",
+                description="Test description",
+                default_adapter="test-default-adapter",
+                require_reasoning=True,
+            )

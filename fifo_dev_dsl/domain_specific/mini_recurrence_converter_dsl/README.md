@@ -108,7 +108,7 @@ from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import pars
 # Initialize OpenAI-compatible backend (e.g., vLLM, LM Studio, Ollama)
 backend = OpenAICompatibleBackend(
     base_url="http://127.0.0.1:8001/v1",
-    model="your-model-name",
+    model="finetuned-recurrence-converter-dsl-adapter",
     api_key="EMPTY"
 )
 
@@ -246,18 +246,18 @@ The `evaluate_mini_recurrence_converter_dsl_model.py` script evaluates the accur
 
 ```bash
 python evaluate_mini_recurrence_converter_dsl_model.py \
-    --backend-type airlock \
-    --container phi \
-    --adapter mini-recurrence-converter-dsl-adapter
+    dsl=airlock \
+        --container phi \
+        --adapter mini-recurrence-converter-dsl-adapter
 ```
 
 **Using OpenAI-compatible backend:**
 
 ```bash
 python evaluate_mini_recurrence_converter_dsl_model.py \
-    --backend-type openai-compatible \
-    --base-url http://127.0.0.1:8001/v1 \
-    --model your-model-name
+    dsl=openai-compatible \
+        --base-url http://127.0.0.1:8001/v1 \
+        --adapter mini-recurrence-converter-dsl-adapter
 ```
 
 **Additional options:**
@@ -265,8 +265,8 @@ python evaluate_mini_recurrence_converter_dsl_model.py \
 - `--max-new-tokens`: Maximum tokens to generate (default: 1024)
 - `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
 - `--reasoning-effort`: Reasoning effort level for reasoning models. Only applicable when using reasoning-capable models. Supported values depend on the backend implementation. Common values include "low", "medium", "high". When None, the parameter is not passed to the backend, allowing the model to use its default reasoning behavior (default: None)
-- `--host`: Airlock server URL (default: http://127.0.0.1:8000)
-- `--api-key`: API key for OpenAI-compatible servers (default: "EMPTY")
+
+See the [LLM abstraction README](../../common/README.md) for detailed information on the command-line arguments that control LLM backend configuration.
 
 ---
 

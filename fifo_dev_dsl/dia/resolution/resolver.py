@@ -375,7 +375,7 @@ class Resolver:
             - Appends a new entry to `_resolution_context.llm_call_logs`.
         """
 
-        answer = self._runtime_context.call_llm(
+        answer = self._runtime_context.call_llm_dsl(
             system_prompt=self._runtime_context.system_prompt_intent_sequencer,
             user_prompt=prompt
         )

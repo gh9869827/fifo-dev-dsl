@@ -29,7 +29,7 @@ def ask_helper_no_interaction(
         (*current, gatherered_data_or_user_answer)
     )
 
-    answer = runtime_context.call_llm(
+    answer = runtime_context.call_llm_dsl(
         system_prompt=system_prompt,
         user_prompt=resolution_text
     )
