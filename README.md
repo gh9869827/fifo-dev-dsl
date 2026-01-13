@@ -37,7 +37,23 @@ No official release or pre-release has been published yet. The code is provided 
 
 ## 📦 Install
 
-Some functionality requires a working [airlock model environment](https://github.com/gh9869827/fifo-tool-airlock-model-env). See its [README](https://github.com/gh9869827/fifo-tool-airlock-model-env/blob/main/README.md) for setup instructions.
+One or more LLMs are used to interpret natural language and convert it into
+structured DSL syntax.
+
+To interact with LLMs, `fifo-dev-dsl` provides two LLM backends:
+- `AirlockBackend`: LLM backend used to call the
+  [airlock model environment](https://github.com/gh9869827/fifo-tool-airlock-model-env).
+- `OpenAICompatibleBackend`: LLM backend used to call an OpenAI-compatible API
+  (e.g. vLLM, LM Studio, Ollama). This refers to API compatibility only and
+  does not imply use of OpenAI-hosted services.
+
+At least one backend is required.
+
+To install the
+[airlock model environment](https://github.com/gh9869827/fifo-tool-airlock-model-env),
+see its
+[README](https://github.com/gh9869827/fifo-tool-airlock-model-env/blob/main/README.md)
+for setup instructions.
 
 Install the DSL module in editable mode in a separate virtual environment:
 
@@ -51,7 +67,7 @@ source bin/activate
 git clone https://github.com/gh9869827/fifo-dev-dsl.git
 cd fifo-dev-dsl
 
-# Run the setup script
+# Run the setup script: install libraries needed by both backends
 ./setup.sh
 ```
 

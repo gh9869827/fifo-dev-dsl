@@ -30,6 +30,7 @@ if [ ! -d "fifo-tool-airlock-model-env" ]; then
     git clone https://github.com/gh9869827/fifo-tool-airlock-model-env.git
 fi
 echo "📦 Installing airlock SDK..."
+# Install Airlock Model Env backend (AirlockBackend) dependencies
 python3 -m pip install -e fifo-tool-airlock-model-env[sdk]
 echo "📦 Installing airlock bridge..."
 python3 -m pip install -e fifo-tool-airlock-model-env[bridge]
@@ -37,6 +38,7 @@ python3 -m pip install -e fifo-tool-airlock-model-env[bridge]
 # Go back to DSL repo and install it
 cd fifo-dev-dsl
 echo "📦 Installing DSL module..."
-python3 -m pip install -e .
+# Install OpenAI-compatible backend (OpenAICompatibleBackend) dependencies
+python3 -m pip install -e .[openai-api]
 
 echo "✅ Setup complete!"
