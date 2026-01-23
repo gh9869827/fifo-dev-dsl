@@ -2,14 +2,6 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg) 
 ![Test Status](https://github.com/gh9869827/fifo-dev-dsl/actions/workflows/test.yml/badge.svg)
 
-# ⚠️ Experimental Branch: `experimental/backend` ⚠️
-
-This branch contains experimental work on LLM backend abstraction, including support
-for OpenAI-compatible servers alongside the Airlock model environment.
-
-Features, APIs, behavior, and configuration are experimental and may change or be removed at any time.
-**Use at your own risk.**
-
 # 🧠 fifo-dev-dsl
 
 A suite of **domain-specific languages (DSLs)** for interpreting natural language and converting it into structured, executable logic within the `fifo-*` ecosystem.
