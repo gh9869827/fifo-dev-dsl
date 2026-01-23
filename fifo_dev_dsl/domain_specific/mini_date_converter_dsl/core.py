@@ -1,15 +1,9 @@
 from __future__ import annotations
+import warnings
 from datetime import datetime, timedelta
 from typing import Tuple
 from dateutil.relativedelta import relativedelta, MO, TU, WE, TH, FR, SA, SU
-from fifo_tool_airlock_model_env.common.models import (
-    GenerationParameters,
-    Message
-)
-from fifo_tool_airlock_model_env.sdk.client_sdk import (
-    call_airlock_model_server,
-    Model
-)
+from fifo_dev_dsl.common.llm_abstraction import LlmBackend, LlmRequest
 from fifo_dev_dsl.domain_specific.common.dsl_utils import (
     extract_hour_minute,
     extract_int,
@@ -31,6 +25,10 @@ def parse_natural_date_expression(
     """
     Given a natural language date expression, this function uses the LLM model to translate it
     to the DSL, then parses and returns the corresponding datetime.
+
+    Deprecated:
+        Use `parse_natural_date_expression_with_backend` instead, which supports
+        pluggable LLM backends through the LlmBackend protocol.
 
     Args:
         question (str):
@@ -54,20 +52,98 @@ def parse_natural_date_expression(
         Tuple[str, datetime]:
             (the DSL code, the parsed datetime object)
     """
-    answer = call_airlock_model_server(
-        model=Model.Phi4MiniInstruct,
-        adapter=adapter,
-        messages=[
-            Message.system(SYSTEM_PROMPT),
-            Message.user(question)
-        ],
-        parameters=GenerationParameters(
-            max_new_tokens=1024,
-            do_sample=False
-        ),
-        container_name=container_name,
-        host=host
+    warnings.warn(
+        "parse_natural_date_expression is deprecated. "
+        "Use parse_natural_date_expression_with_backend instead, "
+        "which supports pluggable LLM backends through the LlmBackend protocol.",
+        DeprecationWarning,
+        stacklevel=2
     )
+    
+    # Import AirlockBackend and AirlockModelEnv only when needed (for backward compatibility)
+    from fifo_dev_dsl.common.llm_abstraction import AirlockBackend # pylint: disable=import-outside-toplevel
+    from fifo_tool_airlock_model_env.common.models import Model # pylint: disable=import-outside-toplevel
+
+    backend = AirlockBackend(
+        container_name=container_name,
+        adapter=adapter,
+        host=host,
+        base_model=Model.Phi4MiniInstruct
+    )
+
+    return parse_natural_date_expression_with_backend(
+        question,
+        now,
+        backend=backend,
+        max_new_tokens=1024,
+        temperature=0.0
+    )
+
+
+def parse_natural_date_expression_with_backend(
+        question: str,
+        now: datetime | None = None,
+        *,
+        backend: LlmBackend,
+        max_new_tokens: int = 1024,
+        temperature: float = 0.0,
+        reasoning_effort: str | None = None) -> Tuple[str, datetime]:
+    """
+    Given a natural language date expression, this function uses an LLM backend to translate it
+    to the DSL, then parses and returns the corresponding datetime.
+
+    This function uses the LlmBackend protocol, allowing you to use any compatible backend
+    implementation (e.g., AirlockBackend, OpenAICompatibleBackend).
+
+    Args:
+        question (str):
+            The natural language question, e.g., "in one day and two hours"
+
+        now (datetime | None, optional):
+            Overrides the current datetime for evaluation. Passed to
+            `MiniDateConverterDSL`. Defaults to None (uses current time).
+
+        backend (LlmBackend):
+            LLM backend implementing the LlmBackend protocol. This can be an AirlockBackend,
+            OpenAICompatibleBackend, or any other compatible backend.
+
+        max_new_tokens (int, optional):
+            Maximum number of tokens to generate. Defaults to 1024.
+
+        temperature (float, optional):
+            Sampling temperature (higher = more random). When 0.0, use greedy decoding.
+            Defaults to 0.0.
+
+        reasoning_effort (str | None, optional):
+            Reasoning effort level for reasoning models. Only applicable when using
+            reasoning-capable models. When None, the parameter is not passed to the
+            backend. Defaults to None.
+
+    Returns:
+        Tuple[str, datetime]:
+            (the DSL code, the parsed datetime object)
+
+    Examples:
+        >>> from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+        >>> backend = AirlockBackend(
+        ...     container_name="my-container",
+        ...     adapter="mini-date-converter-dsl-adapter",
+        ...     host="http://127.0.0.1:8000"
+        ... )
+        >>> dsl_code, dt = parse_natural_date_expression_with_backend(
+        ...     "next Tuesday at 5pm",
+        ...     backend=backend
+        ... )
+    """
+    request = LlmRequest(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=question,
+        max_new_tokens=max_new_tokens,
+        temperature=temperature,
+        reasoning_effort=reasoning_effort
+    )
+
+    answer = backend.complete(request)
 
     try:
         dt = MiniDateConverterDSL(now=now).parse(answer)

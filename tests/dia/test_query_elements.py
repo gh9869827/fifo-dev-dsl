@@ -22,7 +22,7 @@ def test_query_fill_abort_raises() -> None:
     ctx = _runtime_context()
     rc = ResolutionContext()
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_fill.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_reasoning",
         return_value="reasoning: r\nvalue: v\nabort: nope",
     ):
         with pytest.raises(RuntimeError, match="QueryFill failed: abort message was returned"):
@@ -34,7 +34,7 @@ def test_query_fill_unknown_value() -> None:
     ctx = _runtime_context()
     rc = ResolutionContext()
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_fill.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_reasoning",
         return_value="unexpected",
     ):
         outcome = qf.do_resolution(ctx, rc, None)
@@ -49,13 +49,16 @@ def test_query_gather_unknown_value() -> None:
     ctx = _runtime_context()
     rc = ResolutionContext()
     mock_outcome = object()
-    with patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_gather.call_airlock_model_server",
-        return_value="bad answer",
-    ), patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_gather.ask_helper_no_interaction",
-        return_value=mock_outcome
-    ) as helper:
+    with (
+        patch(
+            "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_reasoning",
+            return_value="bad answer",
+        ),
+        patch(
+            "fifo_dev_dsl.dia.dsl.elements.query_gather.ask_helper_no_interaction",
+            return_value=mock_outcome
+        ) as helper
+    ):
         outcome = qg.do_resolution(ctx, rc, None)
     helper.assert_called_once()
     assert helper.call_args.args[-1] == "unknown"
@@ -67,7 +70,7 @@ def test_query_user_unknown_value() -> None:
     ctx = _runtime_context()
     rc = ResolutionContext()
     with patch(
-        "fifo_dev_dsl.dia.dsl.elements.query_user.call_airlock_model_server",
+        "fifo_dev_dsl.dia.runtime.context.LLMRuntimeContext.call_llm_reasoning",
         return_value="irrelevant",
     ):
         outcome = qu.do_resolution(ctx, rc, None)

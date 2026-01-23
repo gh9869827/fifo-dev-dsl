@@ -115,8 +115,17 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
 from fifo_dev_dsl.dia.resolution.interaction import Interaction, InteractionAnswer
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
 
-runtime = LLMRuntimeContext(tools=[...], query_sources=[...])
+# Create the LLM backend
+backend = AirlockBackend(
+    container_name="phi",
+    adapter="dia-intent-sequencer-robot-arm-adapter",
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
+)
+
+runtime = LLMRuntimeContext(llm_backend=backend, tools=[...], query_sources=[...])
 resolver = Resolver(runtime_context=runtime, prompt="retrieve 3 screws from the inventory")
 
 outcome = resolver(interaction_reply=None)
@@ -188,6 +197,7 @@ allowing resolution to pause and resume across asynchronous user interactions.
 ```python
 from fifo_dev_common.introspection.tool_decorator import tool_handler, tool_query_source
 from fifo_dev_dsl.dia.runtime import LLMRuntimeContext
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
 
 class Robot:
     @tool_handler("retrieve_screw")
@@ -219,7 +229,17 @@ class Robot:
         return ...
 
 robot = Robot()
+
+# Create the LLM backend
+backend = AirlockBackend(
+    container_name="phi",
+    adapter="dia-intent-sequencer-robot-arm-adapter",
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
+)
+
 runtime = LLMRuntimeContext(
+    llm_backend=backend,
     # Tool handlers
     tools=[
         robot.retrieve_screw

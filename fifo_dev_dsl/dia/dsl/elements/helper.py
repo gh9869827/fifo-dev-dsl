@@ -1,9 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
-from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
-
 from fifo_dev_dsl.dia.dsl.parser import parser
 from fifo_dev_dsl.dia.resolution.llm_call_log import LLMCallLog
 from fifo_dev_dsl.dia.resolution.enums import ResolutionResult
@@ -32,19 +29,9 @@ def ask_helper_no_interaction(
         (*current, gatherered_data_or_user_answer)
     )
 
-    answer = call_airlock_model_server(
-        model=runtime_context.base_model,
-        adapter=runtime_context.intent_sequencer_adapter,
-        messages=[
-            Message.system(system_prompt),
-            Message.user(resolution_text)
-        ],
-        parameters=GenerationParameters(
-            max_new_tokens=1024,
-            do_sample=False
-        ),
-        container_name=runtime_context.container_name,
-        host=runtime_context.host
+    answer = runtime_context.call_llm_dsl(
+        system_prompt=system_prompt,
+        user_prompt=resolution_text
     )
 
     resolution_context.llm_call_logs.append(

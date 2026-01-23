@@ -1,6 +1,4 @@
 import copy
-from fifo_tool_airlock_model_env.common.models import GenerationParameters, Message
-from fifo_tool_airlock_model_env.sdk.client_sdk import call_airlock_model_server
 from fifo_dev_dsl.dia.dsl.parser.parser import parse_dsl
 from fifo_dev_dsl.dia.dsl.elements.abort import Abort
 from fifo_dev_dsl.dia.dsl.elements.abort_with_new_dsl import AbortWithNewDsl
@@ -377,19 +375,9 @@ class Resolver:
             - Appends a new entry to `_resolution_context.llm_call_logs`.
         """
 
-        answer = call_airlock_model_server(
-            model=self._runtime_context.base_model,
-            adapter=self._runtime_context.intent_sequencer_adapter,
-            messages=[
-                Message.system(self._runtime_context.system_prompt_intent_sequencer),
-                Message.user(prompt)
-            ],
-            parameters=GenerationParameters(
-                max_new_tokens=1024,
-                do_sample=False
-            ),
-            container_name=self._runtime_context.container_name,
-            host=self._runtime_context.host
+        answer = self._runtime_context.call_llm_dsl(
+            system_prompt=self._runtime_context.system_prompt_intent_sequencer,
+            user_prompt=prompt
         )
 
         self._resolution_context.llm_call_logs.append(

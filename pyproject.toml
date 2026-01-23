@@ -14,9 +14,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+openai-api = [
+    "openai>=2.0.0",
+]
 dev = [
   "pytest",
-  "pytest-asyncio"
+  "pytest-asyncio",
+  "types-python-dateutil",
 ]
 
 [build-system]

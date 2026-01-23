@@ -68,12 +68,24 @@ print(result)
 # Output: 2025-06-02 09:30:00
 ```
 
-### Translate natural language into DSL using an LLM adapter:
+### Translate natural language into DSL using an LLM backend:
 
 ```python
-from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natural_date_expression
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natural_date_expression_with_backend
 
-dsl_code, date_time_object = parse_natural_date_expression("next Tuesday at 5pm", model="phi")
+# Initialize backend (e.g., Airlock)
+backend = AirlockBackend(
+    container_name="my-container",
+    adapter="mini-date-converter-dsl-adapter",
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
+)
+
+dsl_code, date_time_object = parse_natural_date_expression_with_backend(
+    "next Tuesday at 5pm",
+    backend=backend
+)
 
 print(dsl_code)
 # Output: SET_TIME(OFFSET(TODAY, 1, WEEKDAY=1), 17, 0)
@@ -81,6 +93,27 @@ print(dsl_code)
 print(date_time_object)
 # Output: 2025-06-03 17:00:00
 ```
+
+**Alternative: Using OpenAI-compatible backends**
+
+```python
+from fifo_dev_dsl.common.llm_abstraction import OpenAICompatibleBackend
+from fifo_dev_dsl.domain_specific.mini_date_converter_dsl.core import parse_natural_date_expression_with_backend
+
+# Initialize OpenAI-compatible backend (e.g., vLLM, LM Studio, Ollama)
+backend = OpenAICompatibleBackend(
+    base_url="http://127.0.0.1:8001/v1",
+    model="finetuned-date-converter-dsl-adapter",
+    api_key="EMPTY"
+)
+
+dsl_code, date_time_object = parse_natural_date_expression_with_backend(
+    "next Tuesday at 5pm",
+    backend=backend
+)
+```
+
+**Note:** The `parse_natural_date_expression` function (without `_with_backend`) is deprecated. Use `parse_natural_date_expression_with_backend` instead for new code.
 
 ---
 
@@ -295,6 +328,66 @@ OFFSET_TIME(SET_TIME(TODAY, 12, 0), 0, 30)
 - Missing arguments or malformed expressions raise `ValueError` with a detailed message
 - Nested expressions are fully supported and evaluated recursively
 - Function names and units (e.g., `DAY`, `WEEKDAY=1`) are **case-sensitive**
+
+---
+
+## 📊 Model Evaluation
+
+The `evaluate_mini_date_converter_dsl_model.py` script evaluates the accuracy of
+fine-tuned models on date expression parsing tasks defined by this DSL. It
+supports two evaluation modes:
+
+1. **Test Dataset Mode**: Evaluates against a published test set from the Hugging Face Hub.
+
+2. **Template-Based Mode**: Focuses the evaluation on the
+   `DATE_FROM_MONTH_WEEKDAY(...)` DSL function using template-based variations across
+   ordinal, weekday, and month values to evaluate the model’s generalization across
+   these constructions.
+
+   - *Variation 1*: Alternate phrasings of the template-based date expression
+     "the `nth` `weekday` of `month`" (e.g., "the second Tuesday in March").
+
+   - *Variation 2*: Compositional expressions involving an offset from *Variation 1*
+     outputs, following the pattern "two weeks after the `nth` `weekday` in `month`"
+     (e.g., "two weeks after the second Tuesday in March").
+
+### Usage Examples
+
+**Using Airlock backend (default):**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    dsl=airlock \
+        --container phi \
+        --adapter mini-date-converter-dsl-adapter
+```
+
+**Using OpenAI-compatible backend:**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    dsl=openai-compatible \
+        --base-url http://127.0.0.1:8001/v1 \
+        --adapter mini-date-converter-dsl-adapter
+```
+
+**Template-Based test mode:**
+
+```bash
+python evaluate_mini_date_converter_dsl_model.py \
+    --template-base 1 \
+    dsl=airlock \
+        --container phi \
+        --adapter mini-date-converter-dsl-adapter
+```
+
+**Additional options:**
+
+- `--max-new-tokens`: Maximum tokens to generate (default: 1024)
+- `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
+- `--reasoning-effort`: Reasoning effort level for reasoning models. Only applicable when using reasoning-capable models. Supported values depend on the backend implementation. Common values include "low", "medium", "high". When None, the parameter is not passed to the backend, allowing the model to use its default reasoning behavior (default: None)
+
+See the [LLM abstraction README](../../common/README.md) for detailed information on the command-line arguments that control LLM backend configuration.
 
 ---
 

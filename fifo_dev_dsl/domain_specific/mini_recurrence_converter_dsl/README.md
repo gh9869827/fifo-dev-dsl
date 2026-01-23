@@ -67,13 +67,25 @@ rule = MiniRecurrenceConverterDSL().parse("WEEKLY(1, [MO, WE], TIME(9, 0))")
 print(rule.next(datetime(2025, 6, 2)))  # e.g., 2025-06-04 09:00:00 (next Monday or Wednesday)
 ```
 
-### Translate natural language into DSL using an LLM adapter:
+### Translate natural language into DSL using an LLM backend:
 
 ```python
 from datetime import datetime
-from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import parse_natural_recurrence_expression
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
+from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import parse_natural_recurrence_expression_with_backend
 
-dsl_code, rule = parse_natural_recurrence_expression("every other Tuesday at 5pm", model="phi")
+# Initialize backend (e.g., Airlock)
+backend = AirlockBackend(
+    container_name="my-container",
+    adapter="mini-recurrence-converter-dsl-adapter",
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Optional: defaults to Phi4MiniInstruct
+)
+
+dsl_code, rule = parse_natural_recurrence_expression_with_backend(
+    "every other Tuesday at 5pm",
+    backend=backend
+)
 
 print(dsl_code)
 # Output: WEEKLY(2, [TU], TIME(17, 0))
@@ -86,6 +98,27 @@ print(rule.next(datetime(2025, 6, 2)))
 print(rule.next(datetime(2025, 6, 3)))
 # Output: 2025-06-17 17:00:00
 ```
+
+**Alternative: Using OpenAI-compatible backends**
+
+```python
+from fifo_dev_dsl.common.llm_abstraction import OpenAICompatibleBackend
+from fifo_dev_dsl.domain_specific.mini_recurrence_converter_dsl.core import parse_natural_recurrence_expression_with_backend
+
+# Initialize OpenAI-compatible backend (e.g., vLLM, LM Studio, Ollama)
+backend = OpenAICompatibleBackend(
+    base_url="http://127.0.0.1:8001/v1",
+    model="finetuned-recurrence-converter-dsl-adapter",
+    api_key="EMPTY"
+)
+
+dsl_code, rule = parse_natural_recurrence_expression_with_backend(
+    "every other Tuesday at 5pm",
+    backend=backend
+)
+```
+
+**Note:** The `parse_natural_recurrence_expression` function (without `_with_backend`) is deprecated. Use `parse_natural_recurrence_expression_with_backend` instead for new code.
 
 ---
 
@@ -200,6 +233,40 @@ HOURLY(0, 20)   # every 20 minutes
 - All arguments are **positional only** (no `frequency=1`)
 - Invalid values (e.g., unknown weekday codes, invalid days/months) raise `ValueError`
 - Empty or malformed DSL (e.g., `DAILY()`, `WEEKLY(1, foo)`) is rejected
+
+---
+
+## 📊 Model Evaluation
+
+The `evaluate_mini_recurrence_converter_dsl_model.py` script evaluates the accuracy of fine-tuned models on recurrence expression parsing tasks defined by this DSL, using a published test set from Hugging Face Hub.
+
+### Usage Examples
+
+**Using Airlock backend (default):**
+
+```bash
+python evaluate_mini_recurrence_converter_dsl_model.py \
+    dsl=airlock \
+        --container phi \
+        --adapter mini-recurrence-converter-dsl-adapter
+```
+
+**Using OpenAI-compatible backend:**
+
+```bash
+python evaluate_mini_recurrence_converter_dsl_model.py \
+    dsl=openai-compatible \
+        --base-url http://127.0.0.1:8001/v1 \
+        --adapter mini-recurrence-converter-dsl-adapter
+```
+
+**Additional options:**
+
+- `--max-new-tokens`: Maximum tokens to generate (default: 1024)
+- `--temperature`: Sampling temperature, 0.0 for greedy decoding (default: 0.0)
+- `--reasoning-effort`: Reasoning effort level for reasoning models. Only applicable when using reasoning-capable models. Supported values depend on the backend implementation. Common values include "low", "medium", "high". When None, the parameter is not passed to the backend, allowing the model to use its default reasoning behavior (default: None)
+
+See the [LLM abstraction README](../../common/README.md) for detailed information on the command-line arguments that control LLM backend configuration.
 
 ---
 

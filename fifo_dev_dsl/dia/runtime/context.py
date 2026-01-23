@@ -1,13 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import textwrap
+import warnings
 
 from fifo_dev_common.containers.read_only.read_only_list import ReadOnlyList
 from fifo_dev_common.introspection.tool_decorator import ToolHandler, ToolQuerySource
-from fifo_tool_airlock_model_env.common.models import Model
+from fifo_dev_dsl.common.llm_abstraction import LlmBackend, LlmRequest, AirlockBackend
 
 if TYPE_CHECKING:  # pragma: no cover
     from fifo_dev_dsl.dia.resolution.context import ResolutionContext
+    from fifo_tool_airlock_model_env.common.models import Model
 
 class LLMRuntimeContext:
     """
@@ -22,6 +24,7 @@ class LLMRuntimeContext:
           - query fill (autofill from context)
           - query user (responding to user questions)
           - query gather (automatically gathering details to properly deduce intents)
+      - An LLM backend for generating DSL code from prompts
 
     This context acts as the main registry for tools, enabling type-safe evaluation
     of resolved intents using their documented parameter and return types. It is also
@@ -41,19 +44,25 @@ class LLMRuntimeContext:
     _prompt_intent_sequencer: str
     _prompt_slot_resolver: str
     _prompt_error_resolver: str
-    _container_name: str
-    _base_model: Model
-    _intent_sequencer_adapter: str
-    _host: str
+    _llm_backend_dsl: LlmBackend
+    _llm_backend_reasoning: LlmBackend
+
+    # Deprecated fields - kept for backward compatibility
+    _container_name: str | None
+    _base_model: Model | None
+    _intent_sequencer_adapter: str | None
+    _host: str | None
 
     def __init__(
         self,
         tools: list[ToolHandler],
         query_sources: list[ToolQuerySource],
-        container_name: str = "dev-phi",
-        base_model: Model = Model.Phi4MiniInstruct,
-        intent_sequencer_adapter: str = "intent-sequencer",
-        host: str = "http://127.0.0.1:8000",
+        llm_backend_dsl: LlmBackend | None = None,
+        llm_backend_reasoning: LlmBackend | None = None,
+        container_name: str | None = None,
+        base_model: Model | None = None,
+        intent_sequencer_adapter: str | None = None,
+        host: str | None = None,
     ):
         """
         Initialize the runtime context with tools and query sources.
@@ -65,24 +74,113 @@ class LLMRuntimeContext:
             query_sources (list[ToolQuerySource]):
                 Sources that can be queried at runtime to answer user or slot-filling questions.
 
-            container_name (str):
-                Container used for calls to the model server.
+            llm_backend_dsl (LlmBackend | None):
+                LLM backend used to generate DSL code by calling the intent-sequencer
+                LoRA-fine-tuned adapter. It is used by the resolver after all missing
+                or ambiguous information has been resolved.
 
-            base_model (Model):
-                Base model used for all LLM calls.
+                This backend is specialized for structured DSL generation, not
+                general reasoning. This is the preferred way to configure the
+                intent-sequencing backend. If not provided, it will be constructed
+                from the deprecated parameters (container_name, base_model,
+                intent_sequencer_adapter, host).
 
-            intent_sequencer_adapter (str):
-                Adapter used when generating DSL from text.
+            llm_backend_reasoning (LlmBackend | None):
+                LLM backend used to leverage the reasoning capabilities of a base
+                (non-fine-tuned) foundation model with strong general reasoning ability.
 
-            host (str):
-                URL of the airlock model server.
+                It is used to:
+                    - Compute or infer missing values
+                    - Collect contextual information
+                    - Attempt to answer direct questions from users
+
+                It is used by `QUERY_USER`, `QUERY_FILL`, and `QUERY_GATHER`, and is not
+                responsible for DSL generation. This is the preferred way to configure the
+                reasoning backend. If not provided, it will be constructed from the
+                deprecated parameters (container_name, base_model,
+                intent_sequencer_adapter, host).
+
+            container_name (str | None):
+                **DEPRECATED**: Use `llm_backend` instead. Container used for calls to the
+                model server. Only used to construct a default AirlockBackend if llm_backend
+                is not provided.
+
+            base_model (Model | None):
+                **DEPRECATED**: Use `llm_backend` instead. Base model used for all LLM calls.
+                Only used to construct a default AirlockBackend if llm_backend is not provided.
+
+            intent_sequencer_adapter (str | None):
+                **DEPRECATED**: Use `llm_backend` instead. Adapter used when generating DSL
+                from text. Only used to construct a default AirlockBackend if llm_backend is
+                not provided.
+
+            host (str | None):
+                **DEPRECATED**: Use `llm_backend` instead. URL of the airlock model server.
+                Only used to construct a default AirlockBackend if llm_backend is not provided.
         """
-        self._tools = ReadOnlyList(tools)
-        self._query_sources = ReadOnlyList(query_sources)
+        # Check if deprecated parameters are being used
+        # Note: Keep this list in sync with the deprecated parameters listed in the docstring above
+        deprecated_params_used = any([
+            container_name is not None,
+            base_model is not None,
+            intent_sequencer_adapter is not None,
+            host is not None
+        ])
+
+        if deprecated_params_used:
+            warnings.warn(
+                "Parameters 'container_name', 'base_model', 'intent_sequencer_adapter', "
+                "and 'host' are deprecated and will be removed in a future version. "
+                "Please use the 'llm_backend' parameter instead.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+
+        # Set up LLM backend
+        if llm_backend_dsl is not None:
+            self._llm_backend_dsl = llm_backend_dsl
+
+        if llm_backend_reasoning is not None:
+            self._llm_backend_reasoning = llm_backend_reasoning
+
+        if llm_backend_dsl is None or llm_backend_reasoning is None:
+            # Backward compatibility: construct AirlockBackend from deprecated parameters
+            # Import here to avoid circular dependency and to keep it optional
+            from fifo_tool_airlock_model_env.common.models import Model as ModelEnum
+
+            _container_name = container_name if container_name is not None else "dev-phi"
+            _base_model = base_model if base_model is not None else ModelEnum.Phi4MiniInstruct
+            _adapter = (
+                intent_sequencer_adapter
+                if intent_sequencer_adapter is not None
+                else "intent-sequencer"
+            )
+            _host = host if host is not None else "http://127.0.0.1:8000"
+
+            if llm_backend_dsl is None:
+                self._llm_backend_dsl = AirlockBackend(
+                    container_name=_container_name,
+                    adapter=_adapter,
+                    host=_host,
+                    base_model=_base_model
+                )
+
+            if llm_backend_reasoning is None:
+                self._llm_backend_reasoning = AirlockBackend(
+                    container_name=_container_name,
+                    # adapter=_adapter, # use the base model directly
+                    host=_host,
+                    base_model=_base_model
+                )
+
+        # Store deprecated parameters for backward compatibility (property access)
         self._container_name = container_name
         self._base_model = base_model
         self._intent_sequencer_adapter = intent_sequencer_adapter
         self._host = host
+
+        self._tools = ReadOnlyList(tools)
+        self._query_sources = ReadOnlyList(query_sources)
 
         yaml_tools = "\n".join(tool.to_schema_yaml() for tool in self._tools)
         yaml_sources = "\n".join(source.get_description() for source in self._query_sources)
@@ -122,7 +220,9 @@ class LLMRuntimeContext:
         """
         return self._prompt_query_fill
 
-    def get_user_prompt_dynamic_query(self, resolution_context: ResolutionContext, question: str) -> str:
+    def get_user_prompt_dynamic_query(self,
+                                      resolution_context: ResolutionContext,
+                                      question: str) -> str:
         """
         Dynamically create the user prompt used for QUERY_FILL, QUERY_USER and QUERY_GATHER
         resolution.
@@ -215,23 +315,120 @@ class LLMRuntimeContext:
 
     @property
     def container_name(self) -> str:
-        """Container used for calls to the model server."""
-        return self._container_name
+        """
+        **DEPRECATED**: This property is deprecated and will be removed in a future version.
+
+        Container used for calls to the model server.
+        """
+        warnings.warn(
+            "The 'container_name' property is deprecated and will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self._container_name if self._container_name is not None else "dev-phi"
 
     @property
     def base_model(self) -> Model:
-        """Default model used for LLM calls."""
-        return self._base_model
+        """
+        **DEPRECATED**: This property is deprecated and will be removed in a future version.
+
+        Default model used for LLM calls.
+        """
+        warnings.warn(
+            "The 'base_model' property is deprecated and will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        if self._base_model is not None:
+            return self._base_model
+        # Import here to avoid issues when not using Airlock
+        from fifo_tool_airlock_model_env.common.models import Model as ModelEnum
+        return ModelEnum.Phi4MiniInstruct
 
     @property
     def host(self) -> str:
-        """URL of the airlock model server."""
-        return self._host
+        """
+        **DEPRECATED**: This property is deprecated and will be removed in a future version.
+
+        URL of the airlock model server.
+        """
+        warnings.warn(
+            "The 'host' property is deprecated and will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return self._host if self._host is not None else "http://127.0.0.1:8000"
 
     @property
     def intent_sequencer_adapter(self) -> str:
-        """Adapter used for intent sequencing calls."""
-        return self._intent_sequencer_adapter
+        """
+        **DEPRECATED**: This property is deprecated and will be removed in a future version.
+
+        Adapter used for intent sequencing calls.
+        """
+        warnings.warn(
+            "The 'intent_sequencer_adapter' property is deprecated "
+            "and will be removed in a future version.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        return (
+            self._intent_sequencer_adapter
+            if self._intent_sequencer_adapter is not None
+            else "intent-sequencer"
+        )
+
+    def call_llm_dsl(self, system_prompt: str, user_prompt: str) -> str:
+        """
+        Call the intent-sequencer LoRA-fine-tuned adapter with the given prompts.
+
+        This helper is used for deterministic DSL generation and is not intended
+        for open-ended reasoning.
+
+        Args:
+            system_prompt (str):
+                The system prompt to send to the adapter.
+
+            user_prompt (str):
+                The user prompt to send to the adapter.
+
+        Returns:
+            str:
+                The generated DSL expression.
+        """
+        request = LlmRequest(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_new_tokens=1024,
+            temperature=0.0
+        )
+        return self._llm_backend_dsl.complete(request)
+
+    def call_llm_reasoning(self, system_prompt: str, user_prompt: str) -> str:
+        """
+        Call the base (non-fine-tuned) LLM with the given prompts.
+
+        This helper is used for general reasoning, inference, and natural-language
+        responses, and is not responsible for DSL generation.
+
+        Args:
+            system_prompt (str):
+                The system prompt to send to the LLM.
+
+            user_prompt (str):
+                The user prompt to send to the LLM.
+
+        Returns:
+            str:
+                The model's natural-language response.
+        """
+        request = LlmRequest(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            max_new_tokens=1024,
+            temperature=0.0
+        )
+        return self._llm_backend_reasoning.complete(request)
 
     # formatting prompts
     # pylint: disable=line-too-long

@@ -4,6 +4,7 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
 
 class Calculator:
     """
@@ -97,9 +98,40 @@ if __name__ == "__main__":
 
     calculator = Calculator()
 
-    runtime_context = LLMRuntimeContext(
+    # Create the LLM backend
+
+    # Using AirlockBackend
+    backend_dsl = AirlockBackend(
         container_name="phi",
-        intent_sequencer_adapter="dia-intent-sequencer-calculator-adapter",
+        adapter="dia-intent-sequencer-calculator-adapter",
+        host="http://127.0.0.1:8000"
+    )
+
+    backend_reasoning = AirlockBackend(
+        container_name="phi",
+        base_model="Phi4MiniInstruct",
+        host="http://127.0.0.1:8000"
+    )
+
+    # Using OpenAICompatibleBackend (commented out)
+    #
+    # from fifo_dev_dsl.common.llm_abstraction import OpenAICompatibleBackend
+    #
+    # backend_dsl = OpenAICompatibleBackend(
+    #     base_url="http://127.0.0.1:8001/v1",
+    #     model="dia-intent-sequencer-calculator-adapter",
+    #     api_key="EMPTY"
+    # )
+    #
+    # backend_reasoning = OpenAICompatibleBackend(
+    #     base_url="http://127.0.0.1:8001/v1",
+    #     model="foundation-model-example",
+    #     api_key="EMPTY"
+    # )
+
+    runtime_context = LLMRuntimeContext(
+        llm_backend_dsl=backend_dsl,
+        llm_backend_reasoning=backend_reasoning,
         tools=[
             calculator.add,
             calculator.subtract,

@@ -2,6 +2,7 @@ import argparse
 from collections import defaultdict
 from typing import Iterator, cast, Callable
 import re
+import sys
 import operator
 from fifo_tool_datasets.sdk.hf_dataset_adapters.dsl import DSLAdapter
 from fifo_dev_dsl.dia.dsl.elements.element_list import ListElement
@@ -25,23 +26,13 @@ from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
+from fifo_dev_dsl.common.llm_abstraction import (
+    parse_cli_and_create_backends
+)
 
 calculator = Calculator()
 
-runtime_context = LLMRuntimeContext(
-    container_name="phi",
-    intent_sequencer_adapter="dia-intent-sequencer-calculator-adapter",
-    tools=[
-        calculator.add,
-        calculator.subtract,
-        calculator.divide,
-        calculator.multiply
-    ],
-    query_sources=[
-    ]
-)
-
-def eval_prompt(prompt: str) -> float:
+def eval_prompt(prompt: str, runtime_context: LLMRuntimeContext) -> float:
     """
     Parse a natural language math prompt into a DSL representation,
     evaluate it using the configured tool runtime, and return the final result.
@@ -53,6 +44,9 @@ def eval_prompt(prompt: str) -> float:
     Args:
         prompt (str):
             Natural language expression to evaluate, e.g. "2 + 3 * 4"
+
+        runtime_context (LLMRuntimeContext):
+            Runtime context passed to all DSL elements during resolution and evaluation.
 
     Returns:
         float:
@@ -84,7 +78,7 @@ def eval_prompt(prompt: str) -> float:
     return node.evaluation_outcome.value
 
 
-def eval_random(delta_flag: bool) -> None:
+def eval_random(delta_flag: bool, runtime_context: LLMRuntimeContext) -> None:
     """
     Evaluate randomly generated arithmetic expressions using the DIA DSL pipeline.
 
@@ -101,6 +95,9 @@ def eval_random(delta_flag: bool) -> None:
         delta_flag (bool):
             If True, failed prompts are logged to `delta.dat`.
             If False, no logging is performed.
+
+        runtime_context (LLMRuntimeContext):
+            Runtime context passed to all DSL elements during resolution and evaluation.
     """
     total_global, error_global = 0, 0
     results_by_length: dict[int, list[int]] = {k: [0, 0] for k in range(2, 7)}
@@ -128,7 +125,7 @@ def eval_random(delta_flag: bool) -> None:
                     continue
 
                 try:
-                    actual = eval_prompt(user)
+                    actual = eval_prompt(user, runtime_context)
                 except (ZeroDivisionError, TypeError, AssertionError, ValueError, KeyError):
                     actual = None
 
@@ -175,7 +172,7 @@ def eval_random(delta_flag: bool) -> None:
             f_delta.close()
 
 
-def eval_test() -> None:
+def eval_test(runtime_context: LLMRuntimeContext) -> None:
     """
     Evaluate a fixed test set of prompts from the Hugging Face dataset
     `a6188466/dia-intent-sequencer-calculator-dataset`.
@@ -188,6 +185,10 @@ def eval_test() -> None:
     Outputs ✅/❌ per test case and prints a final summary of pass/fail counts and accuracy,
     broken down by expression depth (tree length).
     Skips cases with division by zero.
+
+    Args:
+        runtime_context (LLMRuntimeContext):
+            Runtime context passed to all DSL elements during resolution and evaluation.
     """
     adapter_obj = DSLAdapter()
     dataset_dict = adapter_obj.from_hub_to_dataset_wide_dict(
@@ -212,7 +213,7 @@ def eval_test() -> None:
             continue
 
         try:
-            actual = eval_prompt(input_text)
+            actual = eval_prompt(input_text, runtime_context)
         except (TypeError, AssertionError, ValueError, KeyError):
             actual = None
 
@@ -337,17 +338,64 @@ def custom_evaluate_arithmetic_dsl_tree(
     raise TypeError(f"Unsupported node type: {type(node).__name__}")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluation script")
-    parser.add_argument("--random", action="store_true", help="Evaluate on random examples")
-    parser.add_argument(
-        "--delta-flag",
-        action="store_true",
-        help="Log failed random examples to 'delta.dat'. If not set, no file is created."
-    )
-    args = parser.parse_args()
+def main(argv: list[str]) -> None:
+    """
+    Evaluate accuracy of the DIA intent-sequencer calculator adapter.
 
-    if args.random:
-        eval_random(args.delta_flag)
+    For available command-line arguments, see add_backend_cli_arguments() in
+    fifo_dev_dsl.common.llm_abstraction.
+
+    Evaluation mode:
+        --random:
+            Evaluate on random examples.
+
+        --delta-flag:
+            Log failed random examples to 'delta.dat'. If not set, no file is created.
+    """
+    def add_global_args(parser: argparse.ArgumentParser) -> None:
+
+        # Evaluation mode
+        parser.add_argument(
+            "--random",
+            action="store_true",
+            help="Evaluate on random examples"
+        )
+        parser.add_argument(
+            "--delta-flag",
+            action="store_true",
+            help="Log failed random examples to 'delta.dat'. If not set, no file is created."
+        )
+
+    res = parse_cli_and_create_backends(
+        argv,
+        prog="calculator_eval_performance.py",
+        description="Evaluate accuracy of the DIA intent-sequencer calculator adapter.",
+        default_adapter="dia-intent-sequencer-calculator-adapter",
+        require_reasoning=True,
+        add_global_arguments=add_global_args,
+    )
+
+    global_args = res.global_args
+    backends = res.backends
+
+    # Initialize runtime context
+    runtime_context = LLMRuntimeContext(
+        llm_backend_dsl=backends.dsl,
+        llm_backend_reasoning=backends.reasoning,
+        tools=[
+            calculator.add,
+            calculator.subtract,
+            calculator.divide,
+            calculator.multiply
+        ],
+        query_sources=[
+        ]
+    )
+
+    if global_args.random:
+        eval_random(global_args.delta_flag, runtime_context)
     else:
-        eval_test()
+        eval_test(runtime_context)
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

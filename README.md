@@ -1,8 +1,8 @@
-# 🧠 fifo-dev-dsl
-
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg) 
 ![Test Status](https://github.com/gh9869827/fifo-dev-dsl/actions/workflows/test.yml/badge.svg)
+
+# 🧠 fifo-dev-dsl
 
 A suite of **domain-specific languages (DSLs)** for interpreting natural language and converting it into structured, executable logic within the `fifo-*` ecosystem.
 
@@ -29,7 +29,23 @@ No official release or pre-release has been published yet. The code is provided 
 
 ## 📦 Install
 
-Some functionality requires a working [airlock model environment](https://github.com/gh9869827/fifo-tool-airlock-model-env). See its [README](https://github.com/gh9869827/fifo-tool-airlock-model-env/blob/main/README.md) for setup instructions.
+One or more LLMs are used to interpret natural language and convert it into
+structured DSL syntax.
+
+To interact with LLMs, `fifo-dev-dsl` provides two LLM backends:
+- `AirlockBackend`: LLM backend used to call the
+  [airlock model environment](https://github.com/gh9869827/fifo-tool-airlock-model-env).
+- `OpenAICompatibleBackend`: LLM backend used to call an OpenAI-compatible API
+  (e.g. vLLM, LM Studio, Ollama). This refers to API compatibility only and
+  does not imply use of OpenAI-hosted services.
+
+At least one backend is required.
+
+To install the
+[airlock model environment](https://github.com/gh9869827/fifo-tool-airlock-model-env),
+see its
+[README](https://github.com/gh9869827/fifo-tool-airlock-model-env/blob/main/README.md)
+for setup instructions.
 
 Install the DSL module in editable mode in a separate virtual environment:
 
@@ -43,7 +59,7 @@ source bin/activate
 git clone https://github.com/gh9869827/fifo-dev-dsl.git
 cd fifo-dev-dsl
 
-# Run the setup script
+# Run the setup script: install libraries needed by both backends
 ./setup.sh
 ```
 
@@ -80,13 +96,21 @@ from fifo_dev_dsl.dia.runtime.context import LLMRuntimeContext
 from fifo_dev_dsl.dia.resolution.resolver import Resolver
 from fifo_dev_dsl.dia.runtime.evaluator import Evaluator
 from fifo_dev_dsl.dia.runtime.evaluation_outcome import EvaluationStatus
+from fifo_dev_dsl.common.llm_abstraction import AirlockBackend
 
 # Assume we have a tool class like RobotArm providing methods and inventory
 robot = RobotArm()
 
+# Create the LLM backend
+backend = AirlockBackend(
+    container_name="phi",
+    adapter="dia-intent-sequencer-robot-arm-adapter",
+    host="http://127.0.0.1:8000",
+    model="Phi4MiniInstruct"  # Base model (optional, defaults to Phi4MiniInstruct)
+)
+
 runtime_context = LLMRuntimeContext(
-    container_name="phi",  # or any model label you use
-    intent_sequencer_adapter="dia-intent-sequencer-robot-arm-adapter",
+    llm_backend=backend,
     tools=[
         robot.retrieve_screw,
         robot.initialize_components,
@@ -151,5 +175,5 @@ MIT — see [LICENSE](LICENSE).
 
 ## 📄 Disclaimer
 
-This project is not affiliated with or endorsed by Hugging Face or the Python Software Foundation.  
-It builds on their open-source technologies under their respective licenses.
+This project is not affiliated with or endorsed by Hugging Face, OpenAI, or the Python Software Foundation.  
+It builds on their open-source technologies and libraries under their respective licenses.
